@@ -1,0 +1,7 @@
+export const getCarList = (params) => uni.$u.http.get('/cars', { params })
+export const getCarDetail = (id) => uni.$u.http.get(`/cars/${id}`)
+export const createCar = (data) => uni.$u.http.post('/cars', data)
+export const favoriteCar = (id) => uni.$u.http.post(`/cars/${id}/favorite`)
+export const unfavoriteCar = (id) => uni.$u.http.delete(`/cars/${id}/favorite`)
+export const contactSeller = (id) => uni.$u.http.post(`/cars/${id}/contact`)
+export const downloadImage = (carId, imageId) => uni.$u.http.get(`/cars/${carId}/images/${imageId}/download`)

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pancosky.newcartrade.mapper.CarMapper">
+    <resultMap id="carDetailMap" type="com.pancosky.newcartrade.entity.CarSource">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="brand_id" property="brandId"/>
+        <result column="series_id" property="seriesId"/>
+        <result column="model_id" property="modelId"/>
+        <result column="city_code" property="cityCode"/>
+        <result column="city_name" property="cityName"/>
+        <result column="energy_type" property="energyType"/>
+        <result column="auction_status" property="auctionStatus"/>
+        <result column="published_at" property="publishedAt"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <select id="searchExportCars" resultMap="carDetailMap">
+        SELECT cs.*
+        FROM car_sources cs
+        INNER JOIN car_tags ct ON cs.id = ct.car_id
+        WHERE ct.tag_type = 'EXPORT'
+          AND ct.tag_value = #{countryCode}
+          AND cs.status = 'ACTIVE'
+        ORDER BY cs.created_at DESC
+    </select>
+</mapper>

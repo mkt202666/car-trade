@@ -1,0 +1,5 @@
+export const marketAnalysis = (data) => uni.$u.http.post('/ai/market-analysis', data)
+export const aiSearch = (data) => uni.$u.http.post('/ai/search', data)
+export const generateCopywriting = (data) => uni.$u.http.post('/ai/customer-generation', data)
+export const autoOutreach = (data) => uni.$u.http.post('/ai/auto-outreach', data)
+export const distributeCar = (data) => uni.$u.http.post('/ai/distribute', data)

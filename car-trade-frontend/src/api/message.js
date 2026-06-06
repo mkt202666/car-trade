@@ -1,0 +1,5 @@
+export const getMessageList = (params) => uni.$u.http.get('/messages', { params })
+export const getUnreadCount = () => uni.$u.http.get('/messages/unread-count')
+export const markRead = (id) => uni.$u.http.put(`/messages/${id}/read`)
+export const markAllRead = () => uni.$u.http.put('/messages/read-all')
+export const deleteMessage = (id) => uni.$u.http.delete(`/messages/${id}`)
