@@ -27,7 +27,7 @@
     </properties>
 
     <dependencies>
-        <!-- Spring Boot -->
+        <!-- Spring Boot 3.5.14 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
