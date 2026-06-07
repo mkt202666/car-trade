@@ -37,6 +37,7 @@ public class User {
     private LocalDateTime memberExpireAt;
     private String certificationStatus;
     private String status;
+    @TableField(exist = false)
     private String description;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

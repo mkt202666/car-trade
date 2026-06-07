@@ -19,7 +19,7 @@ export default {
   data() {
     return {
       fileList: this.images.map(url => ({ url })),
-      uploadAction: `${uni.$u.http.config.baseURL}/upload`
+      uploadAction: 'http://localhost:8080/api/v1/upload'
     }
   },
   watch: {

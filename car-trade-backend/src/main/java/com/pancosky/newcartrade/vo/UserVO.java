@@ -27,5 +27,6 @@ public class UserVO {
     private Integer followerCount;
     private Integer followerCountToday;
     private String certificationStatus;
+    private String description;
     private LocalDateTime createdAt;
 }

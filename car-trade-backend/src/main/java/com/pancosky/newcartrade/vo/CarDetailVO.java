@@ -10,6 +10,7 @@ import java.util.List;
 @Data
 public class CarDetailVO {
     private Long id;
+    private String title;
     private String brandName;
     private String seriesName;
     private String modelName;
@@ -17,10 +18,10 @@ public class CarDetailVO {
     private Integer mileage;
     private BigDecimal price;
     private BigDecimal deposit;
+    private String color;
     private String city;
     private String cityCode;
     private String energyType;
-    private String color;
     private String usageType;
     private String ownerType;
     private Boolean isMortgaged;
@@ -31,6 +32,7 @@ public class CarDetailVO {
     private String productionDate;
     private Integer keyCount;
     private String description;
+    private String coverImage;
     private List<String> images;
     private List<String> tags;
     private String auctionStatus;
@@ -38,13 +40,17 @@ public class CarDetailVO {
     private LocalDateTime createdAt;
     private Long viewCount;
     private Integer favoriteCount;
+
     private Long sellerId;
     private String sellerName;
-    private String sellerShopName;
     private String sellerAvatar;
+    private String sellerShopName;
     private String sellerCreditGrade;
     private Integer sellerDealCount;
     private Integer sellerFollowerCount;
+    private boolean followedByCurrentUser;
+    private boolean favoritedByCurrentUser;
+
     private String overallCondition;
     private String paint;
     private String structure;
@@ -53,5 +59,4 @@ public class CarDetailVO {
     private Integer transferCount;
     private String mileageType;
     private List<String> abnormalPhotos;
-    private String aiAnalysis;
 }

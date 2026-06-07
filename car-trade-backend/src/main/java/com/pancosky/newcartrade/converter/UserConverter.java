@@ -29,6 +29,7 @@ public class UserConverter {
         vo.setFollowerCount(user.getFollowerCount());
         vo.setFollowerCountToday(user.getFollowerCountToday());
         vo.setCertificationStatus(user.getCertificationStatus());
+        vo.setDescription(user.getDescription());
         vo.setCreatedAt(user.getCreatedAt());
         return vo;
     }

@@ -50,6 +50,17 @@ public class CarSource {
     private Integer favoriteCount;
     private String status;
     private LocalDateTime publishedAt;
+    private String exportCountries;
+
+    // ============ 非持久化字段（Service 层拼装使用） ============
+    @TableField(exist = false)
+    private String brandName;
+    @TableField(exist = false)
+    private String seriesName;
+    @TableField(exist = false)
+    private String modelName;
+    @TableField(exist = false)
+    private String coverImage;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
     @TableField(fill = FieldFill.INSERT_UPDATE)

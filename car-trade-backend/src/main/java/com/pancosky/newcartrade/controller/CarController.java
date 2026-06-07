@@ -9,7 +9,6 @@ import com.pancosky.newcartrade.service.CarService;
 import com.pancosky.newcartrade.vo.CarDetailVO;
 import com.pancosky.newcartrade.vo.CarVO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,7 +21,7 @@ public class CarController {
     private final CarService carService;
 
     @GetMapping
-    public ApiResponse<PageResult<CarVO>> list(CarQueryDTO params, Pageable pageable) {
+    public ApiResponse<PageResult<CarVO>> list(CarQueryDTO params) {
         return ApiResponse.success(carService.list(params));
     }
 

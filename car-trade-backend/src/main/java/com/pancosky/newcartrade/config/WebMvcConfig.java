@@ -19,13 +19,25 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .allowedOriginPatterns("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .allowCredentials(true);
+                .allowCredentials(true)
+                .maxAge(3600);
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authenticationInterceptor)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/api/v1/users/login", "/api/v1/users/register");
+                .excludePathPatterns(
+                        // 匿名接口（无需登录）
+                        "/api/v1/users/login",
+                        "/api/v1/users/register",
+                        "/api/v1/cars",
+                        "/api/v1/cars/*",
+                        "/api/v1/cars/recommend",
+                        "/api/v1/cars/export",
+                        // 错误与静态资源
+                        "/error",
+                        "/favicon.ico"
+                );
     }
 }

@@ -15,7 +15,8 @@ public class CarQueryDTO {
     private String energyType;
     private String exportCountry;
     private Boolean deposit;
+    /** 排序: price_asc / price_desc / mileage_asc / created_desc (默认) */
     private String sort;
-    private int page;
-    private int size;
+    private Integer page = 1;
+    private Integer size = 10;
 }
