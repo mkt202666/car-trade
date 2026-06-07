@@ -1,0 +1,135 @@
+{
+  "pages": [
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "5D好车",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/car-detail/index",
+      "style": {
+        "navigationBarTitleText": "车源详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/trade/index",
+      "style": {
+        "navigationBarTitleText": "交易管理",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/trade-sold/index",
+      "style": {
+        "navigationBarTitleText": "卖出的车"
+      }
+    },
+    {
+      "path": "pages/trade-bought/index",
+      "style": {
+        "navigationBarTitleText": "买到的车"
+      }
+    },
+    {
+      "path": "pages/trade-all/index",
+      "style": {
+        "navigationBarTitleText": "全部订单"
+      }
+    },
+    {
+      "path": "pages/order-detail/index",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
+      "path": "pages/publish/index",
+      "style": {
+        "navigationBarTitleText": "车源发布"
+      }
+    },
+    {
+      "path": "pages/ai/index",
+      "style": {
+        "navigationBarTitleText": "AI助理",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/message/index",
+      "style": {
+        "navigationBarTitleText": "消息中心",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/register/index",
+      "style": {
+        "navigationBarTitleText": "注册"
+      }
+    },
+    {
+      "path": "pages/seller-home/index",
+      "style": {
+        "navigationBarTitleText": "卖家主页"
+      }
+    },
+    {
+      "path": "pages/customer-service/index",
+      "style": {
+        "navigationBarTitleText": "在线客服"
+      }
+    },
+    {
+      "path": "pages/contract-detail/index",
+      "style": {
+        "navigationBarTitleText": "电子合同"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "5D好车",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F5F5F5"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#7A7E83",
+    "selectedColor": "#1f2937",
+    "borderStyle": "white",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      { "pagePath": "pages/home/index", "text": "找车" },
+      { "pagePath": "pages/trade/index", "text": "交易" },
+      { "pagePath": "pages/publish/index", "text": "发布车源" },
+      { "pagePath": "pages/message/index", "text": "消息" },
+      { "pagePath": "pages/profile/index", "text": "我的" }
+    ]
+  },
+  "easycom": {
+    "autoscan": false,
+    "custom": {
+      "^u-field$": "@/components/u-field/u-field.vue",
+      "^u-cell-item$": "@/components/u-cell-item/u-cell-item.vue",
+      "^u-loading$": "uview-plus/components/u-loading-icon/u-loading-icon.vue",
+      "^u-(.*)": "uview-plus/components/u-$1/u-$1.vue"
+    }
+  }
+}
