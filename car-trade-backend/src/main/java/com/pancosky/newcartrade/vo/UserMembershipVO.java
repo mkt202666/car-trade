@@ -12,4 +12,7 @@ public class UserMembershipVO {
     private LocalDateTime startAt;
     private LocalDateTime expireAt;
     private String status;
+    private Long planId;
+    private Long userId;
+    private LocalDateTime endAt;
 }

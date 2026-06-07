@@ -1,10 +1,12 @@
 package com.pancosky.newcartrade.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pancosky.newcartrade.entity.Coupon;
 import com.pancosky.newcartrade.entity.UserCoupon;
 import com.pancosky.newcartrade.mapper.CouponMapper;
 import com.pancosky.newcartrade.mapper.UserCouponMapper;
 import com.pancosky.newcartrade.service.CouponService;
+import com.pancosky.newcartrade.util.SecurityUtils;
 import com.pancosky.newcartrade.vo.CouponVO;
 import com.pancosky.newcartrade.vo.UserCouponVO;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +32,20 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     public List<UserCouponVO> listMyCoupons() {
-        return null;
+        Long userId = SecurityUtils.getCurrentUserId();
+        LambdaQueryWrapper<UserCoupon> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserCoupon::getUserId, userId);
+        List<UserCoupon> userCoupons = userCouponMapper.selectList(wrapper);
+        return userCoupons.stream().map(uc -> {
+            UserCouponVO vo = new UserCouponVO();
+            vo.setId(uc.getId());
+            vo.setCouponId(uc.getCouponId());
+            vo.setUserId(uc.getUserId());
+            vo.setStatus(uc.getStatus());
+            vo.setReceivedAt(uc.getReceivedAt());
+            vo.setUsedAt(uc.getUsedAt());
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     private CouponVO toCouponVO(Coupon coupon) {

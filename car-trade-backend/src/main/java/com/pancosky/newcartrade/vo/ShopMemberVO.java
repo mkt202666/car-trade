@@ -14,4 +14,5 @@ public class ShopMemberVO {
     private String status;
     private LocalDateTime appliedAt;
     private LocalDateTime approvedAt;
+    private Long shopUserId;
 }

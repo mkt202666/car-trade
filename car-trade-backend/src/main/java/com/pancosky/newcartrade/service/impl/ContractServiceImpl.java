@@ -70,9 +70,17 @@ public class ContractServiceImpl implements ContractService {
     public void sign(Long id) {
         Contract contract = contractMapper.selectById(id);
         if (contract == null) throw new BusinessException("Contract not found");
+        contract.setStatus("SIGNED");
+        contract.setBuyerSigned(true);
+        contract.setSellerSigned(true);
+        contractMapper.updateById(contract);
+        log.info("Contract {} signed", id);
     }
 
     @Override
     public void download(Long id) {
+        Contract contract = contractMapper.selectById(id);
+        if (contract == null) throw new BusinessException("Contract not found");
+        log.info("Download contract: {}", contract.getContractNo());
     }
 }

@@ -1,7 +1,9 @@
 package com.pancosky.newcartrade.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pancosky.newcartrade.entity.MemberPlan;
 import com.pancosky.newcartrade.entity.UserMembership;
+import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.mapper.MemberPlanMapper;
 import com.pancosky.newcartrade.mapper.UserMembershipMapper;
 import com.pancosky.newcartrade.service.MembershipService;
@@ -13,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,12 +36,38 @@ public class MembershipServiceImpl implements MembershipService {
     @Override
     public UserMembershipVO getMyMembership() {
         Long userId = SecurityUtils.getCurrentUserId();
-        return null;
+        LambdaQueryWrapper<UserMembership> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserMembership::getUserId, userId);
+        wrapper.orderByDesc(UserMembership::getCreatedAt);
+        wrapper.last("LIMIT 1");
+        UserMembership membership = userMembershipMapper.selectOne(wrapper);
+        if (membership == null) return null;
+        UserMembershipVO vo = new UserMembershipVO();
+        vo.setId(membership.getId());
+        vo.setPlanId(membership.getPlanId());
+        vo.setUserId(membership.getUserId());
+        vo.setLevel(membership.getLevel());
+        vo.setStartAt(membership.getStartAt());
+        vo.setEndAt(membership.getEndAt());
+        vo.setStatus(membership.getStatus());
+        return vo;
     }
 
     @Override
     @Transactional
     public void renew(Long planId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        MemberPlan plan = memberPlanMapper.selectById(planId);
+        if (plan == null) throw new BusinessException("Member plan not found");
+        UserMembership membership = new UserMembership();
+        membership.setUserId(userId);
+        membership.setPlanId(planId);
+        membership.setLevel(plan.getLevel());
+        membership.setStartAt(LocalDateTime.now());
+        membership.setEndAt(LocalDateTime.now().plusDays(plan.getDurationDays()));
+        membership.setStatus("ACTIVE");
+        userMembershipMapper.insert(membership);
+        log.info("User {} renewed membership plan {}", userId, planId);
     }
 
     private MemberPlanVO toPlanVO(MemberPlan plan) {

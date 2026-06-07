@@ -12,9 +12,9 @@
     </parent>
 
     <groupId>com.pancosky</groupId>
-    <artifactId>new-car-trade</artifactId>
+    <artifactId>car-trade-backend</artifactId>
     <version>1.0.0</version>
-    <name>new-car-trade</name>
+    <name>car-trade-backend</name>
     <description>5D好车 - B2B Used Car Trading Platform</description>
 
     <properties>
@@ -23,6 +23,7 @@
         <jjwt.version>0.12.5</jjwt.version>
         <hutool.version>5.8.26</hutool.version>
         <rocketmq.version>2.3.2</rocketmq.version>
+        <lombok.version>1.18.36</lombok.version>
     </properties>
 
     <dependencies>
@@ -85,7 +86,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Hutool -->
@@ -112,6 +113,16 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <release>21</release>
+                    <parameters>true</parameters>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

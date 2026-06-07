@@ -1,5 +1,6 @@
 package com.pancosky.newcartrade.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pancosky.newcartrade.entity.CustomerServiceTicket;
 import com.pancosky.newcartrade.mapper.CustomerServiceTicketMapper;
 import com.pancosky.newcartrade.service.CustomerService;
@@ -10,8 +11,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -36,7 +39,22 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public List<TicketVO> listTickets(String status) {
-        return null;
+        Long userId = SecurityUtils.getCurrentUserId();
+        LambdaQueryWrapper<CustomerServiceTicket> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CustomerServiceTicket::getUserId, userId);
+        if (StringUtils.hasText(status)) {
+            wrapper.eq(CustomerServiceTicket::getStatus, status);
+        }
+        wrapper.orderByDesc(CustomerServiceTicket::getCreatedAt);
+        List<CustomerServiceTicket> tickets = ticketMapper.selectList(wrapper);
+        return tickets.stream().map(t -> {
+            TicketVO vo = new TicketVO();
+            vo.setId(t.getId());
+            vo.setTitle(t.getTitle());
+            vo.setStatus(t.getStatus());
+            vo.setCreatedAt(t.getCreatedAt());
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     @Override

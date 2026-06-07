@@ -1,5 +1,6 @@
 package com.pancosky.newcartrade.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.baomidou.mybatisplus.annotation.IEnum;
 
 public enum OrderStatus implements IEnum<Integer> {
@@ -9,6 +10,7 @@ public enum OrderStatus implements IEnum<Integer> {
     COMPLETED(3),
     CANCELLED(4);
 
+    @EnumValue
     private final Integer value;
 
     OrderStatus(Integer value) {
@@ -16,7 +18,6 @@ public enum OrderStatus implements IEnum<Integer> {
     }
 
     @Override
-    @com.baomidou.mybatisplus.annotation.EnumValue
     public Integer getValue() {
         return value;
     }

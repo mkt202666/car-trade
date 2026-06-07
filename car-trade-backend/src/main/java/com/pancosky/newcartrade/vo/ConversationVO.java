@@ -15,4 +15,5 @@ public class ConversationVO {
     private String lastMessage;
     private LocalDateTime lastMessageAt;
     private Integer unreadCount;
+    private LocalDateTime createdAt;
 }

@@ -1,5 +1,8 @@
 package com.pancosky.newcartrade.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.pancosky.newcartrade.common.PageResult;
 import com.pancosky.newcartrade.converter.CarConverter;
 import com.pancosky.newcartrade.dto.CarCreateDTO;
@@ -20,8 +23,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -36,7 +41,47 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public PageResult<CarVO> list(CarQueryDTO query) {
-        return null;
+        LambdaQueryWrapper<CarSource> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CarSource::getStatus, "PUBLISHED");
+        if (StringUtils.hasText(query.getKeyword())) {
+            wrapper.like(CarSource::getTitle, query.getKeyword());
+        }
+        if (query.getBrandId() != null) {
+            wrapper.eq(CarSource::getBrandId, query.getBrandId());
+        }
+        if (query.getSeriesId() != null) {
+            wrapper.eq(CarSource::getSeriesId, query.getSeriesId());
+        }
+        if (query.getPriceMin() != null) {
+            wrapper.ge(CarSource::getPrice, query.getPriceMin());
+        }
+        if (query.getPriceMax() != null) {
+            wrapper.le(CarSource::getPrice, query.getPriceMax());
+        }
+        if (StringUtils.hasText(query.getCityCode())) {
+            wrapper.eq(CarSource::getCityCode, query.getCityCode());
+        }
+        if (StringUtils.hasText(query.getEnergyType())) {
+            wrapper.eq(CarSource::getEnergyType, query.getEnergyType());
+        }
+        if (query.getDeposit() != null && query.getDeposit()) {
+            wrapper.isNotNull(CarSource::getDeposit);
+        }
+        if ("price_asc".equals(query.getSort())) {
+            wrapper.orderByAsc(CarSource::getPrice);
+        } else if ("price_desc".equals(query.getSort())) {
+            wrapper.orderByDesc(CarSource::getPrice);
+        } else if ("mileage_asc".equals(query.getSort())) {
+            wrapper.orderByAsc(CarSource::getMileage);
+        } else {
+            wrapper.orderByDesc(CarSource::getCreatedAt);
+        }
+        IPage<CarSource> page = new Page<>(query.getPage(), query.getSize());
+        IPage<CarSource> result = carMapper.selectPage(page, wrapper);
+        List<CarVO> list = result.getRecords().stream()
+                .map(carConverter::toVO)
+                .collect(Collectors.toList());
+        return PageResult.of(list, result.getTotal(), query.getPage(), query.getSize());
     }
 
     @Override
@@ -132,18 +177,28 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public List<CarVO> recommend() {
-        return null;
+        LambdaQueryWrapper<CarSource> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CarSource::getStatus, "PUBLISHED");
+        wrapper.orderByDesc(CarSource::getViewCount);
+        wrapper.last("LIMIT 10");
+        List<CarSource> sources = carMapper.selectList(wrapper);
+        return sources.stream().map(carConverter::toVO).collect(Collectors.toList());
     }
 
     @Override
     public void export(String country) {
+        log.info("Export car data for country: {}", country);
     }
 
     @Override
     public void downloadImage(Long carId, Long imageId) {
+        log.info("Download image {} for car: {}", imageId, carId);
     }
 
     @Override
     public void contactSeller(Long carId) {
+        CarSource source = carMapper.selectById(carId);
+        if (source == null) throw new BusinessException("Car not found");
+        log.info("Contact seller {} for car: {}", source.getUserId(), carId);
     }
 }

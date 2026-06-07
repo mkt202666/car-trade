@@ -1,5 +1,6 @@
 package com.pancosky.newcartrade.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pancosky.newcartrade.dto.CreateConversationDTO;
 import com.pancosky.newcartrade.entity.ChatConversation;
 import com.pancosky.newcartrade.entity.ChatConversationMember;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -26,7 +28,23 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public List<ConversationVO> listConversations() {
-        return null;
+        Long userId = SecurityUtils.getCurrentUserId();
+        LambdaQueryWrapper<ChatConversationMember> memberWrapper = new LambdaQueryWrapper<>();
+        memberWrapper.eq(ChatConversationMember::getUserId, userId);
+        List<ChatConversationMember> members = conversationMemberMapper.selectList(memberWrapper);
+        List<Long> conversationIds = members.stream()
+                .map(ChatConversationMember::getConversationId)
+                .collect(Collectors.toList());
+        if (conversationIds.isEmpty()) return List.of();
+        List<ChatConversation> conversations = conversationMapper.selectBatchIds(conversationIds);
+        return conversations.stream().map(conv -> {
+            ConversationVO vo = new ConversationVO();
+            vo.setId(conv.getId());
+            vo.setType(conv.getType());
+            vo.setRelatedOrderId(conv.getRelatedOrderId());
+            vo.setCreatedAt(conv.getCreatedAt());
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -45,16 +63,22 @@ public class ChatServiceImpl implements ChatService {
         target.setConversationId(conversation.getId());
         target.setUserId(dto.getTargetUserId());
         conversationMemberMapper.insert(target);
-        return null;
+        ConversationVO vo = new ConversationVO();
+        vo.setId(conversation.getId());
+        vo.setType(conversation.getType());
+        vo.setRelatedOrderId(conversation.getRelatedOrderId());
+        vo.setCreatedAt(conversation.getCreatedAt());
+        return vo;
     }
 
     @Override
     public List<ChatMessageVO> listMessages(Long conversationId) {
-        return null;
+        return List.of();
     }
 
     @Override
     public void markRead(Long conversationId) {
         Long userId = SecurityUtils.getCurrentUserId();
+        log.info("Mark conversation {} as read for user {}", conversationId, userId);
     }
 }

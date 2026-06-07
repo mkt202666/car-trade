@@ -1,5 +1,6 @@
 package com.pancosky.newcartrade.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pancosky.newcartrade.entity.Message;
 import com.pancosky.newcartrade.manager.MessageProducer;
 import com.pancosky.newcartrade.mapper.MessageMapper;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,13 +27,26 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public List<MessageVO> list(String type, Boolean isRead) {
         Long userId = SecurityUtils.getCurrentUserId();
-        return null;
+        LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Message::getUserId, userId);
+        if (StringUtils.hasText(type)) {
+            wrapper.eq(Message::getType, type);
+        }
+        if (isRead != null) {
+            wrapper.eq(Message::getIsRead, isRead);
+        }
+        wrapper.orderByDesc(Message::getCreatedAt);
+        List<Message> messages = messageMapper.selectList(wrapper);
+        return messages.stream().map(this::toVO).collect(Collectors.toList());
     }
 
     @Override
     public long unreadCount() {
         Long userId = SecurityUtils.getCurrentUserId();
-        return 0;
+        LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Message::getUserId, userId);
+        wrapper.eq(Message::getIsRead, false);
+        return messageMapper.selectCount(wrapper);
     }
 
     @Override
@@ -48,6 +63,14 @@ public class MessageServiceImpl implements MessageService {
     @Transactional
     public void markAllRead() {
         Long userId = SecurityUtils.getCurrentUserId();
+        LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Message::getUserId, userId);
+        wrapper.eq(Message::getIsRead, false);
+        List<Message> messages = messageMapper.selectList(wrapper);
+        for (Message message : messages) {
+            message.setIsRead(true);
+            messageMapper.updateById(message);
+        }
     }
 
     @Override

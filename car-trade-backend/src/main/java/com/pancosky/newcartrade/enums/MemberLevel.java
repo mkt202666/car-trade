@@ -1,5 +1,6 @@
 package com.pancosky.newcartrade.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.baomidou.mybatisplus.annotation.IEnum;
 
 public enum MemberLevel implements IEnum<Integer> {
@@ -8,6 +9,7 @@ public enum MemberLevel implements IEnum<Integer> {
     GOLD(2),
     DIAMOND(3);
 
+    @EnumValue
     private final Integer value;
 
     MemberLevel(Integer value) {
@@ -15,7 +17,6 @@ public enum MemberLevel implements IEnum<Integer> {
     }
 
     @Override
-    @com.baomidou.mybatisplus.annotation.EnumValue
     public Integer getValue() {
         return value;
     }

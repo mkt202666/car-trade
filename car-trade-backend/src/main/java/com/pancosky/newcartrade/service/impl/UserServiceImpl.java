@@ -85,7 +85,11 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserVO uploadAvatar(MultipartFile file) {
-        return null;
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new BusinessException("User not found");
+        log.info("Upload avatar for user: {}, file: {}", userId, file.getOriginalFilename());
+        return userConverter.toVO(user);
     }
 
     @Override
@@ -107,6 +111,12 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void certify() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new BusinessException("User not found");
+        user.setCertificationStatus("PENDING");
+        userMapper.updateById(user);
+        log.info("User {} submitted certification", userId);
     }
 
     @Override

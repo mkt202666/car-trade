@@ -14,4 +14,8 @@ public class UserCouponVO {
     private BigDecimal minAmount;
     private String status;
     private LocalDateTime endAt;
+    private Long couponId;
+    private Long userId;
+    private LocalDateTime receivedAt;
+    private LocalDateTime usedAt;
 }

@@ -1,5 +1,6 @@
 package com.pancosky.newcartrade.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import cn.hutool.core.util.IdUtil;
 import com.pancosky.newcartrade.converter.OrderConverter;
 import com.pancosky.newcartrade.dto.OrderCreateDTO;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -40,7 +42,21 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<OrderVO> list(String type, String status) {
-        return null;
+        Long userId = SecurityUtils.getCurrentUserId();
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+        if ("sold".equals(type)) {
+            wrapper.eq(Order::getSellerId, userId);
+        } else if ("bought".equals(type)) {
+            wrapper.eq(Order::getBuyerId, userId);
+        } else {
+            wrapper.and(w -> w.eq(Order::getBuyerId, userId).or().eq(Order::getSellerId, userId));
+        }
+        if (status != null && !"ALL".equals(status)) {
+            wrapper.eq(Order::getStatus, status);
+        }
+        wrapper.orderByDesc(Order::getCreatedAt);
+        List<Order> orders = orderMapper.selectList(wrapper);
+        return orders.stream().map(orderConverter::toVO).collect(Collectors.toList());
     }
 
     @Override
@@ -120,7 +136,12 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<Object> logs(String id) {
-        return null;
+        LambdaQueryWrapper<OrderLog> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(OrderLog::getOrderId, id);
+        wrapper.orderByDesc(OrderLog::getCreatedAt);
+        return orderLogMapper.selectList(wrapper).stream()
+                .map(log -> (Object) log)
+                .collect(Collectors.toList());
     }
 
     private void addLog(String orderId, String action, String remark) {

@@ -26,4 +26,5 @@ public class UserCoupon {
     private String status;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
+    private LocalDateTime receivedAt;
 }

@@ -1,5 +1,6 @@
 package com.pancosky.newcartrade.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.baomidou.mybatisplus.annotation.IEnum;
 
 public enum DepositType implements IEnum<Integer> {
@@ -10,6 +11,7 @@ public enum DepositType implements IEnum<Integer> {
     FREEZE(4),
     UNFREEZE(5);
 
+    @EnumValue
     private final Integer value;
 
     DepositType(Integer value) {
@@ -17,7 +19,6 @@ public enum DepositType implements IEnum<Integer> {
     }
 
     @Override
-    @com.baomidou.mybatisplus.annotation.EnumValue
     public Integer getValue() {
         return value;
     }

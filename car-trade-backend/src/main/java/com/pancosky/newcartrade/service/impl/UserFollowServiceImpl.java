@@ -1,5 +1,6 @@
 package com.pancosky.newcartrade.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pancosky.newcartrade.entity.UserFollow;
 import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.mapper.UserFollowMapper;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -40,7 +42,15 @@ public class UserFollowServiceImpl implements UserFollowService {
 
     @Override
     public List<UserPublicVO> myFollows() {
-        return null;
+        Long userId = SecurityUtils.getCurrentUserId();
+        LambdaQueryWrapper<UserFollow> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserFollow::getUserId, userId);
+        List<UserFollow> follows = userFollowMapper.selectList(wrapper);
+        return follows.stream().map(f -> {
+            UserPublicVO vo = new UserPublicVO();
+            vo.setId(f.getFollowUserId());
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     @Override

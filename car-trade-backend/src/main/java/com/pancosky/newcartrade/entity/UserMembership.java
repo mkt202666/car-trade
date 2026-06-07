@@ -29,4 +29,5 @@ public class UserMembership {
     private LocalDateTime createdAt;
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
+    private LocalDateTime endAt;
 }

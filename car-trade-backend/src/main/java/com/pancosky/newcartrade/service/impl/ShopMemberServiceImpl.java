@@ -1,5 +1,6 @@
 package com.pancosky.newcartrade.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pancosky.newcartrade.entity.ShopMember;
 import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.mapper.ShopMemberMapper;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -23,7 +25,21 @@ public class ShopMemberServiceImpl implements ShopMemberService {
 
     @Override
     public List<ShopMemberVO> listMembers() {
-        return null;
+        Long userId = SecurityUtils.getCurrentUserId();
+        LambdaQueryWrapper<ShopMember> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ShopMember::getShopUserId, userId);
+        List<ShopMember> members = shopMemberMapper.selectList(wrapper);
+        return members.stream().map(m -> {
+            ShopMemberVO vo = new ShopMemberVO();
+            vo.setId(m.getId());
+            vo.setShopUserId(m.getShopUserId());
+            vo.setMemberUserId(m.getMemberUserId());
+            vo.setRole(m.getRole());
+            vo.setStatus(m.getStatus());
+            vo.setAppliedAt(m.getAppliedAt());
+            vo.setApprovedAt(m.getApprovedAt());
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     @Override

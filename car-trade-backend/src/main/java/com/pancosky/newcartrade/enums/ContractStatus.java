@@ -1,5 +1,6 @@
 package com.pancosky.newcartrade.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.baomidou.mybatisplus.annotation.IEnum;
 
 public enum ContractStatus implements IEnum<Integer> {
@@ -8,6 +9,7 @@ public enum ContractStatus implements IEnum<Integer> {
     SIGNED(2),
     ARCHIVED(3);
 
+    @EnumValue
     private final Integer value;
 
     ContractStatus(Integer value) {
@@ -15,7 +17,6 @@ public enum ContractStatus implements IEnum<Integer> {
     }
 
     @Override
-    @com.baomidou.mybatisplus.annotation.EnumValue
     public Integer getValue() {
         return value;
     }
