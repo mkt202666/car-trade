@@ -2,39 +2,71 @@ server:
   port: 8080
 
 spring:
+  application:
+    name: car-trade-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/new_car_trade
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://47.117.41.219:5432/new_car_trade?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&currentSchema=public
     driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: sxk#2025@
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 10000
+      idle-timeout: 600000
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+  h2:
+    console:
+      enabled: false
   redis:
-    host: localhost
+    host: r-uf6t1iwa40jdn5oijmpd.redis.rds.aliyuncs.com
     port: 6379
-    timeout: 3000
+    password: sxk@2025-Redis
+    timeout: 2000
+    connectTimeout: 2000
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 8
+        min-idle: 2
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+    deserialization:
+      FAIL_ON_UNKNOWN_PROPERTIES: false
 
 jwt:
-  secret: your-secret-key-here-must-be-at-least-256-bits
-  expiration: 7200
+  secret: 5d-car-trade-dev-jwt-secret-key-please-change-in-prod-2026
+  expiration: 86400
 
 rocketmq:
-  name-server: localhost:9876
+  name-server: 10.0.40.103:9876;10.0.40.106:9876
   producer:
-    group: new-car-trade-producer
+    group: car-trade-msg-group
+    send-message-timeout: 5000
 
 mybatis-plus:
-  mapper-locations: classpath:mapper/*.xml
+  mapper-locations: classpath*:/mapper/**/*.xml
   type-aliases-package: com.pancosky.newcartrade.entity
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: AUTO
 
 logging:
   level:
     root: INFO
-    com.pancosky: DEBUG
+    com.pancosky.newcartrade: DEBUG
+    org.springframework.web: INFO
+    io.lettuce.core: WARN
+    com.zaxxer.hikari: INFO
 
 api:
   prefix: /api/v1
