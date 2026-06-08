@@ -283,6 +283,9 @@ public class CarSource extends BaseEntity {
 
     @TableField("published_at")
     private LocalDateTime publishedAt;
+
+    @TableField("export_countries")
+    private String exportCountries;
 }
 ```
 
