@@ -1,4 +1,5 @@
 export const getOrderList = (params) => uni.$u.http.get('/orders', { params })
+export const getOrderStats = () => uni.$u.http.get('/orders/stats')
 export const getOrderDetail = (id) => uni.$u.http.get(`/orders/${id}`)
 export const createOrder = (data) => uni.$u.http.post('/orders', data)
 export const confirmOrder = (id) => uni.$u.http.put(`/orders/${id}/confirm`)

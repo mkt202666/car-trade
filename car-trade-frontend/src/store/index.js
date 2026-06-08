@@ -25,13 +25,13 @@ export default createStore({
   },
   actions: {
     async login({ commit }, credentials) {
-      const res = await uni.$u.api.post('/users/login', credentials)
+      const res = await uni.$u.http.post('/users/login', credentials)
       commit('setToken', res.data.accessToken)
       commit('setUser', res.data.user)
       return res
     },
     async getUser({ commit }) {
-      const res = await uni.$u.api.get('/users/me')
+      const res = await uni.$u.http.get('/users/me')
       commit('setUser', res.data)
       return res
     }

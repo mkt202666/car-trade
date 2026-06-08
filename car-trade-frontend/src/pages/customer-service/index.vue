@@ -75,9 +75,16 @@ export default {
       this.inputText = ''
       this.scrollToBottom()
       try {
-        await uni.$u.api.post('/chat/conversations/' + this.conversationId + '/messages', { content: text })
-        this.loadMessages()
-      } catch (e) {}
+        const res = await uni.$u.http.post('/chat/conversations/' + this.conversationId + '/messages', { content: text })
+        if (res && res.data) {
+          const reply = typeof res.data === 'string' ? res.data : (res.data.content || res.data.reply || '感谢您的咨询')
+          this.messages.push({ role: 'ai', content: reply, createTime: new Date() })
+          this.scrollToBottom()
+        }
+      } catch (e) {
+        this.messages.push({ role: 'ai', content: '客服暂时忙碌，请稍后再试', createTime: new Date() })
+        this.scrollToBottom()
+      }
     },
     scrollToBottom() {
       this.$nextTick(() => {

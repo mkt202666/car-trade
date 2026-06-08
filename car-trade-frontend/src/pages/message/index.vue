@@ -67,6 +67,7 @@
 
 <script>
 import { getMessageList, markAllRead } from '@/api/message'
+import { getConversations } from '@/api/chat'
 
 export default {
   data() {
@@ -88,6 +89,7 @@ export default {
   },
   onShow() {
     this.fetchMessages()
+    this.fetchConversations()
   },
   methods: {
     async fetchMessages() {
@@ -100,6 +102,19 @@ export default {
         }))
       } catch (e) {
         // 静默失败
+      }
+    },
+    async fetchConversations() {
+      try {
+        const res = await getConversations()
+        const data = res.data
+        this.chatConversations = data.list || data.records || data || []
+      } catch (e) {
+        // 静默失败，用模拟数据
+        this.chatConversations = [
+          { id: '1', name: '在线客服', lastMessage: '欢迎咨询，有什么可以帮您？', lastMessageTime: new Date(), unreadCount: 0, avatar: '' },
+          { id: '2', name: '订单助手', lastMessage: '您有一个新订单，请及时查看', lastMessageTime: new Date(), unreadCount: 2, avatar: '' }
+        ]
       }
     },
     switchTab(e) {

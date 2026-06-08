@@ -37,9 +37,9 @@
         <view class="order-body" @click="toDetail(item.id)">
           <image :src="item.coverImage || '/static/default-car.png'" mode="aspectFill" class="order-image"></image>
           <view class="order-info">
-            <view class="order-title u-line-1">{{ item.title }}</view>
+            <view class="order-title u-line-1">{{ item.carTitle || item.title }}</view>
             <view class="order-meta">
-              <text class="order-car-id">车源ID{{ item.carId }}</text>
+              <text class="order-car-id">车源ID {{ item.carId }}</text>
               <text class="order-price">成交价 {{ formatPrice(item.price) }}</text>
             </view>
           </view>
@@ -56,13 +56,24 @@
 </template>
 
 <script>
-import { orderStats, soldOrders, boughtOrders } from '@/mock/data'
+import { getOrderList, getOrderStats } from '@/api/order'
 import { formatPrice } from '@/utils/format'
+
+const STATUS_MAP = {
+  PENDING: '待确认',
+  IN_TRANSACTION: '交易中',
+  DISPUTE: '纠纷中',
+  COMPLETED: '已完成',
+  CANCELLED: '已终止'
+}
 
 export default {
   data() {
     return {
-      orderStats,
+      orderStats: {
+        soldCount: 0,
+        boughtCount: 0
+      },
       currentRole: 'SELLER',
       searchKeyword: '',
       currentStatus: 0,
@@ -70,49 +81,88 @@ export default {
         { name: '全部' },
         { name: '待确认' },
         { name: '交易中' },
-        { name: '争议中' },
+        { name: '纠纷中' },
         { name: '已完成' },
         { name: '已终止' }
       ],
-      statusMap: ['ALL', 'PENDING', 'IN_TRANSACTION', 'DISPUTE', 'COMPLETED', 'CANCELLED']
+      statusMap: ['ALL', 'PENDING', 'IN_TRANSACTION', 'DISPUTE', 'COMPLETED', 'CANCELLED'],
+      orderList: [],
+      loading: false
     }
   },
   computed: {
-    baseOrders() {
-      return this.currentRole === 'SELLER' ? soldOrders : boughtOrders
-    },
     filteredOrders() {
-      let list = this.baseOrders
-      // 状态筛选
-      const statusFilter = this.statusMap[this.currentStatus]
-      if (statusFilter !== 'ALL') {
-        list = list.filter(o => o.status === statusFilter)
-      }
-      // 搜索
+      let list = this.orderList
       if (this.searchKeyword) {
         const kw = this.searchKeyword.toLowerCase()
-        list = list.filter(o => o.title.toLowerCase().includes(kw) || o.carId.includes(kw) || (o.buyerName || o.sellerName || '').includes(kw))
+        list = list.filter(o => {
+          const title = (o.carTitle || '').toLowerCase()
+          const id = (o.carId || '').toLowerCase()
+          const counterparty = (o.buyerName || o.sellerName || '').toLowerCase()
+          return title.includes(kw) || id.includes(kw) || counterparty.includes(kw)
+        })
       }
       return list
     }
   },
   onShow() {
-    // 可以从路由参数获取默认角色
-    const pages = getCurrentPages()
-    const page = pages[pages.length - 1]
-    if (page && page.options && page.options.role) {
-      this.currentRole = page.options.role
-    }
+    this.loadData()
   },
   methods: {
     formatPrice,
+    formatStatus(status) {
+      return STATUS_MAP[status] || status
+    },
     switchRole(role) {
       this.currentRole = role
       this.currentStatus = 0
       this.searchKeyword = ''
+      this.loadData()
     },
     switchStatus(e) {
       this.currentStatus = e.index
+      this.fetchOrders()
+    },
+    async loadData() {
+      this.loading = true
+      try {
+        const statsRes = await getOrderStats()
+        if (statsRes && statsRes.data) {
+          this.orderStats = {
+            soldCount: statsRes.data.soldCount || 0,
+            boughtCount: statsRes.data.boughtCount || 0
+          }
+        }
+        await this.fetchOrders()
+      } catch (e) {
+        console.error('load orders failed:', e)
+      } finally {
+        this.loading = false
+      }
+    },
+    async fetchOrders() {
+      try {
+        const status = this.statusMap[this.currentStatus]
+        const params = {
+          role: this.currentRole,
+          page: 1,
+          size: 50
+        }
+        if (status && status !== 'ALL') {
+          params.status = status
+        }
+        const res = await getOrderList(params)
+        const data = res.data
+        let list = data.list || data.records || data || []
+        list = list.map(o => ({
+          ...o,
+          statusText: STATUS_MAP[o.status] || o.status,
+          counterpartyName: this.currentRole === 'SELLER' ? o.buyerName : o.sellerName
+        }))
+        this.orderList = list
+      } catch (e) {
+        console.error('fetch orders failed:', e)
+      }
     },
     toDetail(id) {
       uni.navigateTo({ url: '/pages/order-detail/index?id=' + id })
