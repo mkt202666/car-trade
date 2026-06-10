@@ -4,3 +4,5 @@ export const generateCopywriting = (data) => uni.$u.http.post('/ai/customer-gene
 export const autoOutreach = (data) => uni.$u.http.post('/ai/auto-outreach', data)
 export const distributeCar = (data) => uni.$u.http.post('/ai/distribute', data)
 export const aiChat = (data) => uni.$u.http.post('/ai/chat', data)
+export const carAnalysis = (data) => uni.$u.http.post('/ai/car-analysis', data)
+export const priceEstimate = (data) => uni.$u.http.post('/ai/price-estimate', data)

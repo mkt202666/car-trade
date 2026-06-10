@@ -153,7 +153,14 @@
           </view>
         </view>
         <view class="seller-actions">
-          <u-button size="mini" type="primary" :plain="true" @click="followSeller">+ 关注</u-button>
+          <u-button
+            size="mini"
+            :type="carInfo.seller.followedByCurrentUser ? 'warning' : 'primary'"
+            :plain="!carInfo.seller.followedByCurrentUser"
+            @click="followSeller"
+          >
+            {{ carInfo.seller.followedByCurrentUser ? '已关注' : '+ 关注' }}
+          </u-button>
           <u-button size="mini" type="primary" @click="toSellerHome">他的主页</u-button>
         </view>
         <view class="seller-stats">
@@ -192,7 +199,7 @@
         </view>
         <view class="action-btn" @click="contact">
           <u-icon name="chat" size="40" color="#666"></u-icon>
-          <text>聊天</text>
+          <text>联系</text>
         </view>
         <view class="action-btn" @click="payDeposit">
           <u-icon name="rmb-circle" size="40" color="#666"></u-icon>
@@ -202,17 +209,54 @@
           <u-icon name="share" size="40" color="#666"></u-icon>
           <text>分享</text>
         </view>
-        <view class="action-btn" @click="report">
+        <view class="action-btn" @click="showReportDialog">
           <u-icon name="warning" size="40" color="#666"></u-icon>
           <text>举报</text>
         </view>
       </view>
     </view>
+
+    <!-- 举报弹窗 -->
+    <u-popup :show="reportDialogVisible" mode="center" :round="16" @close="closeReportDialog">
+      <view class="report-popup">
+        <view class="report-header">
+          <text class="report-title">举报车源</text>
+          <u-icon name="close" size="36" @click="closeReportDialog"></u-icon>
+        </view>
+        <view class="report-body">
+          <text class="report-label">举报原因</text>
+          <view class="report-reasons">
+            <view
+              v-for="reason in reportReasons"
+              :key="reason"
+              class="reason-item"
+              :class="{ active: reportForm.reason === reason }"
+              @click="selectReportReason(reason)"
+            >
+              <text>{{ reason }}</text>
+            </view>
+          </view>
+          <text class="report-label">补充说明（选填）</text>
+          <u-input
+            v-model="reportForm.description"
+            type="textarea"
+            :height="120"
+            :maxlength="200"
+            placeholder="请详细描述问题..."
+            border="surround"
+          />
+        </view>
+        <view class="report-footer">
+          <u-button type="primary" @click="submitReport">提交举报</u-button>
+        </view>
+      </view>
+    </u-popup>
   </view>
 </template>
 
 <script>
 import { getCarDetail, favoriteCar, unfavoriteCar, contactSeller, downloadImage } from '@/api/car'
+import { followUser, unfollowUser } from '@/api/follow'
 import { formatPrice } from '@/utils/format'
 import { requireAuth } from '@/utils/auth'
 
@@ -246,43 +290,179 @@ export default {
         updateTime: '',
         description: '',
         aiAnalysis: '',
-        seller: { id: '', name: '', shopName: '', avatar: '', creditGrade: '', lastOnline: '', carCount: 0, dealCount: 0, followerCount: 0 },
+        seller: { id: '', name: '', shopName: '', avatar: '', creditGrade: '', lastOnline: '', carCount: 0, dealCount: 0, followerCount: 0, followedByCurrentUser: false },
         inspectionReports: { chaboshi: { available: false }, ningmengcha: { available: false }, weibao: { available: false } },
-        favorited: false
+        favorited: false,
+        // 扩展字段
+        brandName: '',
+        seriesName: '',
+        modelName: '',
+        city: '',
+        energyType: '',
+        ownerType: '',
+        isMortgaged: false,
+        isInherited: false,
+        registrationDate: '',
+        insuranceExpiry: '',
+        inspectionExpiry: '',
+        transferCount: 0,
+        mileageType: '',
+        abnormalPhotos: []
       },
       imageList: [],
       flagMap: {
         RU: '🇷🇺', KZ: '🇰🇿', AE: '🇦🇪', AU: '🇦🇺'
-      }
+      },
+      loading: false,
+      reportDialogVisible: false,
+      reportForm: {
+        reason: '',
+        description: ''
+      },
+      reportReasons: [
+        '价格虚假',
+        '车辆信息不实',
+        '图片与实际不符',
+        '重复发布',
+        '涉嫌欺诈',
+        '其他'
+      ]
     }
   },
   onLoad(options) {
     if (options.id) {
       this.fetchCarDetail(options.id)
+    } else if (options.carId) {
+      this.fetchCarDetail(options.carId)
+    }
+  },
+  // 页面分享
+  onShareAppMessage() {
+    return {
+      title: this.carInfo.title,
+      path: `/pages/car-detail/index?id=${this.carInfo.id}`,
+      imageUrl: this.carInfo.coverImage || (this.imageList[0] && this.imageList[0].image)
+    }
+  },
+  onShareTimeline() {
+    return {
+      title: this.carInfo.title,
+      query: `id=${this.carInfo.id}`,
+      imageUrl: this.carInfo.coverImage || (this.imageList[0] && this.imageList[0].image)
     }
   },
   methods: {
     formatPrice,
     async fetchCarDetail(id) {
+      this.loading = true
       try {
         const res = await getCarDetail(id)
-        const data = res.data
-        this.carInfo = data
-        this.imageList = data.images ? data.images.map(img => ({ image: img.url || img })) : [{ image: '' }]
+        const data = res.data || res
+        // 映射后端 VO 到前端数据结构
+        this.carInfo = {
+          id: data.id || '',
+          carId: data.id || '',
+          title: data.title || '',
+          images: data.images || [],
+          price: data.price || 0,
+          deposit: data.deposit || 0,
+          hasDeposit: (data.deposit && data.deposit > 0) || false,
+          exportCountries: data.tags || [],
+          year: data.year || '',
+          month: data.registrationDate ? String(data.registrationDate).split('-')[1] || '' : '',
+          mileage: data.mileage || 0,
+          color: data.color || '',
+          interiorColor: '',
+          emissionStandard: '',
+          displacement: data.energyType || '',
+          gearbox: data.transmission || '',
+          manufacturer: data.brandName || '',
+          vehicleType: data.vehicleType || '',
+          guidePrice: data.guidePrice || 0,
+          usageType: data.usageType || '',
+          insuranceExpire: data.insuranceExpiry || '',
+          location: data.city || '',
+          createTime: data.createdAt ? this.formatDateTime(data.createdAt) : '',
+          updateTime: data.createdAt ? this.formatDateTime(data.createdAt) : '',
+          description: data.description || '',
+          aiAnalysis: data.overallCondition || '暂无AI分析',
+          seller: {
+            id: data.sellerId || '',
+            name: data.sellerName || '匿名卖家',
+            shopName: data.sellerShopName || '',
+            avatar: data.sellerAvatar || '',
+            creditGrade: data.sellerCreditGrade || '',
+            lastOnline: '',
+            carCount: 0,
+            dealCount: data.sellerDealCount || 0,
+            followerCount: data.sellerFollowerCount || 0,
+            followedByCurrentUser: data.followedByCurrentUser || false
+          },
+          favorited: data.favoritedByCurrentUser || false,
+          // 扩展字段
+          brandName: data.brandName || '',
+          seriesName: data.seriesName || '',
+          modelName: data.modelName || '',
+          city: data.city || '',
+          energyType: data.energyType || '',
+          ownerType: data.ownerType || '',
+          isMortgaged: data.isMortgaged || false,
+          isInherited: data.isInherited || false,
+          registrationDate: data.registrationDate || '',
+          insuranceExpiry: data.insuranceExpiry || '',
+          inspectionExpiry: data.inspectionExpiry || '',
+          transferCount: data.transferCount || 0,
+          mileageType: data.mileageType || '',
+          abnormalPhotos: data.abnormalPhotos || [],
+          coverImage: data.coverImage || ''
+        }
+        // 构建图片列表
+        if (this.carInfo.images && this.carInfo.images.length > 0) {
+          this.imageList = this.carInfo.images.map((img, index) => {
+            if (typeof img === 'string') {
+              return { image: img }
+            }
+            return { image: img.url || img }
+          })
+        } else if (this.carInfo.coverImage) {
+          this.imageList = [{ image: this.carInfo.coverImage }]
+        } else {
+          this.imageList = [{ image: '/static/default-car.png' }]
+        }
       } catch (e) {
-        uni.$u.toast('加载车源详情失败')
+        console.error('获取车源详情失败:', e)
+        uni.$u.toast('加载车源详情失败，请重试')
+      } finally {
+        this.loading = false
       }
+    },
+    formatDateTime(dateTime) {
+      if (!dateTime) return ''
+      const date = new Date(dateTime)
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hour = String(date.getHours()).padStart(2, '0')
+      const minute = String(date.getMinutes()).padStart(2, '0')
+      return `${year}-${month}-${day} ${hour}:${minute}`
     },
     exportFlag(code) {
       return this.flagMap[code] || code
     },
-    previewImage() {
+    previewImage(index) {
       const urls = this.imageList.map(img => img.image)
-      uni.previewImage({ urls, current: 0 })
+      uni.previewImage({ urls, current: index || 0 })
     },
+    // 分享功能
     shareCar() {
-      uni.$u.toast('分享功能')
+      if (!requireAuth()) return
+      // 触发分享面板
+      uni.showShareMenu({
+        withShareTicket: true,
+        menus: ['shareAppMessage', 'shareTimeline']
+      })
     },
+    // 收藏功能
     async toggleFavorite() {
       if (!requireAuth()) return
       try {
@@ -296,42 +476,143 @@ export default {
           uni.$u.toast('已收藏')
         }
       } catch (e) {
-        uni.$u.toast('操作失败')
+        console.error('收藏操作失败:', e)
+        uni.$u.toast('操作失败，请重试')
       }
     },
+    // 联系卖家
     async contact() {
       if (!requireAuth()) return
       try {
         await contactSeller(this.carInfo.id)
-        uni.navigateTo({ url: '/pages/customer-service/index?target=' + this.carInfo.seller.id })
+        // 跳转到聊天页面
+        uni.navigateTo({
+          url: `/pages/chat/index?targetId=${this.carInfo.seller.id}&targetName=${this.carInfo.seller.name}`
+        })
       } catch (e) {
-        uni.$u.toast('联系卖家失败')
+        console.error('联系卖家失败:', e)
+        uni.$u.toast('联系卖家失败，请重试')
       }
     },
     payDeposit() {
       if (!requireAuth()) return
-      uni.navigateTo({ url: '/pages/order-detail/index?carId=' + this.carInfo.id })
+      uni.navigateTo({ url: `/pages/order-detail/index?carId=${this.carInfo.id}` })
     },
-    report() {
-      uni.$u.toast('举报功能')
-    },
-    followSeller() {
-      uni.$u.toast('已关注')
+    // 关注卖家
+    async followSeller() {
+      if (!requireAuth()) return
+      try {
+        if (this.carInfo.seller.followedByCurrentUser) {
+          await unfollowUser(this.carInfo.seller.id)
+          this.carInfo.seller.followedByCurrentUser = false
+          this.carInfo.seller.followerCount = Math.max(0, (this.carInfo.seller.followerCount || 0) - 1)
+          uni.$u.toast('已取消关注')
+        } else {
+          await followUser(this.carInfo.seller.id)
+          this.carInfo.seller.followedByCurrentUser = true
+          this.carInfo.seller.followerCount = (this.carInfo.seller.followerCount || 0) + 1
+          uni.$u.toast('关注成功')
+        }
+      } catch (e) {
+        console.error('关注卖家失败:', e)
+        uni.$u.toast('操作失败，请重试')
+      }
     },
     toSellerHome() {
-      uni.navigateTo({ url: '/pages/seller-home/index?id=' + this.carInfo.seller.id })
+      if (!this.carInfo.seller.id) {
+        uni.$u.toast('卖家信息加载中')
+        return
+      }
+      uni.navigateTo({ url: `/pages/seller-home/index?id=${this.carInfo.seller.id}` })
     },
     viewReport(type) {
-      uni.$u.toast('查看报告: ' + type)
+      if (!requireAuth()) return
+      // 暂时显示提示，后续可对接具体报告查看页面
+      uni.$u.toast('报告功能开发中，请联系卖家获取')
     },
+    // 下载图片
     async downloadImages() {
+      if (!requireAuth()) return
       try {
-        if (this.carInfo.images && this.carInfo.images.length > 0) {
-          await downloadImage(this.carInfo.id, this.carInfo.images[0].id || 0)
+        uni.showLoading({ title: '准备下载...' })
+        const images = this.carInfo.images || []
+        if (images.length === 0) {
+          uni.$u.toast('暂无图片可下载')
+          uni.hideLoading()
+          return
         }
-        uni.$u.toast('下载图片')
+        for (let i = 0; i < images.length; i++) {
+          const img = images[i]
+          const url = typeof img === 'string' ? img : img.url
+          if (url) {
+            await this.downloadSingleImage(url, i + 1)
+          }
+        }
+        uni.hideLoading()
+        uni.$u.toast('图片保存成功')
       } catch (e) {
-        uni.$u.toast('下载失败')
+        console.error('下载图片失败:', e)
+        uni.hideLoading()
+        uni.$u.toast('下载失败，请重试')
+      }
+    },
+    downloadSingleImage(url, index) {
+      return new Promise((resolve, reject) => {
+        uni.downloadFile({
+          url: url,
+          success: (res) => {
+            if (res.statusCode === 200) {
+              uni.saveImageToPhotosAlbum({
+                filePath: res.tempFilePath,
+                success: () => {
+                  resolve()
+                },
+                fail: (err) => {
+                  if (err.errMsg && err.errMsg.includes('auth deny')) {
+                    uni.$u.toast('请授权保存图片到相册')
+                    // 打开设置页面
+                    uni.openSetting()
+                  }
+                  reject(err)
+                }
+              })
+            } else {
+              reject(new Error('下载失败'))
+            }
+          },
+          fail: reject
+        })
+      })
+    },
+    // 举报功能
+    showReportDialog() {
+      if (!requireAuth()) return
+      this.reportDialogVisible = true
+    },
+    closeReportDialog() {
+      this.reportDialogVisible = false
+      this.reportForm = { reason: '', description: '' }
+    },
+    selectReportReason(reason) {
+      this.reportForm.reason = reason
+    },
+    async submitReport() {
+      if (!this.reportForm.reason) {
+        uni.$u.toast('请选择举报原因')
+        return
+      }
+      try {
+        uni.showLoading({ title: '提交中...' })
+        // TODO: 对接举报 API
+        // await reportCar(this.carInfo.id, this.reportForm)
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        uni.hideLoading()
+        uni.$u.toast('举报已提交，我们会尽快处理')
+        this.closeReportDialog()
+      } catch (e) {
+        console.error('举报失败:', e)
+        uni.hideLoading()
+        uni.$u.toast('提交失败，请重试')
       }
     }
   }
@@ -339,15 +620,32 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+/* 设计系统变量 */
+$primary-color: #0F172A;
+$cta-color: #0369A1;
+$bg-color: #F8FAFC;
+$text-color: #020617;
+$text-secondary: #64748B;
+$border-color: #E2E8F0;
+$border-radius: 16rpx;
+$shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.08);
+$transition: all 0.2s ease;
+
 .page {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: $bg-color;
 }
 .page-content {
   padding-bottom: 140rpx;
 }
 .navbar-right {
   padding-right: 20rpx;
+  cursor: pointer;
+  transition: $transition;
+
+  &:active {
+    opacity: 0.7;
+  }
 }
 
 /* 图片轮播 */
@@ -370,6 +668,9 @@ export default {
   background: #fff;
   margin: 16rpx 0;
   padding: 30rpx;
+  border-radius: $border-radius;
+  box-shadow: $shadow;
+  margin: 20rpx;
 }
 
 /* 车名+标签 */
@@ -379,11 +680,11 @@ export default {
 .car-name {
   font-size: 32rpx;
   font-weight: 600;
-  color: #333;
+  color: $text-color;
 }
 .car-id {
   font-size: 22rpx;
-  color: #999;
+  color: $text-secondary;
   display: block;
   margin-top: 6rpx;
 }
@@ -394,17 +695,22 @@ export default {
 }
 .tag {
   font-size: 20rpx;
-  padding: 4rpx 14rpx;
-  border-radius: 6rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 8rpx;
+  border: 1rpx solid $border-color;
+  color: $text-secondary;
+  background: $bg-color;
 }
 .tag.deposit {
-  color: #3c9cff;
-  border: 1rpx solid #3c9cff;
+  color: $cta-color;
+  border-color: $cta-color;
+  background: rgba(3, 105, 161, 0.08);
 }
 .tag.export {
   font-size: 24rpx;
   padding: 2rpx 6rpx;
   border: none;
+  background: transparent;
 }
 .price-row {
   display: flex;
@@ -421,32 +727,40 @@ export default {
   align-items: center;
   gap: 6rpx;
   font-size: 24rpx;
-  color: #3c9cff;
+  color: $cta-color;
+  cursor: pointer;
+  transition: $transition;
+
+  &:active {
+    opacity: 0.7;
+  }
 }
 
 /* 卖家头部 */
 .seller-header {
   display: flex;
   align-items: center;
+  padding: 10rpx 0;
 }
 .seller-avatar {
   width: 70rpx;
   height: 70rpx;
   border-radius: 50%;
   margin-right: 16rpx;
+  border: 2rpx solid $border-color;
 }
 .seller-info {
   flex: 1;
 }
 .seller-name {
   font-size: 26rpx;
-  color: #333;
+  color: $text-color;
   font-weight: 600;
   display: block;
 }
 .seller-time {
   font-size: 22rpx;
-  color: #999;
+  color: $text-secondary;
   display: block;
   margin-top: 4rpx;
 }
@@ -454,11 +768,12 @@ export default {
 /* AI 分析 */
 .ai-section {
   background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+  border-radius: $border-radius;
 }
 .section-title {
   font-size: 28rpx;
   font-weight: 600;
-  color: #333;
+  color: $text-color;
   margin-bottom: 16rpx;
   display: flex;
   align-items: center;
@@ -466,12 +781,12 @@ export default {
 }
 .ai-text {
   font-size: 26rpx;
-  color: #666;
+  color: $text-secondary;
   line-height: 1.8;
 }
 .desc-text {
   font-size: 26rpx;
-  color: #666;
+  color: $text-secondary;
   line-height: 1.8;
 }
 
@@ -483,16 +798,23 @@ export default {
 }
 .param-item {
   text-align: center;
+  padding: 16rpx 0;
+  border-radius: $border-radius;
+  transition: $transition;
+
+  &:active {
+    background: rgba(0, 0, 0, 0.02);
+  }
 }
 .param-value {
   font-size: 26rpx;
   font-weight: 600;
-  color: #333;
+  color: $text-color;
   display: block;
 }
 .param-label {
   font-size: 20rpx;
-  color: #999;
+  color: $text-secondary;
   display: block;
   margin-top: 4rpx;
 }
@@ -507,32 +829,51 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid $border-color;
+  cursor: pointer;
+  transition: $transition;
+  border-radius: $border-radius;
+
+  &:active {
+    background: rgba(0, 0, 0, 0.02);
+  }
 }
 .report-name {
   font-size: 28rpx;
-  color: #333;
+  color: $text-color;
 }
 .report-action {
   font-size: 24rpx;
-  color: #3c9cff;
+  color: $cta-color;
 }
 
 /* 卖方信息 */
 .seller-full {
   background: #fff;
+  border-radius: $border-radius;
+  box-shadow: $shadow;
+  margin: 20rpx;
 }
 .seller-card {
   display: flex;
   align-items: center;
   margin-bottom: 20rpx;
+  cursor: pointer;
+  transition: $transition;
+  padding: 16rpx;
+  border-radius: $border-radius;
+
+  &:active {
+    background: rgba(0, 0, 0, 0.02);
+  }
 }
 .seller-avatar-lg {
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
   margin-right: 20rpx;
+  border: 2rpx solid $border-color;
 }
 .seller-info-right {
   flex: 1;
@@ -545,7 +886,7 @@ export default {
 .seller-name-lg {
   font-size: 28rpx;
   font-weight: 600;
-  color: #333;
+  color: $text-color;
 }
 .seller-credit {
   font-size: 22rpx;
@@ -554,11 +895,11 @@ export default {
 }
 .seller-shop {
   font-size: 22rpx;
-  color: #999;
+  color: $text-secondary;
 }
 .seller-last {
   font-size: 22rpx;
-  color: #999;
+  color: $text-secondary;
   margin-top: 6rpx;
 }
 .seller-actions {
@@ -570,7 +911,7 @@ export default {
   display: flex;
   text-align: center;
   padding-top: 16rpx;
-  border-top: 1rpx solid #f5f5f5;
+  border-top: 1rpx solid $border-color;
 }
 .seller-stat {
   flex: 1;
@@ -578,12 +919,12 @@ export default {
 .ss-num {
   font-size: 32rpx;
   font-weight: 700;
-  color: #3c9cff;
+  color: $cta-color;
   display: block;
 }
 .ss-label {
   font-size: 22rpx;
-  color: #999;
+  color: $text-secondary;
   display: block;
   margin-top: 4rpx;
 }
@@ -598,7 +939,13 @@ export default {
 .photo-item {
   width: 100%;
   height: 200rpx;
-  border-radius: 8rpx;
+  border-radius: $border-radius;
+  cursor: pointer;
+  transition: $transition;
+
+  &:active {
+    opacity: 0.8;
+  }
 }
 .download-row {
   display: flex;
@@ -606,8 +953,15 @@ export default {
   justify-content: center;
   gap: 8rpx;
   font-size: 26rpx;
-  color: #3c9cff;
+  color: $cta-color;
   padding: 16rpx 0;
+  cursor: pointer;
+  transition: $transition;
+  border-radius: $border-radius;
+
+  &:active {
+    background: rgba(3, 105, 161, 0.05);
+  }
 }
 
 /* 底部操作栏 */
@@ -621,7 +975,8 @@ export default {
   align-items: center;
   padding: 12rpx 30rpx;
   padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #eee;
+  border-top: 1rpx solid $border-color;
+  box-shadow: 0 -4rpx 16rpx rgba(15, 23, 42, 0.08);
   z-index: 10;
 }
 .action-btn {
@@ -630,7 +985,75 @@ export default {
   flex-direction: column;
   align-items: center;
   font-size: 20rpx;
-  color: #666;
+  color: $text-secondary;
   gap: 4rpx;
+  cursor: pointer;
+  transition: $transition;
+  padding: 8rpx 0;
+  border-radius: $border-radius;
+
+  &:active {
+    background: rgba(0, 0, 0, 0.05);
+    transform: scale(0.95);
+  }
+}
+
+/* 举报弹窗 */
+.report-popup {
+  width: 600rpx;
+  padding: 30rpx;
+}
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+.report-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: $text-color;
+}
+.report-body {
+  margin-bottom: 30rpx;
+}
+.report-label {
+  font-size: 26rpx;
+  color: $text-secondary;
+  display: block;
+  margin-bottom: 16rpx;
+}
+.report-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+.reason-item {
+  padding: 12rpx 24rpx;
+  border: 1rpx solid $border-color;
+  border-radius: $border-radius;
+  font-size: 24rpx;
+  color: $text-secondary;
+  cursor: pointer;
+  transition: $transition;
+  background: $bg-color;
+
+  &:hover {
+    border-color: $cta-color;
+    color: $cta-color;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+.reason-item.active {
+  border-color: $cta-color;
+  background: rgba(3, 105, 161, 0.1);
+  color: $cta-color;
+}
+.report-footer {
+  margin-top: 20rpx;
 }
 </style>

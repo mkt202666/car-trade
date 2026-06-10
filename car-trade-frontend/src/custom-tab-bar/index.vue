@@ -15,6 +15,9 @@
           <block v-else-if="index === 1">
             <u-icon name="list" :size="22" :color="activeIndex === 1 ? '#1f2937' : '#9ca3af'"></u-icon>
           </block>
+          <block v-else-if="index === 2">
+            <!-- 中间AI按钮不在这里显示，在center-btn中显示 -->
+          </block>
           <block v-else-if="index === 3">
             <u-icon name="chat" :size="22" :color="activeIndex === 3 ? '#1f2937' : '#9ca3af'"></u-icon>
           </block>
@@ -29,12 +32,12 @@
       <view class="tab-center-placeholder"></view>
     </view>
 
-    <!-- 中间凸起圆形按钮：发布车源 -->
-    <view class="tab-center" @click="gotoPublish">
-      <view class="center-btn">
-        <u-icon name="plus" size="32" color="#ffffff"></u-icon>
+    <!-- 中间凸起圆形按钮：AI助理 -->
+    <view class="tab-center" @click="gotoAI">
+      <view class="center-btn ai">
+        <u-icon name="chat" size="32" color="#ffffff"></u-icon>
       </view>
-      <text class="center-text">开始</text>
+      <text class="center-text">AI</text>
     </view>
 
     <!-- 底部安全区 -->
@@ -51,7 +54,7 @@ export default {
       tabList: [
         { pagePath: '/pages/home/index', text: '找车' },
         { pagePath: '/pages/trade/index', text: '交易' },
-        { pagePath: '/pages/publish/index', text: '发布车源' },
+        { pagePath: '/pages/ai/index', text: 'AI助理' },
         { pagePath: '/pages/message/index', text: '消息' },
         { pagePath: '/pages/profile/index', text: '我的' }
       ]
@@ -76,8 +79,8 @@ export default {
       this.activeIndex = index
       uni.switchTab({ url: item.pagePath })
     },
-    gotoPublish() {
-      uni.navigateTo({ url: '/pages/publish/index' })
+    gotoAI() {
+      uni.switchTab({ url: '/pages/ai/index' })
     }
   }
 }
@@ -165,6 +168,11 @@ export default {
   justify-content: center;
   box-shadow: 0 8rpx 24rpx rgba(250, 176, 5, 0.35);
   transition: transform 0.15s ease;
+
+  &.ai {
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.35);
+  }
 
   &:active {
     transform: scale(0.92);

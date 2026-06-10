@@ -1,7 +1,220 @@
 @import 'uview-plus/theme.scss';
 
-$app-primary: #3c9cff;
-$app-success: #5ac725;
-$app-warning: #f9ae3d;
-$app-error: #f56c6c;
-$app-bg: #f5f5f5;
+/* ============================================
+   5D Car Trade 企业级设计系统 - 全局样式
+   ============================================ */
+
+/* 设计系统核心变量 */
+/* Colors */
+$ct-primary: #0F172A;           /* 主色 - 专业蓝 */
+$ct-secondary: #334155;         /* 次要色 - 深灰蓝 */
+$ct-cta: #0369A1;               /* CTA按钮色 - 高亮蓝 */
+$ct-background: #F8FAFC;        /* 背景色 - 浅灰蓝 */
+$ct-text: #020617;              /* 正文色 - 深色 */
+$ct-text-muted: #64748B;        /* 辅助文字色 - 灰色 */
+$ct-border: #E2E8F0;            /* 边框色 */
+$ct-card-bg: #FFFFFF;           /* 卡片背景 */
+
+/* 主题色配置 */
+$app-primary: $ct-cta;
+$app-success: #10B981;
+$app-warning: #F59E0B;
+$app-error: #EF4444;
+$app-bg: $ct-background;
+
+/* 间距系统 */
+$space-xs: 4px;
+$space-sm: 8px;
+$space-md: 16px;
+$space-lg: 24px;
+$space-xl: 32px;
+$space-2xl: 48px;
+
+/* 圆角系统 */
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+
+/* 阴影系统 */
+$shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -2px rgba(15, 23, 42, 0.1);
+$shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.1);
+
+/* 字体系统 */
+$font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+/* ============================================
+   工具类
+   ============================================ */
+
+/* 背景色工具类 */
+.bg-ct-primary { background-color: $ct-primary; }
+.bg-ct-secondary { background-color: $ct-secondary; }
+.bg-ct-cta { background-color: $ct-cta; }
+.bg-ct-background { background-color: $ct-background; }
+.bg-ct-card { background-color: $ct-card-bg; }
+
+/* 文字色工具类 */
+.text-ct-primary { color: $ct-primary; }
+.text-ct-secondary { color: $ct-secondary; }
+.text-ct-cta { color: $ct-cta; }
+.text-ct-muted { color: $ct-text-muted; }
+
+/* 边框色工具类 */
+.border-ct { border-color: $ct-border; }
+
+/* 圆角工具类 */
+.rounded-sm { border-radius: $radius-sm; }
+.rounded-md { border-radius: $radius-md; }
+.rounded-lg { border-radius: $radius-lg; }
+.rounded-xl { border-radius: $radius-xl; }
+
+/* 阴影工具类 */
+.shadow-sm { box-shadow: $shadow-sm; }
+.shadow-md { box-shadow: $shadow-md; }
+.shadow-lg { box-shadow: $shadow-lg; }
+
+/* 间距工具类 */
+.spacing-sm { margin: $space-sm; }
+.spacing-md { margin: $space-md; }
+.spacing-lg { margin: $space-lg; }
+.spacing-xl { margin: $space-xl; }
+
+/* ============================================
+   通用组件样式
+   ============================================ */
+
+/* 企业级卡片样式 */
+.ct-card {
+  background: $ct-card-bg;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  border: 1px solid $ct-border;
+  transition: all 0.2s ease;
+}
+
+.ct-card:hover {
+  box-shadow: $shadow-md;
+  transform: translateY(-2px);
+}
+
+/* 企业级按钮样式 */
+.ct-btn {
+  padding: $space-md $space-lg;
+  border-radius: $radius-md;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ct-btn-primary {
+  background: $ct-cta;
+  color: white;
+}
+
+.ct-btn-primary:hover {
+  background: darken($ct-cta, 10);
+}
+
+.ct-btn-secondary {
+  background: $ct-card-bg;
+  color: $ct-primary;
+  border: 1px solid $ct-border;
+}
+
+.ct-btn-secondary:hover {
+  background: $ct-background;
+}
+
+/* 企业级输入框样式 */
+.ct-input {
+  width: 100%;
+  padding: $space-md;
+  border: 1px solid $ct-border;
+  border-radius: $radius-md;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  background: $ct-card-bg;
+}
+
+.ct-input:focus {
+  outline: none;
+  border-color: $ct-cta;
+  box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.1);
+}
+
+/* ============================================
+   页面布局
+   ============================================ */
+
+/* 页面容器 */
+.ct-page {
+  min-height: 100vh;
+  background: $ct-background;
+  padding-bottom: $space-xl;
+}
+
+/* 内容区域 */
+.ct-content {
+  padding: $space-lg;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* 响应式网格 */
+.ct-grid {
+  display: grid;
+  gap: $space-lg;
+}
+
+@media (min-width: 768px) {
+  .ct-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ct-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ============================================
+   交互动画
+   ============================================ */
+
+/* 平滑过渡 */
+.ct-transition {
+  transition: all 0.2s ease;
+}
+
+/* 加载状态 */
+.ct-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* ============================================
+   企业级设计规则
+   ============================================ */
+
+/* 所有可点击元素必须有手型光标 */
+[role="button"],
+button,
+a,
+.clickable {
+  cursor: pointer;
+}
+
+/* 确保可访问性的焦点状态 */
+*:focus-visible {
+  outline: 2px solid $ct-cta;
+  outline-offset: 2px;
+}
+
+/* 防止布局抖动的hover效果 */
+.no-shake-hover {
+  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}

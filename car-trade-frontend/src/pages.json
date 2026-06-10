@@ -59,6 +59,24 @@
       }
     },
     {
+      "path": "pages/ai-market-report/index",
+      "style": {
+        "navigationBarTitleText": "AI行情简报"
+      }
+    },
+    {
+      "path": "pages/ai-search-car/index",
+      "style": {
+        "navigationBarTitleText": "全网找车"
+      }
+    },
+    {
+      "path": "pages/ai-copywriting/index",
+      "style": {
+        "navigationBarTitleText": "获客文案生成"
+      }
+    },
+    {
       "path": "pages/message/index",
       "style": {
         "navigationBarTitleText": "消息中心",
@@ -101,6 +119,38 @@
       "style": {
         "navigationBarTitleText": "电子合同"
       }
+    },
+    {
+      "path": "pages/deposit/index",
+      "style": {
+        "navigationBarTitleText": "保证金",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/membership/index",
+      "style": {
+        "navigationBarTitleText": "会员中心",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/trade-rules/index",
+      "style": {
+        "navigationBarTitleText": "交易规范"
+      }
+    },
+    {
+      "path": "pages/finance/index",
+      "style": {
+        "navigationBarTitleText": "金融服务"
+      }
+    },
+    {
+      "path": "pages/settings/index",
+      "style": {
+        "navigationBarTitleText": "系统设置"
+      }
     }
   ],
   "globalStyle": {
@@ -118,7 +168,7 @@
     "list": [
       { "pagePath": "pages/home/index", "text": "找车" },
       { "pagePath": "pages/trade/index", "text": "交易" },
-      { "pagePath": "pages/publish/index", "text": "发布车源" },
+      { "pagePath": "pages/ai/index", "text": "AI助理" },
       { "pagePath": "pages/message/index", "text": "消息" },
       { "pagePath": "pages/profile/index", "text": "我的" }
     ]

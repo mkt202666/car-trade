@@ -16,7 +16,10 @@
 
       <!-- 最近对话 -->
       <view class="section" v-if="!currentChat">
-        <view class="section-title">最近对话</view>
+        <view class="section-header">
+          <view class="section-title">最近对话</view>
+          <text class="clear-btn" v-if="historyList.length > 0" @click="clearHistory">清空</text>
+        </view>
         <view class="history-list" v-if="historyList.length > 0">
           <view class="history-item" v-for="item in historyList" :key="item.id" @click="loadHistory(item)">
             <view class="history-left">
@@ -71,7 +74,8 @@
 </template>
 
 <script>
-import { aiChat, marketAnalysis, aiSearch, generateCopywriting, autoOutreach } from '@/api/ai'
+import { aiChat, marketAnalysis, aiSearch, generateCopywriting, autoOutreach, carAnalysis, priceEstimate } from '@/api/ai'
+import { requireAuth } from '@/utils/auth'
 
 export default {
   data() {
@@ -91,10 +95,12 @@ export default {
       scrollTop: 0,
       isSending: false,
       userAvatar: '/static/default-avatar.png',
-      aiAvatar: '/static/default-car.png'
+      aiAvatar: '/static/default-car.png',
+      currentFunction: null
     }
   },
   mounted() {
+    if (!requireAuth()) return
     this.loadHistoryList()
   },
   methods: {
@@ -112,6 +118,8 @@ export default {
       } catch (e) {}
     },
     openFunction(item) {
+      if (!requireAuth()) return
+      this.currentFunction = item.id
       const promptMap = {
         search: '帮我推荐一款适合家用的二手车',
         market: '请分析一下最近的二手车市场行情',
@@ -126,7 +134,8 @@ export default {
       this.currentChat = { id: Date.now(), title: prompt || '新对话' }
       this.messages = []
       if (prompt) {
-        this.messages.push({ role: 'ai', content: '您好！我是5D好车的AI助理，有什么可以帮您？' })
+        const welcomeMsg = this.getWelcomeMessage(this.currentFunction)
+        this.messages.push({ role: 'ai', content: welcomeMsg, createTime: new Date() })
       }
       this.scrollToBottom()
       if (prompt) {
@@ -134,8 +143,21 @@ export default {
         setTimeout(() => this.sendMessage(), 300)
       }
     },
+    getWelcomeMessage(functionId) {
+      const welcomeMap = {
+        search: '您好！我是智能找车助手。请告诉我您的需求，比如：预算、品牌、车型、用途等，我会为您推荐最合适的车型。',
+        market: '您好！我是行情分析助手。请问您想了解哪个品牌或车型市场行情？比如"BBA豪华品牌"或"日系紧凑型SUV"。',
+        copywriting: '您好！我是获客文案助手。请告诉我您的车源信息，如：品牌、车型、配置、亮点等，我来帮您生成吸引人的推广文案。',
+        outreach: '您好！我是自动外联助手。请提供客户信息和您的需求，我来帮您制定智能触达方案和话术。',
+        analyze: '您好！我是车源分析助手。请提供车源信息，如：品牌、车型、年份、里程、车况描述等，我来帮您全面评估车辆价值。',
+        price: '您好！我是估价助手。请告诉我车辆信息，如：品牌、车型、年份、里程、配置等，我来帮您估算合理的价格区间。'
+      }
+      return welcomeMap[functionId] || '您好！我是5D好车的AI助理，有什么可以帮您？'
+    },
     loadHistory(item) {
+      if (!requireAuth()) return
       this.currentChat = { id: item.id, title: item.title }
+      this.currentFunction = item.functionId || null
       try {
         const saved = uni.getStorageSync('ai_chat_' + item.id)
         this.messages = saved || []
@@ -148,6 +170,7 @@ export default {
       this.saveCurrentChat()
       this.currentChat = null
       this.messages = []
+      this.currentFunction = null
       this.loadHistoryList()
     },
     formatTime(t) {
@@ -158,18 +181,40 @@ export default {
     async sendMessage() {
       const text = this.inputText.trim()
       if (!text || this.isSending) return
+      if (!requireAuth()) return
+      
       const userMsg = { role: 'user', content: text, createTime: new Date() }
       this.messages.push(userMsg)
       this.inputText = ''
       this.isSending = true
       this.scrollToBottom()
+      
       try {
-        const res = await aiChat({ message: text, history: this.messages.slice(-6).map(m => ({ role: m.role, content: m.content })) })
+        let res
+        // 根据当前功能调用对应的API
+        if (this.currentFunction === 'search') {
+          res = await aiSearch({ message: text })
+        } else if (this.currentFunction === 'market') {
+          res = await marketAnalysis({ message: text })
+        } else if (this.currentFunction === 'copywriting') {
+          res = await generateCopywriting({ message: text })
+        } else if (this.currentFunction === 'outreach') {
+          res = await autoOutreach({ message: text })
+        } else if (this.currentFunction === 'analyze') {
+          res = await carAnalysis({ message: text })
+        } else if (this.currentFunction === 'price') {
+          res = await priceEstimate({ message: text })
+        } else {
+          // 普通对话
+          res = await aiChat({ message: text, history: this.messages.slice(-6).map(m => ({ role: m.role, content: m.content })) })
+        }
+        
         const reply = res.data && (res.data.content || res.data.reply || res.data.message || res.data)
         const aiMsg = { role: 'ai', content: typeof reply === 'string' ? reply : (reply.content || '感谢您的提问'), createTime: new Date() }
         this.messages.push(aiMsg)
         this.saveCurrentChat()
       } catch (e) {
+        console.error('AI请求失败', e)
         this.messages.push({ role: 'ai', content: '抱歉，AI服务暂时不可用，请稍后再试。', createTime: new Date() })
       } finally {
         this.isSending = false
@@ -186,8 +231,9 @@ export default {
         if (existing) {
           existing.title = title
           existing.lastTime = new Date()
+          existing.functionId = this.currentFunction
         } else {
-          this.historyList.unshift({ id: this.currentChat.id, title, lastTime: new Date() })
+          this.historyList.unshift({ id: this.currentChat.id, title, lastTime: new Date(), functionId: this.currentFunction })
         }
         this.saveHistoryList()
       } catch (e) {}
@@ -197,15 +243,47 @@ export default {
         this.scrollTop = 99999
         setTimeout(() => { this.scrollTop = this.scrollTop + 1 }, 50)
       })
+    },
+    clearHistory() {
+      uni.showModal({
+        title: '确认清空',
+        content: '确定要清空所有对话记录吗？',
+        success: (res) => {
+          if (res.confirm) {
+            try {
+              const keys = uni.getStorageInfoSync().keys
+              keys.forEach(key => {
+                if (key.startsWith('ai_chat_')) {
+                  uni.removeStorageSync(key)
+                }
+              })
+              uni.removeStorageSync('ai_chat_history')
+              this.historyList = []
+              uni.$u.toast('已清空')
+            } catch (e) {}
+          }
+        }
+      })
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
+/* 设计系统变量 */
+$primary-color: #0F172A;
+$cta-color: #0369A1;
+$bg-color: #F8FAFC;
+$text-color: #020617;
+$text-secondary: #64748B;
+$border-color: #E2E8F0;
+$border-radius: 16rpx;
+$shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.08);
+$transition: all 0.2s ease;
+
 .page {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: $bg-color;
 }
 .page-content {
   padding-bottom: 40rpx;
@@ -218,6 +296,9 @@ export default {
   display: flex;
   flex-wrap: wrap;
   margin-bottom: 16rpx;
+  border-radius: $border-radius;
+  margin: 20rpx;
+  box-shadow: $shadow;
 }
 .ai-item {
   width: 33.33%;
@@ -225,6 +306,14 @@ export default {
   flex-direction: column;
   align-items: center;
   padding: 20rpx 0;
+  cursor: pointer;
+  transition: $transition;
+  border-radius: $border-radius;
+
+  &:active {
+    background: rgba(0, 0, 0, 0.03);
+    transform: scale(0.95);
+  }
 }
 .ai-icon {
   width: 100rpx;
@@ -238,11 +327,11 @@ export default {
 .ai-name {
   font-size: 26rpx;
   font-weight: 600;
-  color: #333;
+  color: $text-color;
 }
 .ai-desc {
   font-size: 20rpx;
-  color: #999;
+  color: $text-secondary;
   margin-top: 6rpx;
   text-align: center;
 }
@@ -250,14 +339,37 @@ export default {
 /* 通用区块 */
 .section {
   background: #fff;
-  margin: 16rpx 0;
+  margin: 20rpx;
   padding: 30rpx;
+  border-radius: $border-radius;
+  box-shadow: $shadow;
 }
 .section-title {
   font-size: 28rpx;
   font-weight: 600;
-  color: #333;
+  color: $text-color;
   margin-bottom: 20rpx;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+.section-header .section-title {
+  margin-bottom: 0;
+}
+.clear-btn {
+  font-size: 24rpx;
+  color: $text-secondary;
+  cursor: pointer;
+  transition: $transition;
+  padding: 8rpx 16rpx;
+  border-radius: $border-radius;
+
+  &:active {
+    background: rgba(0, 0, 0, 0.05);
+  }
 }
 
 /* 最近对话 */
@@ -270,10 +382,21 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
-}
-.history-item:last-child {
-  border-bottom: none;
+  border-bottom: 1rpx solid $border-color;
+  cursor: pointer;
+  transition: $transition;
+  border-radius: $border-radius;
+  margin: 0 -10rpx;
+  padding-left: 10rpx;
+  padding-right: 10rpx;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.03);
+  }
 }
 .history-left {
   display: flex;
@@ -282,18 +405,20 @@ export default {
 }
 .history-title {
   font-size: 26rpx;
-  color: #333;
+  color: $text-color;
 }
 .history-time {
   font-size: 22rpx;
-  color: #ccc;
+  color: $text-secondary;
 }
 
 /* 快速提问 */
 .quick-ask {
   background: #fff;
-  margin: 16rpx 0;
+  margin: 20rpx;
   padding: 30rpx;
+  border-radius: $border-radius;
+  box-shadow: $shadow;
 }
 .quick-tags {
   display: flex;
@@ -302,10 +427,18 @@ export default {
 }
 .quick-tag {
   font-size: 24rpx;
-  color: #3c9cff;
-  background: #e8f4ff;
+  color: $cta-color;
+  background: rgba(3, 105, 161, 0.08);
   padding: 12rpx 24rpx;
   border-radius: 32rpx;
+  cursor: pointer;
+  transition: $transition;
+  border: 1rpx solid transparent;
+
+  &:active {
+    background: rgba(3, 105, 161, 0.15);
+    transform: scale(0.98);
+  }
 }
 
 /* AI 聊天界面 */
@@ -319,10 +452,19 @@ export default {
   padding: 16rpx 30rpx;
   background: #fff;
   margin-bottom: 16rpx;
+  cursor: pointer;
+  transition: $transition;
+  border-radius: $border-radius;
+  margin: 20rpx;
+  box-shadow: $shadow;
+
+  &:active {
+    opacity: 0.7;
+  }
 }
 .chat-back-text {
   font-size: 26rpx;
-  color: #333;
+  color: $text-color;
 }
 .chat-messages {
   height: calc(100vh - 320rpx);
@@ -342,21 +484,23 @@ export default {
   border-radius: 50%;
   flex-shrink: 0;
   background: #eee;
+  border: 2rpx solid $border-color;
 }
 .chat-bubble {
   max-width: 70%;
   padding: 22rpx;
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: $border-radius;
   line-height: 1.6;
+  box-shadow: $shadow;
 }
 .chat-item.user .chat-bubble {
-  background: #3c9cff;
+  background: $cta-color;
   color: #fff;
 }
 .chat-text {
   font-size: 28rpx;
-  color: inherit;
+  color: $text-color;
   line-height: 1.6;
   white-space: pre-wrap;
 }
@@ -365,7 +509,7 @@ export default {
 }
 .chat-time {
   font-size: 20rpx;
-  color: #999;
+  color: $text-secondary;
   display: block;
   margin-top: 8rpx;
 }
@@ -380,10 +524,11 @@ export default {
 }
 .loading-dot {
   font-size: 24rpx;
-  color: #999;
+  color: $text-secondary;
   padding: 16rpx 24rpx;
   background: #fff;
-  border-radius: 12rpx;
+  border-radius: $border-radius;
+  box-shadow: $shadow;
 }
 .chat-input-bar {
   position: fixed;
@@ -396,11 +541,12 @@ export default {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  border-top: 1rpx solid #eee;
+  border-top: 1rpx solid $border-color;
+  box-shadow: 0 -4rpx 16rpx rgba(15, 23, 42, 0.08);
 }
 .chat-input-bar u-input {
   flex: 1;
-  background: #f5f5f5;
+  background: $bg-color;
   border-radius: 40rpx;
   padding: 0 24rpx;
 }
@@ -408,14 +554,21 @@ export default {
   width: 80rpx;
   height: 80rpx;
   border-radius: 40rpx;
-  background: #3c9cff;
+  background: $cta-color;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: $transition;
+
+  &:active {
+    transform: scale(0.95);
+    background: darken($cta-color, 5%);
+  }
 
   &.disabled {
-    background: #ccc;
+    background: $border-color;
   }
 }
 </style>
