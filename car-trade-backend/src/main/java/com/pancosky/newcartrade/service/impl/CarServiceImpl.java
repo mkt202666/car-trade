@@ -8,14 +8,18 @@ import com.pancosky.newcartrade.converter.CarConverter;
 import com.pancosky.newcartrade.dto.CarCreateDTO;
 import com.pancosky.newcartrade.dto.CarQueryDTO;
 import com.pancosky.newcartrade.dto.CarUpdateDTO;
+import com.pancosky.newcartrade.dto.CreateConversationDTO;
 import com.pancosky.newcartrade.entity.*;
 import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.mapper.*;
 import com.pancosky.newcartrade.service.BrowsingHistoryService;
 import com.pancosky.newcartrade.service.CarService;
+import com.pancosky.newcartrade.service.ChatService;
+import com.pancosky.newcartrade.service.cache.CarCacheService;
 import com.pancosky.newcartrade.util.SecurityUtils;
 import com.pancosky.newcartrade.vo.CarDetailVO;
 import com.pancosky.newcartrade.vo.CarVO;
+import com.pancosky.newcartrade.vo.ConversationVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,6 +46,8 @@ public class CarServiceImpl implements CarService {
     private final UserFavoriteMapper userFavoriteMapper;
     private final UserFollowMapper userFollowMapper;
     private final BrowsingHistoryService browsingHistoryService;
+    private final ChatService chatService;
+    private final CarCacheService carCacheService;
 
     @Override
     public PageResult<CarVO> list(CarQueryDTO query) {
@@ -102,6 +108,13 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public CarDetailVO detail(Long id) {
+        // 尝试从缓存获取（未登录用户可用缓存，已登录用户需要实时收藏/关注状态）
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (currentUserId == null) {
+            CarDetailVO cached = carCacheService.getDetail(id);
+            if (cached != null) return cached;
+        }
+
         CarSource source = carMapper.selectById(id);
         if (source == null) throw new BusinessException("Car not found");
 
@@ -109,7 +122,6 @@ public class CarServiceImpl implements CarService {
         source.setViewCount((source.getViewCount() == null ? 0L : source.getViewCount()) + 1);
 
         // 浏览历史记录
-        Long currentUserId = SecurityUtils.getCurrentUserId();
         if (currentUserId != null) {
             try { browsingHistoryService.record(currentUserId, id); } catch (Exception e) { log.warn("browse history failed", e); }
         }
@@ -144,7 +156,14 @@ public class CarServiceImpl implements CarService {
             source.setCoverImage(images.get(0).getImageUrl());
         }
 
-        return CarConverter.toDetailVO(source, images, inspection, seller, favorited, followed);
+        CarDetailVO result = CarConverter.toDetailVO(source, images, inspection, seller, favorited, followed);
+
+        // 未登录用户缓存结果
+        if (currentUserId == null) {
+            carCacheService.setDetail(id, result);
+        }
+
+        return result;
     }
 
     @Override
@@ -285,20 +304,39 @@ public class CarServiceImpl implements CarService {
     }
 
     @Override
-    public void export(String country) {
-        log.info("Export car data for country: {}", country);
+    public List<CarVO> export(String country) {
+        if (!StringUtils.hasText(country)) throw new BusinessException("Country code is required");
+        List<CarSource> sources = carMapper.searchExportCars(country);
+        return assembleCarVOs(sources);
     }
 
     @Override
-    public void downloadImage(Long carId, Long imageId) {
-        log.info("Download image {} for car: {}", imageId, carId);
+    public String downloadImage(Long carId, Long imageId) {
+        CarImage image = carImageMapper.selectOne(new LambdaQueryWrapper<CarImage>()
+                .eq(CarImage::getCarId, carId)
+                .eq(CarImage::getId, imageId)
+                .last("LIMIT 1"));
+        if (image == null) throw new BusinessException("Image not found");
+        return image.getImageUrl();
     }
 
     @Override
-    public void contactSeller(Long carId) {
+    public Map<String, Object> contactSeller(Long carId) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (currentUserId == null) throw new BusinessException("Please login first");
         CarSource source = carMapper.selectById(carId);
         if (source == null) throw new BusinessException("Car not found");
-        log.info("Contact seller {} for car: {}", source.getUserId(), carId);
+        if (currentUserId.equals(source.getUserId())) throw new BusinessException("Cannot contact yourself");
+
+        // 查找是否已有会话
+        CreateConversationDTO dto = new CreateConversationDTO();
+        dto.setSellerId(source.getUserId());
+        ConversationVO conversation = chatService.createConversation(dto);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("conversationId", conversation.getId());
+        result.put("sellerId", source.getUserId());
+        return result;
     }
 
     // ================= helpers =================

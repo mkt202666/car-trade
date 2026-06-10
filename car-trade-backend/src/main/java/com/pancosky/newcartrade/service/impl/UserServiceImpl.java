@@ -2,6 +2,7 @@ package com.pancosky.newcartrade.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pancosky.newcartrade.converter.UserConverter;
+import com.pancosky.newcartrade.dto.ChangePasswordDTO;
 import com.pancosky.newcartrade.dto.LoginDTO;
 import com.pancosky.newcartrade.dto.RegisterDTO;
 import com.pancosky.newcartrade.entity.User;
@@ -45,11 +46,24 @@ public class UserServiceImpl implements UserService {
             user = new User();
             user.setPhone(dto.getPhone());
             user.setNickname("用户" + maskPhone4(dto.getPhone()));
+            if (StringUtils.hasText(dto.getPassword())) {
+                user.setPassword(dto.getPassword());
+            }
             user.setCreditScore(600);
             user.setCreditGrade("B");
             user.setStatus("ACTIVE");
             user.setCertificationStatus("NONE");
             userMapper.insert(user);
+        } else {
+            // 已注册用户：如果设置了密码，必须验证
+            if (StringUtils.hasText(user.getPassword())) {
+                if (!StringUtils.hasText(dto.getPassword())) {
+                    throw new BusinessException("请输入密码");
+                }
+                if (!user.getPassword().equals(dto.getPassword())) {
+                    throw new BusinessException("密码不正确");
+                }
+            }
         }
         // 注入 secret（仅需一次，启动后不变）
         JwtUtil.setSecret(jwtSecret);
@@ -75,6 +89,9 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setPhone(dto.getPhone());
         user.setNickname(StringUtils.hasText(dto.getNickname()) ? dto.getNickname() : "用户" + maskPhone4(dto.getPhone()));
+        if (StringUtils.hasText(dto.getPassword())) {
+            user.setPassword(dto.getPassword());
+        }
         user.setCreditScore(600);
         user.setCreditGrade("B");
         user.setStatus("ACTIVE");
@@ -109,12 +126,35 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserVO uploadAvatar(org.springframework.web.multipart.MultipartFile file) {
         Long userId = com.pancosky.newcartrade.util.SecurityUtils.getCurrentUserId();
         if (userId == null) throw new BusinessException("请先登录");
         User user = userMapper.selectById(userId);
         if (user == null) throw new BusinessException("用户不存在");
-        log.info("Upload avatar for user: {}, file: {}", userId, file == null ? null : file.getName());
+        if (file == null || file.isEmpty()) throw new BusinessException("请选择图片");
+
+        try {
+            String originalName = file.getOriginalFilename();
+            String ext = originalName != null && originalName.contains(".")
+                    ? originalName.substring(originalName.lastIndexOf("."))
+                    : ".jpg";
+            String fileName = "avatar_" + userId + "_" + System.currentTimeMillis() + ext;
+
+            // 保存到本地 uploads 目录
+            java.io.File uploadDir = new java.io.File("uploads/avatars");
+            if (!uploadDir.exists()) uploadDir.mkdirs();
+            java.io.File dest = new java.io.File(uploadDir, fileName);
+            file.transferTo(dest);
+
+            String avatarUrl = "/uploads/avatars/" + fileName;
+            user.setAvatarUrl(avatarUrl);
+            userMapper.updateById(user);
+            log.info("User {} uploaded avatar: {}", userId, avatarUrl);
+        } catch (java.io.IOException e) {
+            log.error("Avatar upload failed for user {}", userId, e);
+            throw new BusinessException("头像上传失败");
+        }
         return userConverter.toVO(user);
     }
 
@@ -156,6 +196,54 @@ public class UserServiceImpl implements UserService {
         User user = userMapper.selectById(id);
         if (user == null) throw new BusinessException("用户不存在");
         return userConverter.toPublicVO(user);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(ChangePasswordDTO dto) {
+        Long userId = com.pancosky.newcartrade.util.SecurityUtils.getCurrentUserId();
+        if (userId == null) throw new BusinessException("请先登录");
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new BusinessException("用户不存在");
+
+        // 如果已设置过密码，验证旧密码
+        if (StringUtils.hasText(user.getPassword())) {
+            if (!StringUtils.hasText(dto.getOldPassword())) {
+                throw new BusinessException("请输入旧密码");
+            }
+            if (!user.getPassword().equals(dto.getOldPassword())) {
+                throw new BusinessException("旧密码不正确");
+            }
+        }
+        if (!StringUtils.hasText(dto.getNewPassword()) || dto.getNewPassword().length() < 6) {
+            throw new BusinessException("新密码长度不能少于6位");
+        }
+        user.setPassword(dto.getNewPassword());
+        userMapper.updateById(user);
+        log.info("User {} changed password", userId);
+    }
+
+    @Override
+    @Transactional
+    public void updatePhone(String newPhone, String smsCode) {
+        Long userId = com.pancosky.newcartrade.util.SecurityUtils.getCurrentUserId();
+        if (userId == null) throw new BusinessException("请先登录");
+        if (!StringUtils.hasText(newPhone)) throw new BusinessException("请输入新手机号");
+
+        // 检查新手机号是否已被使用
+        User existing = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getPhone, newPhone).last("LIMIT 1"));
+        if (existing != null && !existing.getId().equals(userId)) {
+            throw new BusinessException("该手机号已被其他用户使用");
+        }
+
+        // TODO: 验证短信验证码
+        // if (!verifySmsCode(newPhone, smsCode)) throw new BusinessException("验证码错误");
+
+        User user = userMapper.selectById(userId);
+        user.setPhone(newPhone);
+        userMapper.updateById(user);
+        log.info("User {} updated phone to {}", userId, newPhone);
     }
 
     private static String maskPhone4(String phone) {

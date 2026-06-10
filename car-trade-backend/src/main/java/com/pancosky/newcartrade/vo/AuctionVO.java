@@ -1,4 +1,4 @@
-﻿package com.pancosky.newcartrade.vo;
+package com.pancosky.newcartrade.vo;
 
 import com.pancosky.newcartrade.enums.AuctionStatus;
 import lombok.Data;

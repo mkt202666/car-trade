@@ -1,7 +1,76 @@
+# ========== Maven 构建产物 ==========
 target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ========== Java 编译产物 ==========
 *.class
 *.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# ========== 日志文件 ==========
+logs/
+*.log
+*.log.*
+
+# ========== IDE - IntelliJ IDEA ==========
 .idea/
 *.iml
+*.iws
+*.ipr
+out/
+production/
+build/
+
+# ========== IDE - Eclipse ==========
+.settings/
+.project
+.classpath
+.factorypath
+
+# ========== IDE - VSCode ==========
+.vscode/
+*.code-workspace
+
+# ========== 系统文件 ==========
 .DS_Store
-logs/
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ========== 临时文件 ==========
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# ========== 环境配置（本地） ==========
+.env
+.env.local
+.env.*.local
+application-local.yml
+application-dev.yml
+
+# ========== 测试覆盖率 ==========
+.coverage
+.coverity/
+*.cover
+
+# ========== 其他 ==========
+*.pid
+*.seed
+*.lock

@@ -8,6 +8,7 @@ import com.pancosky.newcartrade.vo.CarDetailVO;
 import com.pancosky.newcartrade.vo.CarVO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface CarService {
     PageResult<CarVO> list(CarQueryDTO query);
@@ -18,7 +19,7 @@ public interface CarService {
     void favorite(Long id);
     void unfavorite(Long id);
     List<CarVO> recommend();
-    void export(String country);
-    void downloadImage(Long carId, Long imageId);
-    void contactSeller(Long carId);
+    List<CarVO> export(String country);
+    String downloadImage(Long carId, Long imageId);
+    Map<String, Object> contactSeller(Long carId);
 }

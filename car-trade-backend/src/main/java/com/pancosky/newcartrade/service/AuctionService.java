@@ -1,4 +1,4 @@
-﻿package com.pancosky.newcartrade.service;
+package com.pancosky.newcartrade.service;
 
 import com.pancosky.newcartrade.common.PageResult;
 import com.pancosky.newcartrade.dto.AuctionCreateDTO;

@@ -1,6 +1,7 @@
 package com.pancosky.newcartrade.controller;
 
 import com.pancosky.newcartrade.common.ApiResponse;
+import com.pancosky.newcartrade.dto.TicketCreateDTO;
 import com.pancosky.newcartrade.service.CustomerService;
 import com.pancosky.newcartrade.vo.TicketDetailVO;
 import com.pancosky.newcartrade.vo.TicketVO;
@@ -17,7 +18,7 @@ public class CustomerServiceController {
     private final CustomerService customerService;
 
     @PostMapping("/tickets")
-    public ApiResponse<TicketVO> createTicket(@RequestBody Object dto) {
+    public ApiResponse<TicketVO> createTicket(@RequestBody TicketCreateDTO dto) {
         return ApiResponse.success(customerService.createTicket(dto));
     }
 

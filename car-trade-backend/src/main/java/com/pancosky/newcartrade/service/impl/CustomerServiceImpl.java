@@ -1,6 +1,7 @@
 package com.pancosky.newcartrade.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.pancosky.newcartrade.dto.TicketCreateDTO;
 import com.pancosky.newcartrade.entity.CustomerServiceTicket;
 import com.pancosky.newcartrade.mapper.CustomerServiceTicketMapper;
 import com.pancosky.newcartrade.service.CustomerService;
@@ -25,13 +26,19 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     @Transactional
-    public TicketVO createTicket(Object dto) {
+    public TicketVO createTicket(TicketCreateDTO dto) {
         CustomerServiceTicket ticket = new CustomerServiceTicket();
         ticket.setUserId(SecurityUtils.getCurrentUserId());
-        ticket.setStatus("OPEN");
+        ticket.setTitle(dto.getTitle());
+        ticket.setCategory(dto.getCategory());
+        ticket.setPriority(StringUtils.hasText(dto.getPriority()) ? dto.getPriority() : "NORMAL");
+        ticket.setStatus("PENDING");
         ticketMapper.insert(ticket);
         TicketVO vo = new TicketVO();
         vo.setId(ticket.getId());
+        vo.setTitle(ticket.getTitle());
+        vo.setCategory(ticket.getCategory());
+        vo.setPriority(ticket.getPriority());
         vo.setStatus(ticket.getStatus());
         vo.setCreatedAt(ticket.getCreatedAt());
         return vo;

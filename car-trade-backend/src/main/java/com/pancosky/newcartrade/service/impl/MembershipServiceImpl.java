@@ -59,15 +59,34 @@ public class MembershipServiceImpl implements MembershipService {
         Long userId = SecurityUtils.getCurrentUserId();
         MemberPlan plan = memberPlanMapper.selectById(planId);
         if (plan == null) throw new BusinessException("Member plan not found");
-        UserMembership membership = new UserMembership();
-        membership.setUserId(userId);
-        membership.setPlanId(planId);
-        membership.setLevel(plan.getLevel());
-        membership.setStartAt(LocalDateTime.now());
-        membership.setEndAt(LocalDateTime.now().plusDays(plan.getDurationDays()));
-        membership.setStatus("ACTIVE");
-        userMembershipMapper.insert(membership);
-        log.info("User {} renewed membership plan {}", userId, planId);
+
+        // 查找当前有效的会员记录
+        LambdaQueryWrapper<UserMembership> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserMembership::getUserId, userId)
+               .eq(UserMembership::getStatus, "ACTIVE")
+               .orderByDesc(UserMembership::getEndAt)
+               .last("LIMIT 1");
+        UserMembership existing = userMembershipMapper.selectOne(wrapper);
+
+        if (existing != null && existing.getEndAt().isAfter(LocalDateTime.now())) {
+            // 未过期：在到期时间基础上顺延
+            existing.setEndAt(existing.getEndAt().plusDays(plan.getDurationDays()));
+            existing.setPlanId(planId);
+            existing.setLevel(plan.getLevel());
+            userMembershipMapper.updateById(existing);
+            log.info("User {} extended membership to {}", userId, existing.getEndAt());
+        } else {
+            // 已过期或无记录：创建新会员
+            UserMembership membership = new UserMembership();
+            membership.setUserId(userId);
+            membership.setPlanId(planId);
+            membership.setLevel(plan.getLevel());
+            membership.setStartAt(LocalDateTime.now());
+            membership.setEndAt(LocalDateTime.now().plusDays(plan.getDurationDays()));
+            membership.setStatus("ACTIVE");
+            userMembershipMapper.insert(membership);
+            log.info("User {} created new membership plan {}", userId, planId);
+        }
     }
 
     private MemberPlanVO toPlanVO(MemberPlan plan) {

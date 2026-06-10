@@ -1,5 +1,6 @@
 package com.pancosky.newcartrade.service;
 
+import com.pancosky.newcartrade.dto.ChangePasswordDTO;
 import com.pancosky.newcartrade.dto.LoginDTO;
 import com.pancosky.newcartrade.dto.RegisterDTO;
 import com.pancosky.newcartrade.vo.LoginVO;
@@ -17,4 +18,6 @@ public interface UserService {
     UserStatsVO getStats();
     void certify();
     UserPublicVO getUserPublicInfo(Long id);
+    void changePassword(ChangePasswordDTO dto);
+    void updatePhone(String newPhone, String smsCode);
 }

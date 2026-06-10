@@ -1,10 +1,13 @@
 package com.pancosky.newcartrade.controller;
 
 import com.pancosky.newcartrade.common.ApiResponse;
+import com.pancosky.newcartrade.dto.ChangePasswordDTO;
 import com.pancosky.newcartrade.dto.LoginDTO;
 import com.pancosky.newcartrade.dto.RegisterDTO;
 import com.pancosky.newcartrade.service.BrowsingHistoryService;
 import com.pancosky.newcartrade.service.UserService;
+import com.pancosky.newcartrade.util.SecurityUtils;
+import com.pancosky.newcartrade.vo.BrowsingHistoryVO;
 import com.pancosky.newcartrade.vo.LoginVO;
 import com.pancosky.newcartrade.vo.UserPublicVO;
 import com.pancosky.newcartrade.vo.UserStatsVO;
@@ -12,6 +15,9 @@ import com.pancosky.newcartrade.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -63,12 +69,29 @@ public class UserController {
     }
 
     @GetMapping("/me/browsing")
-    public ApiResponse<Void> browsing() {
-        return ApiResponse.success();
+    public ApiResponse<List<BrowsingHistoryVO>> browsing(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        return ApiResponse.success(browsingHistoryService.list(userId, page, size));
     }
 
     @DeleteMapping("/me/browsing")
     public ApiResponse<Void> clearBrowsing() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        browsingHistoryService.clear(userId);
+        return ApiResponse.success();
+    }
+
+    @PutMapping("/me/password")
+    public ApiResponse<Void> changePassword(@RequestBody ChangePasswordDTO dto) {
+        userService.changePassword(dto);
+        return ApiResponse.success();
+    }
+
+    @PutMapping("/me/phone")
+    public ApiResponse<Void> updatePhone(@RequestBody Map<String, String> body) {
+        userService.updatePhone(body.get("phone"), body.get("smsCode"));
         return ApiResponse.success();
     }
 }

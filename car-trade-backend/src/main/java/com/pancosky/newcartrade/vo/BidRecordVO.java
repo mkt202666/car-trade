@@ -1,4 +1,4 @@
-﻿package com.pancosky.newcartrade.vo;
+package com.pancosky.newcartrade.vo;
 
 import lombok.Data;
 

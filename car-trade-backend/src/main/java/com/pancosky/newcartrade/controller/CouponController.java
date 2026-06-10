@@ -5,11 +5,10 @@ import com.pancosky.newcartrade.service.CouponService;
 import com.pancosky.newcartrade.vo.CouponVO;
 import com.pancosky.newcartrade.vo.UserCouponVO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/coupons")
@@ -26,5 +25,17 @@ public class CouponController {
     @GetMapping("/my")
     public ApiResponse<List<UserCouponVO>> myCoupons() {
         return ApiResponse.success(couponService.listMyCoupons());
+    }
+
+    @PostMapping("/{id}/claim")
+    public ApiResponse<Void> claim(@PathVariable Long id) {
+        couponService.claim(id);
+        return ApiResponse.success();
+    }
+
+    @PostMapping("/{id}/use")
+    public ApiResponse<Void> use(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        couponService.use(id, body.get("orderId"));
+        return ApiResponse.success();
     }
 }

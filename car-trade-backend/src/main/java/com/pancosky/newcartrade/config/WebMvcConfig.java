@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
@@ -24,6 +25,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
     }
 
     @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:uploads/");
+    }
+
+    @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authenticationInterceptor)
                 .addPathPatterns("/**")
@@ -35,7 +42,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/v1/cars/*",
                         "/api/v1/cars/recommend",
                         "/api/v1/cars/export",
-                        // 错误与静态资源
+                        // 静态资源
+                        "/uploads/**",
+                        // 错误
                         "/error",
                         "/favicon.ico"
                 );

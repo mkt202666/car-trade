@@ -28,6 +28,7 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS last_terminate_at TIMESTAMP;
 CREATE TABLE IF NOT EXISTS users (
     id              BIGSERIAL PRIMARY KEY,
     phone           VARCHAR(20) NOT NULL UNIQUE,
+    password        VARCHAR(100),
     nickname        VARCHAR(50),
     real_name       VARCHAR(50),
     avatar_url      VARCHAR(500),

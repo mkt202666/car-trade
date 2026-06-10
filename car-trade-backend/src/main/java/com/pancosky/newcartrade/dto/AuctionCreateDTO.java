@@ -1,4 +1,4 @@
-﻿package com.pancosky.newcartrade.dto;
+package com.pancosky.newcartrade.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;

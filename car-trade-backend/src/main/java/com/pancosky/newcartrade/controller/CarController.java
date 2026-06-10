@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/cars")
@@ -64,20 +65,17 @@ public class CarController {
     }
 
     @GetMapping("/export")
-    public ApiResponse<Void> export(@RequestParam String country) {
-        carService.export(country);
-        return ApiResponse.success();
+    public ApiResponse<List<CarVO>> export(@RequestParam String country) {
+        return ApiResponse.success(carService.export(country));
     }
 
     @GetMapping("/{id}/images/{imageId}/download")
-    public ApiResponse<Void> downloadImage(@PathVariable Long id, @PathVariable Long imageId) {
-        carService.downloadImage(id, imageId);
-        return ApiResponse.success();
+    public ApiResponse<String> downloadImage(@PathVariable Long id, @PathVariable Long imageId) {
+        return ApiResponse.success(carService.downloadImage(id, imageId));
     }
 
     @PostMapping("/{id}/contact")
-    public ApiResponse<Void> contactSeller(@PathVariable Long id) {
-        carService.contactSeller(id);
-        return ApiResponse.success();
+    public ApiResponse<Map<String, Object>> contactSeller(@PathVariable Long id) {
+        return ApiResponse.success(carService.contactSeller(id));
     }
 }

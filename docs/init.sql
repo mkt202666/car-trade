@@ -18,6 +18,7 @@ ALTER DATABASE new_car_trade SET search_path TO public;
 CREATE TABLE users (
     id              BIGSERIAL PRIMARY KEY,
     phone           VARCHAR(20) NOT NULL UNIQUE,
+    password        VARCHAR(100),
     nickname        VARCHAR(50),
     real_name       VARCHAR(50),
     avatar_url      VARCHAR(500),

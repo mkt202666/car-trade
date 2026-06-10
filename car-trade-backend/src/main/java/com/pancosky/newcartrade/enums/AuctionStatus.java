@@ -1,4 +1,4 @@
-﻿package com.pancosky.newcartrade.enums;
+package com.pancosky.newcartrade.enums;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 

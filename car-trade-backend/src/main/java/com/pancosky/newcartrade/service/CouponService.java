@@ -8,4 +8,6 @@ import java.util.List;
 public interface CouponService {
     List<CouponVO> listAvailable();
     List<UserCouponVO> listMyCoupons();
+    void claim(Long couponId);
+    void use(Long couponId, String orderId);
 }

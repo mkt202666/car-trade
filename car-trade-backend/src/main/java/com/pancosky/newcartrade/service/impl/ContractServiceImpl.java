@@ -130,16 +130,63 @@ public class ContractServiceImpl implements ContractService {
     public String download(Long id) {
         Contract contract = contractMapper.selectById(id);
         if (contract == null) throw new BusinessException("Contract not found");
-        
-        // Generate download URL if not exists
+
+        // 生成合同文件（HTML 格式，可浏览器打印为 PDF）
         if (contract.getFileUrl() == null || contract.getFileUrl().isEmpty()) {
-            String fileName = contract.getContractNo() + ".pdf";
-            String fileUrl = fileUrlPrefix + fileName;
-            contract.setFileUrl(fileUrl);
-            contractMapper.updateById(contract);
+            try {
+                java.io.File dir = new java.io.File("uploads/contracts");
+                if (!dir.exists()) dir.mkdirs();
+
+                String fileName = contract.getContractNo() + ".html";
+                java.io.File file = new java.io.File(dir, fileName);
+
+                User buyer = contract.getBuyerId() != null ? userMapper.selectById(contract.getBuyerId()) : null;
+                User seller = contract.getSellerId() != null ? userMapper.selectById(contract.getSellerId()) : null;
+
+                String html = buildContractHtml(contract, buyer, seller);
+                java.nio.file.Files.write(file.toPath(), html.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+                String fileUrl = "/uploads/contracts/" + fileName;
+                contract.setFileUrl(fileUrl);
+                contractMapper.updateById(contract);
+                log.info("Generated contract file: {}", fileUrl);
+            } catch (java.io.IOException e) {
+                log.error("Failed to generate contract file for {}", contract.getContractNo(), e);
+                throw new BusinessException("合同文件生成失败");
+            }
         }
-        
-        log.info("Download contract: {}", contract.getContractNo());
+
         return contract.getFileUrl();
+    }
+
+    private String buildContractHtml(Contract contract, User buyer, User seller) {
+        String buyerName = buyer != null ? buyer.getNickname() : "未指定";
+        String sellerName = seller != null ? seller.getNickname() : "未指定";
+        String content = contract.getContent() != null ? contract.getContent() : "（合同内容待补充）";
+
+        return "<!DOCTYPE html><html><head><meta charset='UTF-8'>" +
+                "<title>电子合同 - " + contract.getContractNo() + "</title>" +
+                "<style>body{font-family:sans-serif;max-width:800px;margin:40px auto;padding:20px;line-height:1.8}" +
+                "h1{text-align:center;border-bottom:2px solid #333;padding-bottom:10px}" +
+                ".info{margin:10px 0}.sign{margin-top:30px;display:flex;justify-content:space-between}" +
+                ".sign div{width:45%;border-top:1px solid #999;padding-top:10px;text-align:center}" +
+                "@media print{body{margin:0}}</style></head><body>" +
+                "<h1>5D好车 电子合同</h1>" +
+                "<div class='info'><strong>合同编号：</strong>" + contract.getContractNo() + "</div>" +
+                "<div class='info'><strong>合同状态：</strong>" + contract.getStatus() + "</div>" +
+                "<div class='info'><strong>创建时间：</strong>" + contract.getCreatedAt() + "</div>" +
+                "<hr>" +
+                "<div class='info'><strong>卖方：</strong>" + sellerName + "</div>" +
+                "<div class='info'><strong>买方：</strong>" + buyerName + "</div>" +
+                "<hr>" +
+                "<h3>合同条款</h3>" +
+                "<div>" + content + "</div>" +
+                "<hr>" +
+                "<div class='sign'>" +
+                "<div>卖方签署：" + (contract.getSellerSigned() ? "✅ 已签署 " + contract.getSellerSignedAt() : "❌ 待签署") + "</div>" +
+                "<div>买方签署：" + (contract.getBuyerSigned() ? "✅ 已签署 " + contract.getBuyerSignedAt() : "❌ 待签署") + "</div>" +
+                "</div>" +
+                "<p style='margin-top:40px;color:#666;font-size:12px;text-align:center'>本合同由5D好车平台生成，具有电子签约法律效力</p>" +
+                "</body></html>";
     }
 }
