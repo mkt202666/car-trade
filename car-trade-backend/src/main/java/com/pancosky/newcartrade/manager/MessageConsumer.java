@@ -22,7 +22,12 @@ public class MessageConsumer {
     }
 
     @Component
-    @RocketMQMessageListener(topic = "message-system", consumerGroup = "new-car-trade-system-consumer")
+    @RocketMQMessageListener(
+        topic = "message-system",
+        consumerGroup = "new-car-trade-system-consumer",
+        accessChannel = "CLOUD",
+        namespaceV2 = "rmq-cn-zqb4angv602"
+    )
     public class SystemMessageConsumer implements RocketMQListener<String> {
         @Override
         public void onMessage(String payload) {
@@ -47,7 +52,12 @@ public class MessageConsumer {
     }
 
     @Component
-    @RocketMQMessageListener(topic = "message-chat", consumerGroup = "new-car-trade-chat-consumer")
+    @RocketMQMessageListener(
+        topic = "message-chat",
+        consumerGroup = "new-car-trade-chat-consumer",
+        accessChannel = "CLOUD",
+        namespaceV2 = "rmq-cn-zqb4angv602"
+    )
     public class ChatMessageConsumer implements RocketMQListener<String> {
         @Override
         public void onMessage(String payload) {

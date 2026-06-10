@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -151,5 +152,108 @@ public class OrderServiceImpl implements OrderService {
         logEntry.setOperatorId(SecurityUtils.getCurrentUserId());
         logEntry.setRemark(remark);
         orderLogMapper.insert(logEntry);
+    }
+
+    @Override
+    @Transactional
+    public void submitContract(String id, String content) {
+        Order order = orderMapper.selectById(id);
+        if (order == null) throw new BusinessException("Order not found");
+        if (!"DEPOSIT_PAID".equals(order.getStatus())) {
+            throw new BusinessException("Cannot submit contract in current status");
+        }
+        order.setContractContent(content);
+        order.setContractSubmitted(true);
+        order.setContractSubmittedAt(LocalDateTime.now());
+        order.setStatus("CONTRACT_SUBMITTED");
+        orderMapper.updateById(order);
+        addLog(id, "submit_contract", "Contract submitted");
+    }
+
+    @Override
+    @Transactional
+    public void updateContract(String id, String content) {
+        Order order = orderMapper.selectById(id);
+        if (order == null) throw new BusinessException("Order not found");
+        if (!"CONTRACT_SUBMITTED".equals(order.getStatus())) {
+            throw new BusinessException("Cannot update contract in current status");
+        }
+        order.setContractContent(content);
+        orderMapper.updateById(order);
+        addLog(id, "update_contract", "Contract updated");
+    }
+
+    @Override
+    @Transactional
+    public void confirmContract(String id) {
+        Order order = orderMapper.selectById(id);
+        if (order == null) throw new BusinessException("Order not found");
+        if (!"CONTRACT_SUBMITTED".equals(order.getStatus())) {
+            throw new BusinessException("Cannot confirm contract in current status");
+        }
+        order.setContractConfirmed(true);
+        order.setContractConfirmedAt(LocalDateTime.now());
+        order.setStatus("CONTRACT_CONFIRMED");
+        orderMapper.updateById(order);
+        addLog(id, "confirm_contract", "Contract confirmed");
+    }
+
+    @Override
+    public Map<String, Object> getContract(String id) {
+        Order order = orderMapper.selectById(id);
+        if (order == null) throw new BusinessException("Order not found");
+        Map<String, Object> contract = new java.util.HashMap<>();
+        contract.put("content", order.getContractContent());
+        contract.put("submitted", order.getContractSubmitted());
+        contract.put("submittedAt", order.getContractSubmittedAt());
+        contract.put("confirmed", order.getContractConfirmed());
+        contract.put("confirmedAt", order.getContractConfirmedAt());
+        return contract;
+    }
+
+    @Override
+    @Transactional
+    public void terminate(String id, String reason) {
+        Order order = orderMapper.selectById(id);
+        if (order == null) throw new BusinessException("Order not found");
+
+        // 检查终止次数限制
+        if (order.getTerminateCount() != null && order.getTerminateCount() >= 3) {
+            // 检查是否是今天
+            if (order.getLastTerminateAt() != null &&
+                order.getLastTerminateAt().toLocalDate().equals(LocalDateTime.now().toLocalDate())) {
+                throw new BusinessException("Today's terminate limit reached");
+            }
+            // 重置计数
+            order.setTerminateCount(0);
+        }
+
+        order.setTerminateReason(reason);
+        order.setTerminateCount((order.getTerminateCount() == null ? 0 : order.getTerminateCount()) + 1);
+        order.setLastTerminateAt(LocalDateTime.now());
+        order.setStatus("TERMINATED");
+        orderMapper.updateById(order);
+        addLog(id, "terminate", "Transaction terminated: " + reason);
+    }
+
+    @Override
+    public Map<String, Integer> getTerminateCount(String id) {
+        Order order = orderMapper.selectById(id);
+        if (order == null) throw new BusinessException("Order not found");
+
+        int used = order.getTerminateCount() == null ? 0 : order.getTerminateCount();
+        int remaining = 3 - used;
+
+        // 检查是否是今天
+        if (order.getLastTerminateAt() != null &&
+            !order.getLastTerminateAt().toLocalDate().equals(LocalDateTime.now().toLocalDate())) {
+            remaining = 3; // 不是今天，重置
+        }
+
+        Map<String, Integer> result = new java.util.HashMap<>();
+        result.put("used", used);
+        result.put("remaining", Math.max(0, remaining));
+        result.put("limit", 3);
+        return result;
     }
 }

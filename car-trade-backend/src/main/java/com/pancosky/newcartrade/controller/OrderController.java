@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -63,6 +64,43 @@ public class OrderController {
         return ApiResponse.success();
     }
 
+    // 合同相关接口
+    @PostMapping("/{id}/contract")
+    public ApiResponse<Void> submitContract(@PathVariable String id, @RequestBody Map<String, String> body) {
+        orderService.submitContract(id, body.get("content"));
+        return ApiResponse.success();
+    }
+
+    @PutMapping("/{id}/contract")
+    public ApiResponse<Void> updateContract(@PathVariable String id, @RequestBody Map<String, String> body) {
+        orderService.updateContract(id, body.get("content"));
+        return ApiResponse.success();
+    }
+
+    @PutMapping("/{id}/contract/confirm")
+    public ApiResponse<Void> confirmContract(@PathVariable String id) {
+        orderService.confirmContract(id);
+        return ApiResponse.success();
+    }
+
+    @GetMapping("/{id}/contract")
+    public ApiResponse<Map<String, Object>> getContract(@PathVariable String id) {
+        return ApiResponse.success(orderService.getContract(id));
+    }
+
+    // 终止交易接口
+    @PostMapping("/{id}/terminate")
+    public ApiResponse<Void> terminate(@PathVariable String id, @RequestBody Map<String, String> body) {
+        orderService.terminate(id, body.get("reason"));
+        return ApiResponse.success();
+    }
+
+    @GetMapping("/{id}/terminate/count")
+    public ApiResponse<Map<String, Integer>> getTerminateCount(@PathVariable String id) {
+        return ApiResponse.success(orderService.getTerminateCount(id));
+    }
+
+    // 订单日志接口
     @GetMapping("/{id}/logs")
     public ApiResponse<List<Object>> logs(@PathVariable String id) {
         return ApiResponse.success(orderService.logs(id));

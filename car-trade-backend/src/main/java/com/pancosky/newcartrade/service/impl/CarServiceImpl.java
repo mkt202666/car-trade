@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -52,8 +53,29 @@ public class CarServiceImpl implements CarService {
         }
         if (query.getBrandId() != null) wrapper.eq(CarSource::getBrandId, query.getBrandId());
         if (query.getSeriesId() != null) wrapper.eq(CarSource::getSeriesId, query.getSeriesId());
-        if (query.getPriceMin() != null) wrapper.ge(CarSource::getPrice, query.getPriceMin());
-        if (query.getPriceMax() != null) wrapper.le(CarSource::getPrice, query.getPriceMax());
+        
+        // 处理价格筛选（兼容两种参数格式）
+        BigDecimal priceMin = query.getPriceMin() != null ? query.getPriceMin() : query.getMinPrice();
+        BigDecimal priceMax = query.getPriceMax() != null ? query.getPriceMax() : query.getMaxPrice();
+        if (priceMin != null) wrapper.ge(CarSource::getPrice, priceMin.multiply(new BigDecimal("10000")));
+        if (priceMax != null) wrapper.le(CarSource::getPrice, priceMax.multiply(new BigDecimal("10000")));
+        
+        // 处理车龄筛选（根据年份计算）
+        Integer ageMin = query.getAgeMin() != null ? query.getAgeMin() : query.getMinAge();
+        Integer ageMax = query.getAgeMax() != null ? query.getAgeMax() : query.getMaxAge();
+        int currentYear = java.time.Year.now().getValue();
+        if (ageMin != null) wrapper.le(CarSource::getYear, currentYear - ageMin);
+        if (ageMax != null) wrapper.ge(CarSource::getYear, currentYear - ageMax);
+        
+        // 处理里程筛选
+        BigDecimal mileageMin = query.getMileageMin() != null ? query.getMileageMin() : query.getMinMileage();
+        BigDecimal mileageMax = query.getMileageMax() != null ? query.getMileageMax() : query.getMaxMileage();
+        if (mileageMin != null) wrapper.ge(CarSource::getMileage, mileageMin.multiply(new BigDecimal("10000")).intValue());
+        if (mileageMax != null) wrapper.le(CarSource::getMileage, mileageMax.multiply(new BigDecimal("10000")).intValue());
+        
+        // 处理变速箱筛选
+        if (StringUtils.hasText(query.getTransmission())) wrapper.eq(CarSource::getTransmission, query.getTransmission());
+        
         if (StringUtils.hasText(query.getCityCode())) wrapper.eq(CarSource::getCityCode, query.getCityCode());
         if (StringUtils.hasText(query.getEnergyType())) wrapper.eq(CarSource::getEnergyType, query.getEnergyType());
         if (query.getDeposit() != null && query.getDeposit()) wrapper.isNotNull(CarSource::getDeposit);
@@ -135,9 +157,14 @@ public class CarServiceImpl implements CarService {
         entity.setSeriesId(dto.getSeriesId());
         entity.setModelId(dto.getModelId());
         entity.setTitle(dto.getTitle() != null ? dto.getTitle() : buildDefaultTitle(dto));
+        entity.setVin(dto.getVin());  // 车架号
         entity.setYear(dto.getYear());
         entity.setMileage(dto.getMileage());
         entity.setPrice(dto.getPrice());
+        entity.setPricingType(dto.getPricingType() != null ? dto.getPricingType() : "FIXED");  // 报价方式
+        entity.setStartingPrice(dto.getStartingPrice());  // 起拍价
+        entity.setCeilingPrice(dto.getCeilingPrice());  // 封顶价
+        entity.setBidIncrement(dto.getBidIncrement());  // 加价幅度
         entity.setDeposit(dto.getDeposit());
         entity.setColor(dto.getColor());
         entity.setCityCode(dto.getCityCode());
@@ -153,6 +180,12 @@ public class CarServiceImpl implements CarService {
         entity.setProductionDate(dto.getProductionDate());
         entity.setKeyCount(dto.getKeyCount());
         entity.setDescription(dto.getDescription());
+        entity.setInspectionReportType(dto.getInspectionReportType());  // 检测报告类型
+        entity.setInspectionReportUrl(dto.getInspectionReportUrl());  // 检测报告URL
+        entity.setCertificateMaterials(dto.getCertificateMaterials());  // 证件材料
+        entity.setSupportLockNegotiation(dto.getSupportLockNegotiation() != null ? dto.getSupportLockNegotiation() : false);  // 支持锁车洽谈
+        entity.setAiAutoPromote(dto.getAiAutoPromote() != null ? dto.getAiAutoPromote() : false);  // AI自动推广
+        entity.setIsDraft(dto.getIsDraft() != null ? dto.getIsDraft() : false);  // 是否草稿
         entity.setStatus("ACTIVE");
         entity.setPublishedAt(LocalDateTime.now());
         entity.setViewCount(0L);

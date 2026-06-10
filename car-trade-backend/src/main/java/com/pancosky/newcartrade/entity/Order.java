@@ -31,6 +31,15 @@ public class Order {
     private LocalDateTime sellerDepositPaidAt;
     private String status;
     private String contractNo;
+    private String contractContent;  // 合同内容
+    private Boolean contractSubmitted;  // 合同是否已提交
+    private LocalDateTime contractSubmittedAt;  // 合同提交时间
+    private Boolean contractConfirmed;  // 合同是否已确认
+    private LocalDateTime contractConfirmedAt;  // 合同确认时间
+    private Integer terminateCount;  // 终止交易次数
+    private Integer terminateLimit;  // 每日终止交易限制
+    private String terminateReason;  // 终止交易原因
+    private LocalDateTime lastTerminateAt;  // 最后终止交易时间
     private String remark;
     private String cancelReason;
     private LocalDateTime completedAt;

@@ -1,22 +1,21 @@
-package com.pancosky.newcartrade.enums;
+﻿package com.pancosky.newcartrade.enums;
 
-import com.baomidou.mybatisplus.annotation.IEnum;
 import com.baomidou.mybatisplus.annotation.EnumValue;
 
-public enum AuctionStatus implements IEnum<Integer> {
-    NONE(0),
-    BIDDING(1),
-    BIDDED(2);
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
+public enum AuctionStatus {
+    PENDING(0, "待开始"),
+    BIDDING(1, "竞拍中"),
+    ENDED(2, "已结束"),
+    SETTLED(3, "已结算"),
+    CANCELLED(4, "已取消"),
+    FAILED(5, "流拍");
 
     @EnumValue
     private final Integer value;
-
-    AuctionStatus(Integer value) {
-        this.value = value;
-    }
-
-    @Override
-    public Integer getValue() {
-        return value;
-    }
+    private final String description;
 }

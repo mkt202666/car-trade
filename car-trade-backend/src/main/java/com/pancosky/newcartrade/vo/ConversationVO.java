@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public class ConversationVO {
     private Long id;
     private String type;
+    private String name;
     private String relatedOrderId;
     private Long targetUserId;
     private String targetUserName;

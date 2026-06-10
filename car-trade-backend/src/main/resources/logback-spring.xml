@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name"/>
+    
+    <!-- 阿里云 SLS Appender -->
+    <appender name="SLS" class="com.aliyun.openservices.log.logback.LogbackAppender">
+        <!-- SLS 配置 -->
+        <endpoint>cn-shanghai.log.aliyuncs.com</endpoint>
+        <project>${SLS_PROJECT:new-car-trade}</project>
+        <logStore>${SLS_LOGSTORE:application-log}</logStore>
+        <accessKeyId>${SLS_ACCESS_KEY_ID}</accessKeyId>
+        <accessKeySecret>${SLS_ACCESS_KEY_SECRET}</accessKeySecret>
+        
+        <!-- 日志格式 -->
+        <topic>${APP_NAME}</topic>
+        <source>${HOSTNAME}</source>
+        
+        <!-- 缓冲配置 -->
+        <totalSizeInBytes>104857600</totalSizeInBytes>
+        <maxBlockMs>0</maxBlockMs>
+        <discardThreshold>0</discardThreshold>
+        
+        <!-- 日志级别 -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>
+                <![CDATA[
+{
+    "timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}",
+    "level": "%level",
+    "logger": "%logger{50}",
+    "thread": "%thread",
+    "message": "%msg",
+    "exception": "%ex",
+    "appName": "${APP_NAME}",
+    "traceId": "%X{traceId:-}",
+    "spanId": "%X{spanId:-}"
+}
+                ]]>
+            </pattern>
+        </layout>
+    </appender>
+
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 文件输出 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>./logs/${APP_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>./logs/${APP_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 应用日志 -->
+    <logger name="com.pancosky.newcartrade" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+        <appender-ref ref="SLS"/>
+    </logger>
+
+    <!-- 根日志 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+        <appender-ref ref="SLS"/>
+    </root>
+</configuration>

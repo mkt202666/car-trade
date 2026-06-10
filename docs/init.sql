@@ -1,8 +1,20 @@
-CREATE DATABASE new_car_trade WITH ENCODING 'UTF8' LC_COLLATE 'zh_CN.utf8' LC_CTYPE 'zh_CN.utf8'
-TEMPLATE template0;
+-- ============================================================
+-- 5D好车 B2B 二手车交易平台 - 完整数据库初始化脚本
+-- 数据库: PostgreSQL 16
+-- 编码: UTF-8
+-- 日期: 2026-06-10
+-- 说明: 包含建库、建表、索引、注释、测试数据
+-- ============================================================
 
+-- ===================== 1. 创建数据库 =====================
+CREATE DATABASE new_car_trade WITH ENCODING 'UTF8' LC_COLLATE 'zh_CN.utf8' LC_CTYPE 'zh_CN.utf8' TEMPLATE template0;
 ALTER DATABASE new_car_trade SET search_path TO public;
--- 1. 用户表
+
+-- ===================== 2. 创建数据表 =====================
+
+-- ----------------------------------------------------------
+-- 表1: 用户表
+-- ----------------------------------------------------------
 CREATE TABLE users (
     id              BIGSERIAL PRIMARY KEY,
     phone           VARCHAR(20) NOT NULL UNIQUE,
@@ -54,7 +66,9 @@ COMMENT ON COLUMN users.created_at IS '创建时间';
 COMMENT ON COLUMN users.updated_at IS '更新时间';
 COMMENT ON COLUMN users.deleted_at IS '删除时间，软删除';
 
--- 2. 汽车品牌表
+-- ----------------------------------------------------------
+-- 表2: 汽车品牌表
+-- ----------------------------------------------------------
 CREATE TABLE brands (
     id              SERIAL PRIMARY KEY,
     name            VARCHAR(50) NOT NULL,
@@ -75,7 +89,9 @@ COMMENT ON COLUMN brands.sort_order IS '排序权重';
 COMMENT ON COLUMN brands.status IS '状态: ACTIVE-启用, DISABLE-禁用';
 COMMENT ON COLUMN brands.created_at IS '创建时间';
 
--- 3. 车系表
+-- ----------------------------------------------------------
+-- 表3: 车系表
+-- ----------------------------------------------------------
 CREATE TABLE series (
     id              SERIAL PRIMARY KEY,
     brand_id        INTEGER NOT NULL REFERENCES brands(id),
@@ -94,7 +110,9 @@ COMMENT ON COLUMN series.sort_order IS '排序权重';
 COMMENT ON COLUMN series.status IS '状态: ACTIVE-启用, DISABLE-禁用';
 COMMENT ON COLUMN series.created_at IS '创建时间';
 
--- 4. 车型表
+-- ----------------------------------------------------------
+-- 表4: 车型表
+-- ----------------------------------------------------------
 CREATE TABLE models (
     id              SERIAL PRIMARY KEY,
     series_id       INTEGER NOT NULL REFERENCES series(id),
@@ -117,7 +135,9 @@ COMMENT ON COLUMN models.sort_order IS '排序权重';
 COMMENT ON COLUMN models.status IS '状态: ACTIVE-启用, DISABLE-禁用';
 COMMENT ON COLUMN models.created_at IS '创建时间';
 
--- 5. 车源表
+-- ----------------------------------------------------------
+-- 表5: 车源表
+-- ----------------------------------------------------------
 CREATE TABLE car_sources (
     id              BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES users(id),
@@ -125,14 +145,20 @@ CREATE TABLE car_sources (
     series_id       INTEGER NOT NULL,
     model_id        INTEGER NOT NULL,
     title           VARCHAR(200),
+    vin             VARCHAR(50),
     year            INTEGER,
     mileage         INTEGER,
     price           DECIMAL(12,2),
+    pricing_type    VARCHAR(20) DEFAULT 'FIXED',
+    starting_price  DECIMAL(12,2),
+    ceiling_price   DECIMAL(12,2),
+    bid_increment   DECIMAL(10,2),
     deposit         DECIMAL(10,2),
     color           VARCHAR(20),
     city_code       VARCHAR(20),
     city_name       VARCHAR(50),
     energy_type     VARCHAR(20),
+    transmission    VARCHAR(20),
     usage_type      VARCHAR(20),
     owner_type      VARCHAR(20),
     is_mortgaged    BOOLEAN DEFAULT FALSE,
@@ -143,6 +169,12 @@ CREATE TABLE car_sources (
     production_date VARCHAR(10),
     key_count       INTEGER,
     description     TEXT,
+    inspection_report_type VARCHAR(20),
+    inspection_report_url VARCHAR(500),
+    certificate_materials JSONB,
+    support_lock_negotiation BOOLEAN DEFAULT FALSE,
+    ai_auto_promote BOOLEAN DEFAULT FALSE,
+    is_draft        BOOLEAN DEFAULT FALSE,
     auction_status  VARCHAR(20),
     auction_end_time TIMESTAMP,
     view_count      BIGINT DEFAULT 0,
@@ -151,7 +183,8 @@ CREATE TABLE car_sources (
     published_at    TIMESTAMP,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted_at      TIMESTAMP
+    deleted_at      TIMESTAMP,
+    export_countries VARCHAR(100)
 );
 
 CREATE INDEX idx_car_sources_user_id ON car_sources(user_id);
@@ -167,14 +200,20 @@ COMMENT ON COLUMN car_sources.brand_id IS '品牌ID';
 COMMENT ON COLUMN car_sources.series_id IS '车系ID';
 COMMENT ON COLUMN car_sources.model_id IS '车型ID';
 COMMENT ON COLUMN car_sources.title IS '车源标题';
+COMMENT ON COLUMN car_sources.vin IS '车架号';
 COMMENT ON COLUMN car_sources.year IS '车辆年款';
 COMMENT ON COLUMN car_sources.mileage IS '行驶里程(公里)';
 COMMENT ON COLUMN car_sources.price IS '售卖价格';
+COMMENT ON COLUMN car_sources.pricing_type IS '定价方式: FIXED-一口价, AUCTION-拍卖';
+COMMENT ON COLUMN car_sources.starting_price IS '起拍价';
+COMMENT ON COLUMN car_sources.ceiling_price IS '封顶价';
+COMMENT ON COLUMN car_sources.bid_increment IS '加价幅度';
 COMMENT ON COLUMN car_sources.deposit IS '保证金金额';
 COMMENT ON COLUMN car_sources.color IS '车身颜色';
 COMMENT ON COLUMN car_sources.city_code IS '城市编码';
 COMMENT ON COLUMN car_sources.city_name IS '城市名称';
 COMMENT ON COLUMN car_sources.energy_type IS '能源类型: GASOLINE-燃油, PURE_ELECTRIC-纯电, HYBRID-混动';
+COMMENT ON COLUMN car_sources.transmission IS '变速箱类型';
 COMMENT ON COLUMN car_sources.usage_type IS '使用性质';
 COMMENT ON COLUMN car_sources.owner_type IS '车主类型';
 COMMENT ON COLUMN car_sources.is_mortgaged IS '是否抵押车';
@@ -185,6 +224,12 @@ COMMENT ON COLUMN car_sources.inspection_expiry IS '年检到期日';
 COMMENT ON COLUMN car_sources.production_date IS '出厂日期';
 COMMENT ON COLUMN car_sources.key_count IS '车钥匙数量';
 COMMENT ON COLUMN car_sources.description IS '车辆详情描述';
+COMMENT ON COLUMN car_sources.inspection_report_type IS '检测报告类型: LINK-链接, FILE-文件';
+COMMENT ON COLUMN car_sources.inspection_report_url IS '检测报告链接/文件URL';
+COMMENT ON COLUMN car_sources.certificate_materials IS '证件材料JSON';
+COMMENT ON COLUMN car_sources.support_lock_negotiation IS '支持锁车洽谈';
+COMMENT ON COLUMN car_sources.ai_auto_promote IS 'AI自动推广';
+COMMENT ON COLUMN car_sources.is_draft IS '是否草稿';
 COMMENT ON COLUMN car_sources.auction_status IS '拍卖状态: NONE-未拍卖, BIDDING-拍卖中, BIDDED-已参拍';
 COMMENT ON COLUMN car_sources.auction_end_time IS '拍卖结束时间';
 COMMENT ON COLUMN car_sources.view_count IS '浏览次数';
@@ -194,8 +239,11 @@ COMMENT ON COLUMN car_sources.published_at IS '发布时间';
 COMMENT ON COLUMN car_sources.created_at IS '创建时间';
 COMMENT ON COLUMN car_sources.updated_at IS '更新时间';
 COMMENT ON COLUMN car_sources.deleted_at IS '删除时间，软删除';
+COMMENT ON COLUMN car_sources.export_countries IS '可出口国家，逗号分隔';
 
--- 6. 车源图片表
+-- ----------------------------------------------------------
+-- 表6: 车源图片表
+-- ----------------------------------------------------------
 CREATE TABLE car_images (
     id              BIGSERIAL PRIMARY KEY,
     car_id          BIGINT NOT NULL REFERENCES car_sources(id),
@@ -214,7 +262,9 @@ COMMENT ON COLUMN car_images.image_type IS '图片类型: EXTERIOR-外观, INTER
 COMMENT ON COLUMN car_images.sort_order IS '图片排序';
 COMMENT ON COLUMN car_images.created_at IS '创建时间';
 
--- 7. 车源标签表
+-- ----------------------------------------------------------
+-- 表7: 车源标签表
+-- ----------------------------------------------------------
 CREATE TABLE car_tags (
     id              BIGSERIAL PRIMARY KEY,
     car_id          BIGINT NOT NULL REFERENCES car_sources(id),
@@ -232,7 +282,9 @@ COMMENT ON COLUMN car_tags.tag_type IS '标签类型: DEPOSIT-保证金, EXPORT-
 COMMENT ON COLUMN car_tags.tag_value IS '标签值';
 COMMENT ON COLUMN car_tags.created_at IS '创建时间';
 
--- 8. 车辆检测报告表
+-- ----------------------------------------------------------
+-- 表8: 车辆检测报告表
+-- ----------------------------------------------------------
 CREATE TABLE car_inspections (
     id              BIGSERIAL PRIMARY KEY,
     car_id          BIGINT NOT NULL REFERENCES car_sources(id),
@@ -265,7 +317,9 @@ COMMENT ON COLUMN car_inspections.abnormal_photos IS '异常图片集合，JSON�
 COMMENT ON COLUMN car_inspections.created_at IS '创建时间';
 COMMENT ON COLUMN car_inspections.updated_at IS '更新时间';
 
--- 9. 订单表
+-- ----------------------------------------------------------
+-- 表9: 订单表
+-- ----------------------------------------------------------
 CREATE TABLE orders (
     id              VARCHAR(32) PRIMARY KEY,
     car_id          BIGINT NOT NULL REFERENCES car_sources(id),
@@ -279,6 +333,15 @@ CREATE TABLE orders (
     seller_deposit_paid_at TIMESTAMP,
     status          VARCHAR(20) DEFAULT 'PENDING_CONFIRM',
     contract_no     VARCHAR(32),
+    contract_content TEXT,
+    contract_submitted BOOLEAN DEFAULT FALSE,
+    contract_submitted_at TIMESTAMP,
+    contract_confirmed BOOLEAN DEFAULT FALSE,
+    contract_confirmed_at TIMESTAMP,
+    terminate_count INTEGER DEFAULT 0,
+    terminate_limit INTEGER DEFAULT 3,
+    terminate_reason VARCHAR(200),
+    last_terminate_at TIMESTAMP,
     remark          TEXT,
     cancel_reason   VARCHAR(200),
     completed_at    TIMESTAMP,
@@ -305,6 +368,15 @@ COMMENT ON COLUMN orders.seller_deposit_paid IS '卖家是否已交保证金';
 COMMENT ON COLUMN orders.seller_deposit_paid_at IS '卖家保证金缴纳时间';
 COMMENT ON COLUMN orders.status IS '订单状态: PENDING_CONFIRM-待确认, TRADING-交易中, DISPUTE-争议中, COMPLETED-已完成, CANCELLED-已终止';
 COMMENT ON COLUMN orders.contract_no IS '合同编号';
+COMMENT ON COLUMN orders.contract_content IS '合同内容';
+COMMENT ON COLUMN orders.contract_submitted IS '合同是否已提交';
+COMMENT ON COLUMN orders.contract_submitted_at IS '合同提交时间';
+COMMENT ON COLUMN orders.contract_confirmed IS '合同是否已确认';
+COMMENT ON COLUMN orders.contract_confirmed_at IS '合同确认时间';
+COMMENT ON COLUMN orders.terminate_count IS '终止交易次数';
+COMMENT ON COLUMN orders.terminate_limit IS '每日终止交易限制';
+COMMENT ON COLUMN orders.terminate_reason IS '终止交易原因';
+COMMENT ON COLUMN orders.last_terminate_at IS '最后终止交易时间';
 COMMENT ON COLUMN orders.remark IS '订单备注';
 COMMENT ON COLUMN orders.cancel_reason IS '取消原因';
 COMMENT ON COLUMN orders.completed_at IS '交易完成时间';
@@ -312,7 +384,9 @@ COMMENT ON COLUMN orders.cancelled_at IS '订单取消时间';
 COMMENT ON COLUMN orders.created_at IS '创建时间';
 COMMENT ON COLUMN orders.updated_at IS '更新时间';
 
--- 10. 订单车况信息表
+-- ----------------------------------------------------------
+-- 表10: 订单车况信息表
+-- ----------------------------------------------------------
 CREATE TABLE order_inspections (
     id              BIGSERIAL PRIMARY KEY,
     order_id        VARCHAR(32) NOT NULL REFERENCES orders(id),
@@ -347,7 +421,9 @@ COMMENT ON COLUMN order_inspections.materials IS '随车资料，JSON格式';
 COMMENT ON COLUMN order_inspections.created_at IS '创建时间';
 COMMENT ON COLUMN order_inspections.updated_at IS '更新时间';
 
--- 11. 订单日志表
+-- ----------------------------------------------------------
+-- 表11: 订单日志表
+-- ----------------------------------------------------------
 CREATE TABLE order_logs (
     id              BIGSERIAL PRIMARY KEY,
     order_id        VARCHAR(32) NOT NULL REFERENCES orders(id),
@@ -368,7 +444,9 @@ COMMENT ON COLUMN order_logs.operator_name IS '操作人名称';
 COMMENT ON COLUMN order_logs.remark IS '日志备注';
 COMMENT ON COLUMN order_logs.created_at IS '操作时间';
 
--- 12. 争议表
+-- ----------------------------------------------------------
+-- 表12: 争议表
+-- ----------------------------------------------------------
 CREATE TABLE disputes (
     id              BIGSERIAL PRIMARY KEY,
     order_id        VARCHAR(32) NOT NULL REFERENCES orders(id),
@@ -400,7 +478,9 @@ COMMENT ON COLUMN disputes.handled_at IS '处理完成时间';
 COMMENT ON COLUMN disputes.created_at IS '创建时间';
 COMMENT ON COLUMN disputes.updated_at IS '更新时间';
 
--- 13. 电子合同表
+-- ----------------------------------------------------------
+-- 表13: 电子合同表
+-- ----------------------------------------------------------
 CREATE TABLE contracts (
     id              BIGSERIAL PRIMARY KEY,
     order_id        VARCHAR(32) NOT NULL REFERENCES orders(id),
@@ -440,7 +520,9 @@ COMMENT ON COLUMN contracts.file_url IS '合同文件地址';
 COMMENT ON COLUMN contracts.created_at IS '创建时间';
 COMMENT ON COLUMN contracts.updated_at IS '更新时间';
 
--- 14. 保证金账户表
+-- ----------------------------------------------------------
+-- 表14: 保证金账户表
+-- ----------------------------------------------------------
 CREATE TABLE deposit_accounts (
     id              BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL UNIQUE REFERENCES users(id),
@@ -463,7 +545,9 @@ COMMENT ON COLUMN deposit_accounts.status IS '账户状态: ACTIVE-正常, DISAB
 COMMENT ON COLUMN deposit_accounts.created_at IS '创建时间';
 COMMENT ON COLUMN deposit_accounts.updated_at IS '更新时间';
 
--- 15. 保证金流水表
+-- ----------------------------------------------------------
+-- 表15: 保证金流水表
+-- ----------------------------------------------------------
 CREATE TABLE deposit_records (
     id              BIGSERIAL PRIMARY KEY,
     account_id      BIGINT NOT NULL REFERENCES deposit_accounts(id),
@@ -487,7 +571,9 @@ COMMENT ON COLUMN deposit_records.balance_after IS '变动后余额';
 COMMENT ON COLUMN deposit_records.remark IS '流水备注';
 COMMENT ON COLUMN deposit_records.created_at IS '流水发生时间';
 
--- 16. 信用账户表
+-- ----------------------------------------------------------
+-- 表16: 信用账户表
+-- ----------------------------------------------------------
 CREATE TABLE credit_accounts (
     id              BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL UNIQUE REFERENCES users(id),
@@ -510,7 +596,9 @@ COMMENT ON COLUMN credit_accounts.status IS '账户状态: ACTIVE-正常, DISABL
 COMMENT ON COLUMN credit_accounts.created_at IS '创建时间';
 COMMENT ON COLUMN credit_accounts.updated_at IS '更新时间';
 
--- 17. 消息表
+-- ----------------------------------------------------------
+-- 表17: 消息表
+-- ----------------------------------------------------------
 CREATE TABLE messages (
     id              BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES users(id),
@@ -538,7 +626,9 @@ COMMENT ON COLUMN messages.related_id IS '关联业务ID';
 COMMENT ON COLUMN messages.related_type IS '关联业务类型';
 COMMENT ON COLUMN messages.created_at IS '消息创建时间';
 
--- 18. 用户收藏表
+-- ----------------------------------------------------------
+-- 表18: 用户收藏表
+-- ----------------------------------------------------------
 CREATE TABLE user_favorites (
     id              BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES users(id),
@@ -555,7 +645,9 @@ COMMENT ON COLUMN user_favorites.user_id IS '用户ID';
 COMMENT ON COLUMN user_favorites.car_id IS '收藏车源ID';
 COMMENT ON COLUMN user_favorites.created_at IS '收藏时间';
 
--- 19. 用户关注表
+-- ----------------------------------------------------------
+-- 表19: 用户关注表
+-- ----------------------------------------------------------
 CREATE TABLE user_follows (
     id              BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES users(id),
@@ -572,7 +664,9 @@ COMMENT ON COLUMN user_follows.user_id IS '关注人ID';
 COMMENT ON COLUMN user_follows.follow_user_id IS '被关注人ID';
 COMMENT ON COLUMN user_follows.created_at IS '关注时间';
 
--- 20. 浏览记录表
+-- ----------------------------------------------------------
+-- 表20: 浏览记录表
+-- ----------------------------------------------------------
 CREATE TABLE browsing_history (
     id              BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES users(id),
@@ -587,7 +681,9 @@ COMMENT ON COLUMN browsing_history.user_id IS '浏览用户ID';
 COMMENT ON COLUMN browsing_history.car_id IS '浏览车源ID';
 COMMENT ON COLUMN browsing_history.created_at IS '浏览时间';
 
--- 21. 车行成员表
+-- ----------------------------------------------------------
+-- 表21: 车行成员表
+-- ----------------------------------------------------------
 CREATE TABLE shop_members (
     id              BIGSERIAL PRIMARY KEY,
     shop_user_id    BIGINT NOT NULL REFERENCES users(id),
@@ -614,7 +710,9 @@ COMMENT ON COLUMN shop_members.approved_at IS '审批通过时间';
 COMMENT ON COLUMN shop_members.created_at IS '创建时间';
 COMMENT ON COLUMN shop_members.updated_at IS '更新时间';
 
--- 22. 优惠券定义表
+-- ----------------------------------------------------------
+-- 表22: 优惠券定义表
+-- ----------------------------------------------------------
 CREATE TABLE coupons (
     id              BIGSERIAL PRIMARY KEY,
     name            VARCHAR(100) NOT NULL,
@@ -643,7 +741,9 @@ COMMENT ON COLUMN coupons.end_at IS '失效结束时间';
 COMMENT ON COLUMN coupons.status IS '状态: ACTIVE-正常, DISABLE-下架';
 COMMENT ON COLUMN coupons.created_at IS '创建时间';
 
--- 23. 用户优惠券表
+-- ----------------------------------------------------------
+-- 表23: 用户优惠券表
+-- ----------------------------------------------------------
 CREATE TABLE user_coupons (
     id              BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES users(id),
@@ -664,7 +764,9 @@ COMMENT ON COLUMN user_coupons.order_id IS '使用关联订单编号';
 COMMENT ON COLUMN user_coupons.status IS '状态: UNUSED-未使用, USED-已使用, EXPIRED-已过期';
 COMMENT ON COLUMN user_coupons.created_at IS '领取时间';
 
--- 24. 会员方案表
+-- ----------------------------------------------------------
+-- 表24: 会员方案表
+-- ----------------------------------------------------------
 CREATE TABLE member_plans (
     id              BIGSERIAL PRIMARY KEY,
     name            VARCHAR(50) NOT NULL,
@@ -688,7 +790,9 @@ COMMENT ON COLUMN member_plans.sort_order IS '排序权重';
 COMMENT ON COLUMN member_plans.status IS '状态: ACTIVE-上架, DISABLE-下架';
 COMMENT ON COLUMN member_plans.created_at IS '创建时间';
 
--- 25. 用户会员表
+-- ----------------------------------------------------------
+-- 表25: 用户会员表
+-- ----------------------------------------------------------
 CREATE TABLE user_membership (
     id              BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES users(id),
@@ -713,7 +817,9 @@ COMMENT ON COLUMN user_membership.status IS '状态: ACTIVE-有效, EXPIRED-已�
 COMMENT ON COLUMN user_membership.created_at IS '开通时间';
 COMMENT ON COLUMN user_membership.updated_at IS '更新时间';
 
--- 26. 在线客服工单表
+-- ----------------------------------------------------------
+-- 表26: 在线客服工单表
+-- ----------------------------------------------------------
 CREATE TABLE customer_service_tickets (
     id              BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES users(id),
@@ -741,7 +847,9 @@ COMMENT ON COLUMN customer_service_tickets.handled_at IS '处理完成时间';
 COMMENT ON COLUMN customer_service_tickets.created_at IS '工单创建时间';
 COMMENT ON COLUMN customer_service_tickets.updated_at IS '工单更新时间';
 
--- 27. 聊天会话表
+-- ----------------------------------------------------------
+-- 表27: 聊天会话表
+-- ----------------------------------------------------------
 CREATE TABLE chat_conversations (
     id              BIGSERIAL PRIMARY KEY,
     type            VARCHAR(20) DEFAULT 'SINGLE',
@@ -761,7 +869,9 @@ COMMENT ON COLUMN chat_conversations.last_message_at IS '最后消息时间';
 COMMENT ON COLUMN chat_conversations.created_at IS '会话创建时间';
 COMMENT ON COLUMN chat_conversations.updated_at IS '会话更新时间';
 
--- 28. 聊天会话成员表
+-- ----------------------------------------------------------
+-- 表28: 聊天会话成员表
+-- ----------------------------------------------------------
 CREATE TABLE chat_conversation_members (
     id              BIGSERIAL PRIMARY KEY,
     conversation_id BIGINT NOT NULL REFERENCES chat_conversations(id),
@@ -780,3 +890,165 @@ COMMENT ON COLUMN chat_conversation_members.user_id IS '会话成员用户ID';
 COMMENT ON COLUMN chat_conversation_members.unread_count IS '未读消息数';
 COMMENT ON COLUMN chat_conversation_members.last_read_at IS '最后已读时间';
 COMMENT ON COLUMN chat_conversation_members.created_at IS '加入会话时间';
+
+-- ----------------------------------------------------------
+-- 表29: 拍卖表
+-- ----------------------------------------------------------
+CREATE TABLE auctions (
+    id              BIGINT PRIMARY KEY,
+    car_id          BIGINT NOT NULL,
+    seller_id       BIGINT NOT NULL,
+    start_price     DECIMAL(12,2) NOT NULL,
+    reserve_price   DECIMAL(12,2),
+    current_price   DECIMAL(12,2) NOT NULL,
+    bid_increment   DECIMAL(10,2) NOT NULL DEFAULT 1000,
+    start_time      TIMESTAMP NOT NULL,
+    end_time        TIMESTAMP NOT NULL,
+    actual_end_time TIMESTAMP,
+    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    winner_id       BIGINT,
+    winning_price   DECIMAL(12,2),
+    total_bids      INT NOT NULL DEFAULT 0,
+    view_count      BIGINT NOT NULL DEFAULT 0,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version         INT NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_auctions_car_id ON auctions(car_id);
+CREATE INDEX idx_auctions_seller_id ON auctions(seller_id);
+CREATE INDEX idx_auctions_status ON auctions(status);
+CREATE INDEX idx_auctions_start_time ON auctions(start_time);
+CREATE INDEX idx_auctions_end_time ON auctions(end_time);
+COMMENT ON TABLE auctions IS '拍卖表';
+COMMENT ON COLUMN auctions.id IS '主键ID';
+COMMENT ON COLUMN auctions.car_id IS '关联车源ID';
+COMMENT ON COLUMN auctions.seller_id IS '卖家用户ID';
+COMMENT ON COLUMN auctions.start_price IS '起拍价(元)';
+COMMENT ON COLUMN auctions.reserve_price IS '保留价/底价(元)';
+COMMENT ON COLUMN auctions.current_price IS '当前最高出价(元)';
+COMMENT ON COLUMN auctions.bid_increment IS '每次加价幅度(元)';
+COMMENT ON COLUMN auctions.start_time IS '拍卖开始时间';
+COMMENT ON COLUMN auctions.end_time IS '拍卖计划结束时间';
+COMMENT ON COLUMN auctions.actual_end_time IS '拍卖实际结束时间';
+COMMENT ON COLUMN auctions.status IS '状态: PENDING-待开始, BIDDING-竞拍中, ENDED-已结束, SETTLED-已结算, CANCELLED-已取消, FAILED-流拍';
+COMMENT ON COLUMN auctions.winner_id IS '中标者用户ID';
+COMMENT ON COLUMN auctions.winning_price IS '中标价格(元)';
+COMMENT ON COLUMN auctions.total_bids IS '累计出价次数';
+COMMENT ON COLUMN auctions.view_count IS '浏览次数';
+COMMENT ON COLUMN auctions.created_at IS '创建时间';
+COMMENT ON COLUMN auctions.updated_at IS '更新时间';
+COMMENT ON COLUMN auctions.version IS '乐观锁版本号';
+
+-- ----------------------------------------------------------
+-- 表30: 拍卖出价记录表
+-- ----------------------------------------------------------
+CREATE TABLE auction_bids (
+    id          BIGINT PRIMARY KEY,
+    auction_id  BIGINT NOT NULL,
+    bidder_id   BIGINT NOT NULL,
+    bid_price   DECIMAL(12,2) NOT NULL,
+    bid_time    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_winning  BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_auction_bids_auction_id ON auction_bids(auction_id);
+CREATE INDEX idx_auction_bids_bidder_id ON auction_bids(bidder_id);
+CREATE INDEX idx_auction_bids_bid_time ON auction_bids(bid_time);
+COMMENT ON TABLE auction_bids IS '拍卖出价记录表';
+COMMENT ON COLUMN auction_bids.id IS '主键ID';
+COMMENT ON COLUMN auction_bids.auction_id IS '关联拍卖ID';
+COMMENT ON COLUMN auction_bids.bidder_id IS '出价者用户ID';
+COMMENT ON COLUMN auction_bids.bid_price IS '出价金额(元)';
+COMMENT ON COLUMN auction_bids.bid_time IS '出价时间';
+COMMENT ON COLUMN auction_bids.is_winning IS '是否为当前最高出价';
+COMMENT ON COLUMN auction_bids.created_at IS '创建时间';
+
+-- ----------------------------------------------------------
+-- 表31: 拍卖关注表
+-- ----------------------------------------------------------
+CREATE TABLE auction_watches (
+    id         BIGINT PRIMARY KEY,
+    auction_id BIGINT NOT NULL,
+    user_id    BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(auction_id, user_id)
+);
+
+CREATE INDEX idx_auction_watches_user_id ON auction_watches(user_id);
+COMMENT ON TABLE auction_watches IS '拍卖关注表';
+COMMENT ON COLUMN auction_watches.id IS '主键ID';
+COMMENT ON COLUMN auction_watches.auction_id IS '关联拍卖ID';
+COMMENT ON COLUMN auction_watches.user_id IS '关注用户ID';
+COMMENT ON COLUMN auction_watches.created_at IS '关注时间';
+
+
+-- ===================== 3. 测试数据 =====================
+
+-- ----- 用户 -----
+INSERT INTO users (id, phone, nickname, shop_name, credit_grade, credit_score, deal_count, on_sale_count, certification_status, status)
+VALUES (1, '13800138001', '诚信车行', '诚信二手车', 'A', 850, 156, 23, 'CERTIFIED', 'ACTIVE');
+
+INSERT INTO users (id, phone, nickname, shop_name, credit_grade, credit_score, deal_count, on_sale_count, certification_status, status)
+VALUES (2, '13800138002', '车坊张老板', '精品车坊', 'S', 920, 328, 45, 'CERTIFIED', 'ACTIVE');
+
+-- ----- 品牌 -----
+INSERT INTO brands (id, name, logo_url, first_letter, sort_order, status) VALUES
+(1, '大众', 'https://example.com/vw.png', 'D', 1, 'ACTIVE'),
+(2, '丰田', 'https://example.com/toyota.png', 'F', 2, 'ACTIVE'),
+(3, '奔驰', 'https://example.com/benz.png', 'B', 3, 'ACTIVE'),
+(4, '宝马', 'https://example.com/bmw.png', 'B', 4, 'ACTIVE'),
+(5, '特斯拉', 'https://example.com/tesla.png', 'T', 5, 'ACTIVE');
+
+-- ----- 车系 -----
+INSERT INTO series (id, brand_id, name, sort_order, status) VALUES
+(1, 1, '帕萨特', 1, 'ACTIVE'),
+(2, 1, '速腾', 2, 'ACTIVE'),
+(3, 2, '凯美瑞', 1, 'ACTIVE'),
+(4, 3, 'E级', 1, 'ACTIVE'),
+(5, 4, '5系', 1, 'ACTIVE'),
+(6, 5, 'Model Y', 1, 'ACTIVE');
+
+-- ----- 车型 -----
+INSERT INTO models (id, series_id, name, year, guide_price, sort_order, status) VALUES
+(1, 1, '330TSI 豪华版', 2024, 250000.00, 1, 'ACTIVE'),
+(2, 2, '280TSI 舒适版', 2024, 180000.00, 1, 'ACTIVE'),
+(3, 3, '2.5G 豪华版', 2024, 220000.00, 1, 'ACTIVE'),
+(4, 4, 'E300L 时尚版', 2024, 550000.00, 1, 'ACTIVE'),
+(5, 5, '530Li 尊享版', 2024, 520000.00, 1, 'ACTIVE'),
+(6, 6, '长续航全轮驱动版', 2024, 300000.00, 1, 'ACTIVE');
+
+-- ----- 车源 -----
+INSERT INTO car_sources (id, user_id, brand_id, series_id, model_id, title, year, mileage, price, deposit, color, city_code, city_name, energy_type, export_countries, view_count, favorite_count, status, published_at) VALUES
+(1, 1, 1, 1, 1, '大众帕萨特 2024款 330TSI 豪华版', 2024, 15000, 188000.00, 5000.00, '黑色', '010', '北京', 'GASOLINE', 'RU,KZ,AE', 1256, 58, 'ACTIVE', CURRENT_TIMESTAMP),
+(2, 1, 1, 2, 2, '大众速腾 2024款 280TSI 舒适版', 2024, 8000, 138000.00, 3000.00, '银色', '010', '北京', 'GASOLINE', 'RU,KZ', 892, 32, 'ACTIVE', CURRENT_TIMESTAMP),
+(3, 2, 2, 3, 3, '丰田凯美瑞 2024款 2.5G 豪华版', 2024, 12000, 168000.00, 4000.00, '白色', '020', '上海', 'GASOLINE', 'AE,AU,SA,SE', 2341, 87, 'ACTIVE', CURRENT_TIMESTAMP),
+(4, 2, 3, 4, 4, '奔驰E级 2024款 E300L 时尚版', 2024, 5000, 458000.00, 10000.00, '黑色', '020', '上海', 'GASOLINE', 'AE,AU', 3567, 124, 'ACTIVE', CURRENT_TIMESTAMP),
+(5, 1, 4, 5, 5, '宝马5系 2024款 530Li 尊享版', 2024, 8000, 438000.00, 10000.00, '白色', '010', '北京', 'GASOLINE', 'RU,KZ,AE,AU,SA,SE', 2891, 98, 'ACTIVE', CURRENT_TIMESTAMP),
+(6, 2, 5, 6, 6, '特斯拉Model Y 2024款 长续航全轮驱动版', 2024, 3000, 268000.00, 8000.00, '红色', '021', '广州', 'PURE_ELECTRIC', 'AE,AU,SE', 4567, 156, 'ACTIVE', CURRENT_TIMESTAMP);
+
+-- ----- 车源图片 -----
+INSERT INTO car_images (car_id, image_url, image_type, sort_order) VALUES
+(1, 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800', 'EXTERIOR', 1),
+(2, 'https://images.unsplash.com/photo-1549317668-b6ada16ea8b8?w=800', 'EXTERIOR', 1),
+(3, 'https://images.unsplash.com/photo-1621007933163-fec1a6d10b6d?w=800', 'EXTERIOR', 1),
+(4, 'https://images.unsplash.com/photo-1617531653332-bd46c24f2000?w=800', 'EXTERIOR', 1),
+(5, 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800', 'EXTERIOR', 1),
+(6, 'https://images.unsplash.com/photo-1617788615603-6ce36e9b65c8?w=800', 'EXTERIOR', 1);
+
+-- ----- 会员套餐 -----
+INSERT INTO member_plans (name, level, price, duration_days, benefits, sort_order, status, created_at) VALUES
+('月度会员', 'BRONZE', 99.00, 30, '{"freePublish": 10, "discountRate": 0.95, "aiAnalysis": true}', 3, 'ACTIVE', CURRENT_TIMESTAMP),
+('季度会员', 'SILVER', 249.00, 90, '{"freePublish": 30, "discountRate": 0.90, "aiAnalysis": true}', 2, 'ACTIVE', CURRENT_TIMESTAMP),
+('年度会员', 'GOLD', 799.00, 365, '{"freePublish": 100, "discountRate": 0.85, "aiAnalysis": true}', 1, 'ACTIVE', CURRENT_TIMESTAMP);
+
+
+-- ===================== 4. 重置自增序列 =====================
+SELECT setval('brands_id_seq', (SELECT COALESCE(MAX(id), 0) FROM brands));
+SELECT setval('series_id_seq', (SELECT COALESCE(MAX(id), 0) FROM series));
+SELECT setval('models_id_seq', (SELECT COALESCE(MAX(id), 0) FROM models));
+SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 0) FROM users));
+SELECT setval('car_sources_id_seq', (SELECT COALESCE(MAX(id), 0) FROM car_sources));
+SELECT setval('car_images_id_seq', (SELECT COALESCE(MAX(id), 0) FROM car_images));
+SELECT setval('member_plans_id_seq', (SELECT COALESCE(MAX(id), 0) FROM member_plans));

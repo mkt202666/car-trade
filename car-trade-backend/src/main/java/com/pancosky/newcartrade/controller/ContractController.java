@@ -1,6 +1,7 @@
 package com.pancosky.newcartrade.controller;
 
 import com.pancosky.newcartrade.common.ApiResponse;
+import com.pancosky.newcartrade.entity.User;
 import com.pancosky.newcartrade.service.ContractService;
 import com.pancosky.newcartrade.vo.ContractDetailVO;
 import com.pancosky.newcartrade.vo.ContractVO;
@@ -27,14 +28,16 @@ public class ContractController {
     }
 
     @PutMapping("/{id}/sign")
-    public ApiResponse<Void> sign(@PathVariable Long id) {
-        contractService.sign(id);
+    public ApiResponse<Void> sign(
+            @PathVariable Long id,
+            @RequestParam String role,
+            @RequestParam(required = false) Long userId) {
+        contractService.sign(id, role, userId);
         return ApiResponse.success();
     }
 
     @GetMapping("/{id}/download")
-    public ApiResponse<Void> download(@PathVariable Long id) {
-        contractService.download(id);
-        return ApiResponse.success();
+    public ApiResponse<String> download(@PathVariable Long id) {
+        return ApiResponse.success(contractService.download(id));
     }
 }

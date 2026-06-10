@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/chat")
@@ -30,6 +31,11 @@ public class ChatController {
     @GetMapping("/conversations/{id}/messages")
     public ApiResponse<List<ChatMessageVO>> messages(@PathVariable Long id) {
         return ApiResponse.success(chatService.listMessages(id));
+    }
+
+    @PostMapping("/conversations/{id}/messages")
+    public ApiResponse<ChatMessageVO> sendMessage(@PathVariable Long id, @RequestBody Map<String, Object> data) {
+        return ApiResponse.success(chatService.sendMessage(id, data));
     }
 
     @PostMapping("/conversations/{id}/read")
