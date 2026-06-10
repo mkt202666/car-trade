@@ -47,7 +47,16 @@ export const PUBLIC_ENDPOINTS = [
   { path: /^\/ai\/chat$/, method: 'POST' },                            // AI 对话
 
   // -------- 关注状态查询 --------
-  { path: /^\/follows\/[\w-]+\/check$/, method: 'GET' }                // 查询是否已关注某用户
+  { path: /^\/follows\/[\w-]+\/check$/, method: 'GET' },               // 查询是否已关注某用户
+
+  // -------- 拍卖浏览（公开）--------
+  { path: /^\/auctions$/, method: 'GET' },                              // GET /auctions 拍卖列表
+  { path: /^\/auctions\/[\w-]+$/, method: 'GET' },                      // GET /auctions/:id 拍卖详情
+  { path: /^\/auctions\/[\w-]+\/bids$/, method: 'GET' },                // GET /auctions/:id/bids 出价记录
+  { path: /^\/auctions\/[\w-]+\/current-price$/, method: 'GET' },       // GET /auctions/:id/current-price
+
+  // -------- 求购浏览（公开）--------
+  { path: /^\/purchases$/, method: 'GET' }                              // GET /purchases 求购列表
 ]
 
 /**

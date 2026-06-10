@@ -8,6 +8,8 @@ import com.pancosky.newcartrade.dto.RegisterDTO;
 import com.pancosky.newcartrade.entity.User;
 import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.mapper.UserMapper;
+import com.pancosky.newcartrade.service.FileStorageService;
+import com.pancosky.newcartrade.service.SmsService;
 import com.pancosky.newcartrade.service.UserService;
 import com.pancosky.newcartrade.util.JwtUtil;
 import com.pancosky.newcartrade.util.PasswordUtil;
@@ -30,6 +32,8 @@ public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
     private final UserConverter userConverter;
+    private final FileStorageService fileStorageService;
+    private final SmsService smsService;
 
     @Value("${jwt.secret:default-secret-key-for-dev-please-override-in-prod}")
     private String jwtSecret;
@@ -135,27 +139,10 @@ public class UserServiceImpl implements UserService {
         if (user == null) throw new BusinessException("用户不存在");
         if (file == null || file.isEmpty()) throw new BusinessException("请选择图片");
 
-        try {
-            String originalName = file.getOriginalFilename();
-            String ext = originalName != null && originalName.contains(".")
-                    ? originalName.substring(originalName.lastIndexOf("."))
-                    : ".jpg";
-            String fileName = "avatar_" + userId + "_" + System.currentTimeMillis() + ext;
-
-            // 保存到本地 uploads 目录
-            java.io.File uploadDir = new java.io.File("uploads/avatars");
-            if (!uploadDir.exists()) uploadDir.mkdirs();
-            java.io.File dest = new java.io.File(uploadDir, fileName);
-            file.transferTo(dest);
-
-            String avatarUrl = "/uploads/avatars/" + fileName;
-            user.setAvatarUrl(avatarUrl);
-            userMapper.updateById(user);
-            log.info("User {} uploaded avatar: {}", userId, avatarUrl);
-        } catch (java.io.IOException e) {
-            log.error("Avatar upload failed for user {}", userId, e);
-            throw new BusinessException("头像上传失败");
-        }
+        String avatarUrl = fileStorageService.upload(file, "avatars");
+        user.setAvatarUrl(avatarUrl);
+        userMapper.updateById(user);
+        log.info("User {} uploaded avatar: {}", userId, avatarUrl);
         return userConverter.toVO(user);
     }
 
@@ -238,8 +225,10 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("该手机号已被其他用户使用");
         }
 
-        // TODO: 验证短信验证码
-        // if (!verifySmsCode(newPhone, smsCode)) throw new BusinessException("验证码错误");
+        // 验证短信验证码
+        if (!smsService.verifyCode(newPhone, smsCode)) {
+            throw new BusinessException("验证码错误");
+        }
 
         User user = userMapper.selectById(userId);
         user.setPhone(newPhone);

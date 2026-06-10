@@ -20,14 +20,14 @@
             </view>
             <u-icon name="arrow-right" size="24" color="#999"></u-icon>
           </view>
-          <view class="setting-item" @click="changePassword">
+          <view class="setting-item" @click="showPasswordPopup = true">
             <view class="setting-left">
               <u-icon name="lock" size="32" color="#10B981"></u-icon>
               <text class="setting-name">修改密码</text>
             </view>
             <u-icon name="arrow-right" size="24" color="#999"></u-icon>
           </view>
-          <view class="setting-item" @click="changePhone">
+          <view class="setting-item" @click="showPhonePopup = true">
             <view class="setting-left">
               <u-icon name="phone" size="32" color="#F59E0B"></u-icon>
               <text class="setting-name">更换手机号</text>
@@ -136,6 +136,58 @@
         <text class="version-text">5D好车 v1.0.0</text>
       </view>
     </view>
+
+    <!-- 修改密码弹窗 -->
+    <u-popup :show="showPasswordPopup" mode="bottom" round="24" @close="showPasswordPopup = false">
+      <view class="popup-content">
+        <view class="popup-title">修改密码</view>
+        <view class="popup-form">
+          <u-input v-model="passwordForm.oldPassword" type="password" placeholder="请输入旧密码" :border="'surround'" v-if="hasPassword"></u-input>
+          <u-input v-model="passwordForm.newPassword" type="password" placeholder="请输入新密码（至少6位）" :border="'surround'"></u-input>
+          <u-input v-model="passwordForm.confirmPassword" type="password" placeholder="请确认新密码" :border="'surround'"></u-input>
+        </view>
+        <view class="popup-btn" @click="submitPassword">确认修改</view>
+      </view>
+    </u-popup>
+
+    <!-- 更换手机号弹窗 -->
+    <u-popup :show="showPhonePopup" mode="bottom" round="24" @close="showPhonePopup = false">
+      <view class="popup-content">
+        <view class="popup-title">更换手机号</view>
+        <view class="popup-form">
+          <u-input v-model="phoneForm.newPhone" type="number" placeholder="请输入新手机号" :border="'surround'" maxlength="11"></u-input>
+        </view>
+        <view class="popup-btn" @click="submitPhone">确认更换</view>
+      </view>
+    </u-popup>
+
+    <!-- 关于我们弹窗 -->
+    <u-popup :show="showAbout" mode="center" round="24" @close="showAbout = false">
+      <view class="about-content">
+        <view class="about-title">5D好车</view>
+        <view class="about-version">v1.0.0</view>
+        <view class="about-desc">AI赋能的B2B二手车交易平台</view>
+        <view class="about-info">
+          <text>专注二手车交易，提供找车、发布、交易、合同签署一站式服务</text>
+        </view>
+        <view class="about-contact">
+          <text>客服热线：400-XXX-XXXX</text>
+          <text>邮箱：support@5dcar.com</text>
+        </view>
+        <view class="popup-btn" @click="showAbout = false">知道了</view>
+      </view>
+    </u-popup>
+
+    <!-- 用户协议/隐私政策弹窗 -->
+    <u-popup :show="showAgreement" mode="center" round="24" @close="showAgreement = false">
+      <view class="agreement-content">
+        <view class="popup-title">{{ agreementTitle }}</view>
+        <scroll-view scroll-y class="agreement-scroll">
+          <view class="agreement-text" v-html="agreementContent"></view>
+        </scroll-view>
+        <view class="popup-btn" @click="showAgreement = false">我已阅读</view>
+      </view>
+    </u-popup>
   </view>
 </template>
 
@@ -150,7 +202,16 @@ export default {
         publicCars: true,
         allowFollow: true
       },
-      cacheSize: '12.5MB'
+      cacheSize: '12.5MB',
+      showPasswordPopup: false,
+      showPhonePopup: false,
+      showAbout: false,
+      showAgreement: false,
+      hasPassword: false,
+      agreementTitle: '',
+      agreementContent: '',
+      passwordForm: { oldPassword: '', newPassword: '', confirmPassword: '' },
+      phoneForm: { newPhone: '' }
     }
   },
   onLoad() {
@@ -160,62 +221,65 @@ export default {
     loadSettings() {
       try {
         const saved = uni.getStorageSync('app_settings')
-        if (saved) {
-          this.settings = { ...this.settings, ...saved }
-        }
+        if (saved) this.settings = { ...this.settings, ...saved }
       } catch (e) {}
     },
     saveSettings() {
-      try {
-        uni.setStorageSync('app_settings', this.settings)
-      } catch (e) {}
+      try { uni.setStorageSync('app_settings', this.settings) } catch (e) {}
     },
     editProfile() {
       uni.navigateTo({ url: '/pages/profile/index' })
     },
-    changePassword() {
-      uni.$u.toast('修改密码功能开发中')
+    async submitPassword() {
+      const { oldPassword, newPassword, confirmPassword } = this.passwordForm
+      if (!newPassword || newPassword.length < 6) { uni.$u.toast('新密码长度不能少于6位'); return }
+      if (newPassword !== confirmPassword) { uni.$u.toast('两次密码不一致'); return }
+      try {
+        await uni.$u.http.put('/users/me/password', { oldPassword, newPassword })
+        uni.$u.toast('密码修改成功')
+        this.showPasswordPopup = false
+        this.passwordForm = { oldPassword: '', newPassword: '', confirmPassword: '' }
+      } catch (e) { console.error(e) }
     },
-    changePhone() {
-      uni.$u.toast('更换手机号功能开发中')
+    async submitPhone() {
+      const { newPhone } = this.phoneForm
+      if (!newPhone || newPhone.length < 11) { uni.$u.toast('请输入正确手机号'); return }
+      try {
+        await uni.$u.http.put('/users/me/phone', { phone: newPhone })
+        uni.$u.toast('手机号更换成功')
+        this.showPhonePopup = false
+        this.phoneForm = { newPhone: '' }
+      } catch (e) { console.error(e) }
     },
     clearCache() {
       uni.showModal({
-        title: '确认清除',
-        content: '确定要清除缓存吗？',
+        title: '确认清除', content: '确定要清除缓存吗？',
         success: (res) => {
           if (res.confirm) {
-            try {
-              uni.clearStorageSync()
-              this.cacheSize = '0MB'
-              uni.$u.toast('缓存已清除')
-            } catch (e) {
-              uni.$u.toast('清除失败')
-            }
+            try { uni.clearStorageSync(); this.cacheSize = '0MB'; uni.$u.toast('缓存已清除') } catch (e) { uni.$u.toast('清除失败') }
           }
         }
       })
     },
-    aboutUs() {
-      uni.$u.toast('关于我们功能开发中')
-    },
+    aboutUs() { this.showAbout = true },
     userAgreement() {
-      uni.$u.toast('用户协议功能开发中')
+      this.agreementTitle = '用户协议'
+      this.agreementContent = '<p><strong>《5D找车使用协议》</strong></p><p>欢迎您使用5D好车平台。在使用本平台服务前，请仔细阅读以下协议条款。</p><p>1. 本平台为二手车B2B交易信息服务平台，提供车源发布、交易撮合、电子合同签署等服务。</p><p>2. 用户注册时需提供真实有效的身份信息和企业资质。</p><p>3. 发布车源需符合平台《车源发布规范》，确保车辆信息真实准确。</p><p>4. 交易过程中使用平台定金保障服务，享受全程争议追溯。</p><p>5. 严禁发布虚假车源、恶意刷单等违规行为。</p><p>6. 本平台保留对违规账号进行处罚的权利。</p>'
+      this.showAgreement = true
     },
     privacyPolicy() {
-      uni.$u.toast('隐私政策功能开发中')
+      this.agreementTitle = '隐私政策'
+      this.agreementContent = '<p><strong>《5D找车隐私政策》</strong></p><p>我们非常重视您的隐私保护。</p><p>1. 我们收集的信息：手机号、昵称、车行信息、车辆信息等必要数据。</p><p>2. 信息使用目的：提供平台服务、交易撮合、信用评估。</p><p>3. 信息安全：采用加密存储和传输，严格控制数据访问权限。</p><p>4. 信息共享：未经您同意，不会向第三方共享您的个人信息。</p><p>5. 您有权随时查看、修改或删除您的个人信息。</p><p>6. 如有疑问，请联系客服：400-XXX-XXXX。</p>'
+      this.showAgreement = true
     },
     handleLogout() {
       uni.showModal({
-        title: '确认退出',
-        content: '确定要退出登录吗？',
+        title: '确认退出', content: '确定要退出登录吗？',
         success: (res) => {
           if (res.confirm) {
             this.$store.commit('logout')
             uni.$u.toast('已退出登录')
-            setTimeout(() => {
-              uni.reLaunch({ url: '/pages/login/index' })
-            }, 500)
+            setTimeout(() => uni.reLaunch({ url: '/pages/login/index' }), 500)
           }
         }
       })
@@ -342,5 +406,71 @@ $transition: all 0.2s ease;
 .version-text {
   font-size: 24rpx;
   color: $text-secondary;
+}
+
+.popup-content, .about-content, .agreement-content {
+  padding: 40rpx 30rpx;
+}
+.popup-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 30rpx;
+}
+.popup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+.popup-btn {
+  background: $cta-color;
+  color: #fff;
+  text-align: center;
+  padding: 24rpx 0;
+  border-radius: 12rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+.about-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  text-align: center;
+  color: $text-color;
+}
+.about-version {
+  font-size: 26rpx;
+  color: $text-secondary;
+  text-align: center;
+  margin-top: 8rpx;
+}
+.about-desc {
+  font-size: 28rpx;
+  color: $cta-color;
+  text-align: center;
+  margin: 20rpx 0;
+}
+.about-info {
+  font-size: 26rpx;
+  color: $text-secondary;
+  line-height: 1.6;
+  margin-bottom: 20rpx;
+}
+.about-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: $text-secondary;
+  margin-bottom: 30rpx;
+}
+.agreement-scroll {
+  max-height: 600rpx;
+  margin-bottom: 30rpx;
+}
+.agreement-text {
+  font-size: 26rpx;
+  color: $text-color;
+  line-height: 1.8;
 }
 </style>

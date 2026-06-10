@@ -9,6 +9,7 @@ import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.mapper.DepositAccountMapper;
 import com.pancosky.newcartrade.mapper.DepositRecordMapper;
 import com.pancosky.newcartrade.service.DepositService;
+import com.pancosky.newcartrade.service.PaymentService;
 import com.pancosky.newcartrade.util.SecurityUtils;
 import com.pancosky.newcartrade.vo.DepositRecordVO;
 import com.pancosky.newcartrade.vo.DepositVO;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,6 +30,7 @@ public class DepositServiceImpl implements DepositService {
 
     private final DepositAccountMapper depositAccountMapper;
     private final DepositRecordMapper depositRecordMapper;
+    private final PaymentService paymentService;
 
     @Override
     public DepositVO getDepositInfo() {
@@ -47,14 +50,20 @@ public class DepositServiceImpl implements DepositService {
             throw new BusinessException("充值金额必须大于0");
         }
         Long userId = SecurityUtils.getCurrentUserId();
-        DepositAccount account = getOrCreateAccount(userId);
         BigDecimal bdAmount = BigDecimal.valueOf(amount);
-        
+
+        // 调用支付服务创建充值订单
+        Map<String, Object> payResult = paymentService.createRechargeOrder(userId, bdAmount);
+        String orderNo = (String) payResult.get("orderNo");
+        log.info("Payment order created: {}", orderNo);
+
+        // Mock 实现直接入账；真实支付需在回调中入账
+        DepositAccount account = getOrCreateAccount(userId);
         account.setBalance(account.getBalance().add(bdAmount));
         account.setTotalDeposit(account.getTotalDeposit().add(bdAmount));
         depositAccountMapper.updateById(account);
-        
-        createRecord(account.getId(), "RECHARGE", bdAmount, account.getBalance(), "保证金充值");
+
+        createRecord(account.getId(), "RECHARGE", bdAmount, account.getBalance(), "保证金充值 " + orderNo);
         log.info("User {} recharged deposit: {}", userId, amount);
     }
 
@@ -67,15 +76,20 @@ public class DepositServiceImpl implements DepositService {
         Long userId = SecurityUtils.getCurrentUserId();
         DepositAccount account = getOrCreateAccount(userId);
         BigDecimal bdAmount = BigDecimal.valueOf(amount);
-        
+
         if (account.getBalance().compareTo(bdAmount) < 0) {
             throw new BusinessException("余额不足");
         }
-        
+
+        // 调用支付服务创建提现申请
+        Map<String, Object> payResult = paymentService.createWithdrawOrder(userId, bdAmount);
+        String orderNo = (String) payResult.get("orderNo");
+        log.info("Withdraw order created: {}", orderNo);
+
         account.setBalance(account.getBalance().subtract(bdAmount));
         depositAccountMapper.updateById(account);
-        
-        createRecord(account.getId(), "WITHDRAW", bdAmount, account.getBalance(), "保证金提现");
+
+        createRecord(account.getId(), "WITHDRAW", bdAmount, account.getBalance(), "保证金提现 " + orderNo);
         log.info("User {} withdrew deposit: {}", userId, amount);
     }
 

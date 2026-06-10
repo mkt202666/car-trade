@@ -5,6 +5,7 @@ import com.pancosky.newcartrade.dto.ChangePasswordDTO;
 import com.pancosky.newcartrade.dto.LoginDTO;
 import com.pancosky.newcartrade.dto.RegisterDTO;
 import com.pancosky.newcartrade.service.BrowsingHistoryService;
+import com.pancosky.newcartrade.service.SmsService;
 import com.pancosky.newcartrade.service.UserService;
 import com.pancosky.newcartrade.util.SecurityUtils;
 import com.pancosky.newcartrade.vo.BrowsingHistoryVO;
@@ -32,6 +33,7 @@ public class UserController {
 
     private final UserService userService;
     private final BrowsingHistoryService browsingHistoryService;
+    private final SmsService smsService;
 
     /**
      * 用户登录
@@ -179,6 +181,14 @@ public class UserController {
     @PutMapping("/me/phone")
     public ApiResponse<Void> updatePhone(@RequestBody Map<String, String> body) {
         userService.updatePhone(body.get("phone"), body.get("smsCode"));
+        return ApiResponse.success();
+    }
+
+    @PostMapping("/sms/send")
+    public ApiResponse<Void> sendSms(@RequestBody Map<String, String> body) {
+        String phone = body.get("phone");
+        boolean sent = smsService.sendVerificationCode(phone);
+        if (!sent) throw new com.pancosky.newcartrade.exception.BusinessException("验证码发送失败");
         return ApiResponse.success();
     }
 }
