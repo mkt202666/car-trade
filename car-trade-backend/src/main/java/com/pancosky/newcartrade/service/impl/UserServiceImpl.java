@@ -10,6 +10,7 @@ import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.mapper.UserMapper;
 import com.pancosky.newcartrade.service.UserService;
 import com.pancosky.newcartrade.util.JwtUtil;
+import com.pancosky.newcartrade.util.PasswordUtil;
 import com.pancosky.newcartrade.vo.LoginVO;
 import com.pancosky.newcartrade.vo.UserStatsVO;
 import com.pancosky.newcartrade.vo.UserVO;
@@ -47,7 +48,7 @@ public class UserServiceImpl implements UserService {
             user.setPhone(dto.getPhone());
             user.setNickname("用户" + maskPhone4(dto.getPhone()));
             if (StringUtils.hasText(dto.getPassword())) {
-                user.setPassword(dto.getPassword());
+                user.setPassword(PasswordUtil.encode(dto.getPassword()));
             }
             user.setCreditScore(600);
             user.setCreditGrade("B");
@@ -60,7 +61,7 @@ public class UserServiceImpl implements UserService {
                 if (!StringUtils.hasText(dto.getPassword())) {
                     throw new BusinessException("请输入密码");
                 }
-                if (!user.getPassword().equals(dto.getPassword())) {
+                if (!PasswordUtil.matches(dto.getPassword(), user.getPassword())) {
                     throw new BusinessException("密码不正确");
                 }
             }
@@ -90,7 +91,7 @@ public class UserServiceImpl implements UserService {
         user.setPhone(dto.getPhone());
         user.setNickname(StringUtils.hasText(dto.getNickname()) ? dto.getNickname() : "用户" + maskPhone4(dto.getPhone()));
         if (StringUtils.hasText(dto.getPassword())) {
-            user.setPassword(dto.getPassword());
+            user.setPassword(PasswordUtil.encode(dto.getPassword()));
         }
         user.setCreditScore(600);
         user.setCreditGrade("B");
@@ -211,14 +212,14 @@ public class UserServiceImpl implements UserService {
             if (!StringUtils.hasText(dto.getOldPassword())) {
                 throw new BusinessException("请输入旧密码");
             }
-            if (!user.getPassword().equals(dto.getOldPassword())) {
+            if (!PasswordUtil.matches(dto.getOldPassword(), user.getPassword())) {
                 throw new BusinessException("旧密码不正确");
             }
         }
         if (!StringUtils.hasText(dto.getNewPassword()) || dto.getNewPassword().length() < 6) {
             throw new BusinessException("新密码长度不能少于6位");
         }
-        user.setPassword(dto.getNewPassword());
+        user.setPassword(PasswordUtil.encode(dto.getNewPassword()));
         userMapper.updateById(user);
         log.info("User {} changed password", userId);
     }

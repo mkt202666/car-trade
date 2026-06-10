@@ -101,6 +101,54 @@
       "style": {
         "navigationBarTitleText": "电子合同"
       }
+    },
+    {
+      "path": "pages/auction/index",
+      "style": {
+        "navigationBarTitleText": "在线拍卖"
+      }
+    },
+    {
+      "path": "pages/auction-detail/index",
+      "style": {
+        "navigationBarTitleText": "拍卖详情"
+      }
+    },
+    {
+      "path": "pages/favorites/index",
+      "style": {
+        "navigationBarTitleText": "我的收藏"
+      }
+    },
+    {
+      "path": "pages/browsing-history/index",
+      "style": {
+        "navigationBarTitleText": "浏览记录"
+      }
+    },
+    {
+      "path": "pages/follows/index",
+      "style": {
+        "navigationBarTitleText": "我的关注"
+      }
+    },
+    {
+      "path": "pages/coupons/index",
+      "style": {
+        "navigationBarTitleText": "我的优惠券"
+      }
+    },
+    {
+      "path": "pages/purchase-demand/index",
+      "style": {
+        "navigationBarTitleText": "发布求购"
+      }
+    },
+    {
+      "path": "pages/shop-members/index",
+      "style": {
+        "navigationBarTitleText": "车行管理"
+      }
     }
   ],
   "globalStyle": {

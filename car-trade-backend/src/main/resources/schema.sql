@@ -691,3 +691,35 @@ COMMENT ON COLUMN auction_watches.auction_id IS '关联拍卖ID';
 COMMENT ON COLUMN auction_watches.user_id IS '关注用户ID';
 COMMENT ON COLUMN auction_watches.created_at IS '关注时间';
 COMMENT ON TABLE auction_watches IS '拍卖关注表';
+
+-- 32. 求购意向表
+CREATE TABLE IF NOT EXISTS purchase_demands (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         BIGINT NOT NULL REFERENCES users(id),
+    brand_name      VARCHAR(50),
+    series_name     VARCHAR(50),
+    model_name      VARCHAR(100),
+    year_from       INTEGER,
+    year_to         INTEGER,
+    price_min       DECIMAL(12,2),
+    price_max       DECIMAL(12,2),
+    mileage_max     INTEGER,
+    color           VARCHAR(20),
+    city_code       VARCHAR(20),
+    city_name       VARCHAR(50),
+    energy_type     VARCHAR(20),
+    description     TEXT,
+    status          VARCHAR(20) DEFAULT 'ACTIVE',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_purchase_demands_user_id ON purchase_demands(user_id);
+CREATE INDEX idx_purchase_demands_status ON purchase_demands(status);
+CREATE INDEX idx_purchase_demands_created_at ON purchase_demands(created_at DESC);
+COMMENT ON TABLE purchase_demands IS '求购意向表';
+COMMENT ON COLUMN purchase_demands.user_id IS '求购用户ID';
+COMMENT ON COLUMN purchase_demands.brand_name IS '意向品牌';
+COMMENT ON COLUMN purchase_demands.price_min IS '最低预算';
+COMMENT ON COLUMN purchase_demands.price_max IS '最高预算';
+COMMENT ON COLUMN purchase_demands.status IS '状态: ACTIVE-有效, CANCELLED-已取消, FULFILLED-已成交';

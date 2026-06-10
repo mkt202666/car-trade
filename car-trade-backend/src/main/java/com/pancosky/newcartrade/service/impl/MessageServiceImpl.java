@@ -7,8 +7,8 @@ import com.pancosky.newcartrade.mapper.MessageMapper;
 import com.pancosky.newcartrade.service.MessageService;
 import com.pancosky.newcartrade.util.SecurityUtils;
 import com.pancosky.newcartrade.vo.MessageVO;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -18,11 +18,16 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
 
     private final MessageMapper messageMapper;
-    private final MessageProducer messageProducer;
+
+    @Autowired(required = false)
+    private MessageProducer messageProducer;
+
+    public MessageServiceImpl(MessageMapper messageMapper) {
+        this.messageMapper = messageMapper;
+    }
 
     @Override
     public List<MessageVO> list(String type, Boolean isRead) {
@@ -82,13 +87,21 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public void sendSystem(Message message) {
         messageMapper.insert(message);
-        messageProducer.sendSystemMessage(message);
+        if (messageProducer != null) {
+            messageProducer.sendSystemMessage(message);
+        } else {
+            log.debug("RocketMQ not available, system message saved to DB only");
+        }
     }
 
     @Override
     public void sendChat(Message message) {
         messageMapper.insert(message);
-        messageProducer.sendChatMessage(message);
+        if (messageProducer != null) {
+            messageProducer.sendChatMessage(message);
+        } else {
+            log.debug("RocketMQ not available, chat message saved to DB only");
+        }
     }
 
     private MessageVO toVO(Message msg) {

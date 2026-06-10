@@ -1,0 +1,10 @@
+// 拍卖相关接口
+export const getAuctionList = (params) => uni.$u.http.get('/auctions', { params })
+export const getAuctionDetail = (id) => uni.$u.http.get(`/auctions/${id}`)
+export const createAuction = (data) => uni.$u.http.post('/auctions', data)
+export const cancelAuction = (id) => uni.$u.http.post(`/auctions/${id}/cancel`)
+export const watchAuction = (id) => uni.$u.http.post(`/auctions/${id}/watch`)
+export const unwatchAuction = (id) => uni.$u.http.delete(`/auctions/${id}/watch`)
+export const placeBid = (data) => uni.$u.http.post('/auctions/bids', data)
+export const getBidRecords = (id, params) => uni.$u.http.get(`/auctions/${id}/bids`, { params })
+export const getCurrentPrice = (id) => uni.$u.http.get(`/auctions/${id}/current-price`)

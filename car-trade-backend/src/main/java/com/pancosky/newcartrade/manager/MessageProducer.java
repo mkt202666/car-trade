@@ -2,19 +2,24 @@ package com.pancosky.newcartrade.manager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pancosky.newcartrade.entity.Message;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
+@ConditionalOnBean(RocketMQTemplate.class)
 public class MessageProducer {
 
     private final RocketMQTemplate rocketMQTemplate;
     private final ObjectMapper objectMapper;
+
+    public MessageProducer(RocketMQTemplate rocketMQTemplate, ObjectMapper objectMapper) {
+        this.rocketMQTemplate = rocketMQTemplate;
+        this.objectMapper = objectMapper;
+    }
 
     public void sendSystemMessage(Message message) {
         try {
