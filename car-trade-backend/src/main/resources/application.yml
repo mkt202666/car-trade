@@ -1,14 +1,14 @@
+# ==================== 基础配置（公共） ====================
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 spring:
   application:
     name: car-trade-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
   datasource:
-    url: jdbc:postgresql://47.117.41.219:5432/new_car_trade?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&currentSchema=public
     driver-class-name: org.postgresql.Driver
-    username: postgres
-    password: sxk#2025@
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -18,13 +18,11 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
   h2:
     console:
       enabled: false
   redis:
-    host: r-uf6t1iwa40jdn5oijmpd.redis.rds.aliyuncs.com
-    port: 6379
-    password: sxk@2025-Redis
     timeout: 2000
     connectTimeout: 2000
     lettuce:
@@ -41,32 +39,23 @@ spring:
       FAIL_ON_UNKNOWN_PROPERTIES: false
 
 jwt:
-  secret: 5d-car-trade-dev-jwt-secret-key-please-change-in-prod-2026
   expiration: 86400
-
-rocketmq:
-  name-server: 10.0.40.103:9876;10.0.40.106:9876
-  producer:
-    group: car-trade-msg-group
-    send-message-timeout: 5000
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
   type-aliases-package: com.pancosky.newcartrade.entity
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       id-type: AUTO
 
-logging:
-  level:
-    root: INFO
-    com.pancosky.newcartrade: DEBUG
-    org.springframework.web: INFO
-    io.lettuce.core: WARN
-    com.zaxxer.hikari: INFO
-
 api:
   prefix: /api/v1
+
+# AI 服务配置
+ai:
+  enabled: ${AI_ENABLED:false}
+  api-key: ${AI_API_KEY:}
+  base-url: ${AI_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode/v1}
+  model: ${AI_MODEL:qwen-plus}
