@@ -17,7 +17,7 @@
     {
       "path": "pages/trade/index",
       "style": {
-        "navigationBarTitleText": "交易管理",
+        "navigationBarTitleText": "我的交易",
         "navigationStyle": "custom"
       }
     },
@@ -181,6 +181,13 @@
       "style": {
         "navigationBarTitleText": "使用教程"
       }
+    },
+    {
+      "path": "pages/purchase-demand-list/index",
+      "style": {
+        "navigationBarTitleText": "求购车源",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {
@@ -197,8 +204,8 @@
     "backgroundColor": "#FFFFFF",
     "list": [
       { "pagePath": "pages/home/index", "text": "找车" },
-      { "pagePath": "pages/trade/index", "text": "交易" },
-      { "pagePath": "pages/ai/index", "text": "AI助理" },
+      { "pagePath": "pages/purchase-demand-list/index", "text": "求购" },
+      { "pagePath": "pages/purchase-demand-list/index", "text": "AI助理" },
       { "pagePath": "pages/message/index", "text": "消息" },
       { "pagePath": "pages/profile/index", "text": "我的" }
     ]

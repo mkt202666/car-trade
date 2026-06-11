@@ -33,8 +33,12 @@
       <view class="ad-bottom-mask"></view>
     </view>
 
-    <!-- 搜索栏（白底 + 搜索按钮 + 筛选） -->
+    <!-- 搜索栏（白底 + 城市选择器 + 搜索框 + 搜索按钮 + 筛选） -->
     <view class="search-wrap">
+      <view class="city-picker" @click="selectCity">
+        <text class="city-text">{{ currentCity }}</text>
+        <text class="city-arrow">▾</text>
+      </view>
       <view class="search-field">
         <u-icon name="search" size="28" color="#9ca3af"></u-icon>
         <input class="search-input" placeholder="请输入搜索内容" placeholder-style="color:#9ca3af" v-model="searchKeyword" confirm-type="search" @confirm="doSearch" />
@@ -43,7 +47,7 @@
         <text>搜索</text>
       </view>
       <view class="filter-icon" @click="openFilter">
-        <u-icon name="filter" size="24" color="#1f2937"></u-icon>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
         <view class="filter-dot" v-if="hasActiveFilter"></view>
       </view>
     </view>
@@ -78,10 +82,10 @@
       </view>
     </view>
 
-    <!-- 车源列表：单列大图卡片（左图右信息） -->
+    <!-- 车源列表：单列卡片（左图右信息） -->
     <view class="car-list">
       <view class="car-card" v-for="item in carList" :key="item.id" @click="toDetail(item.id)">
-        <!-- 左侧大图 -->
+        <!-- 左侧图 -->
         <view class="card-image-wrap">
           <image :src="item.coverImage || defaultImage" mode="aspectFill" class="car-image"></image>
           <view class="image-tags">
@@ -99,24 +103,23 @@
             <text class="dot">·</text>
             <text class="car-sub">{{ formatMileage(item.mileage) }}公里</text>
           </view>
-          <view class="deposit-row" v-if="item.hasDeposit">
-            <view class="deposit-badge">
-              <u-icon name="lock" size="16" color="#ffffff"></u-icon>
-              <text>保证金</text>
-            </view>
-          </view>
-          <view class="location-row">
-            <u-icon name="map-pin" size="18" color="#6b7280"></u-icon>
-            <text class="location">{{ item.city || '全国' }}</text>
-            <text class="dot">·</text>
-            <text class="time">{{ formatTime(item.createdAt) }}</text>
+
+          <!-- 标签行（保证金 + 出口） -->
+          <view class="meta-row">
+            <view class="deposit-badge" v-if="item.hasDeposit">保证金</view>
+            <view class="export-country-badge" v-for="(code, i) in (item.exportCountries || []).slice(0, 2)" :key="i">{{ flagMap[code] || code }}</view>
           </view>
 
+          <!-- 位置/时间 -->
+          <view class="location-row">
+            <text>{{ item.city || '全国' }}</text>
+            <text class="dot">·</text>
+            <text>{{ formatTime(item.createdAt) }}</text>
+          </view>
+
+          <!-- 价格（右下红色大字） -->
           <view class="price-row">
-            <text class="price-value">¥{{ formatPrice(item.price) }}</text>
-            <view class="export-flags" v-if="item.exportCountries && item.exportCountries.length > 0">
-              <text v-for="(code, i) in item.exportCountries.slice(0, 3)" :key="i" class="mini-flag">{{ flagMap[code] || code }}</text>
-            </view>
+            <text class="price-value">{{ formatPrice(item.price) }}<text class="price-unit">万</text></text>
           </view>
         </view>
       </view>
@@ -166,12 +169,16 @@
     <view class="tabbar-placeholder"></view>
 
     <!-- 筛选弹窗 -->
-    <u-popup v-model="showFilter" mode="bottom" :round="16" :closeable="true" border-radius="24">
+    <u-popup :show="showFilter" mode="bottom" round="24" :closeable="true" @close="showFilter = false">
+      <view class="filter-popup-wrapper">
       <view class="filter-popup">
         <!-- 筛选标题 -->
         <view class="filter-header">
           <text class="filter-title">高级筛选</text>
         </view>
+
+        <!-- 可滚动筛选内容区 -->
+        <view class="filter-scroll">
 
         <!-- 品牌/车系选择 -->
         <view class="filter-section">
@@ -198,12 +205,12 @@
             :show-active-value="false"
           ></u-slider>
           <view class="quick-price">
-            <view class="quick-price-item" :class="{ active: filterData.priceRange === '0-5' }" @click="setQuickPrice('0-5')">5万以下</view>
-            <view class="quick-price-item" :class="{ active: filterData.priceRange === '5-10' }" @click="setQuickPrice('5-10')">5-10万</view>
-            <view class="quick-price-item" :class="{ active: filterData.priceRange === '10-15' }" @click="setQuickPrice('10-15')">10-15万</view>
-            <view class="quick-price-item" :class="{ active: filterData.priceRange === '15-20' }" @click="setQuickPrice('15-20')">15-20万</view>
-            <view class="quick-price-item" :class="{ active: filterData.priceRange === '20-30' }" @click="setQuickPrice('20-30')">20-30万</view>
-            <view class="quick-price-item" :class="{ active: filterData.priceRange === '30-100' }" @click="setQuickPrice('30-100')">30万以上</view>
+            <view class="quick-price-item" :class="{ active: filterData.priceRange === '0-5' }" @tap.stop="setQuickPrice('0-5')">5万以下</view>
+            <view class="quick-price-item" :class="{ active: filterData.priceRange === '5-10' }" @tap.stop="setQuickPrice('5-10')">5-10万</view>
+            <view class="quick-price-item" :class="{ active: filterData.priceRange === '10-15' }" @tap.stop="setQuickPrice('10-15')">10-15万</view>
+            <view class="quick-price-item" :class="{ active: filterData.priceRange === '15-20' }" @tap.stop="setQuickPrice('15-20')">15-20万</view>
+            <view class="quick-price-item" :class="{ active: filterData.priceRange === '20-30' }" @tap.stop="setQuickPrice('20-30')">20-30万</view>
+            <view class="quick-price-item" :class="{ active: filterData.priceRange === '30-100' }" @tap.stop="setQuickPrice('30-100')">30万以上</view>
           </view>
         </view>
 
@@ -223,10 +230,11 @@
             :show-active-value="false"
           ></u-slider>
           <view class="quick-age">
-            <view class="quick-age-item" :class="{ active: filterData.ageRange === '0-3' }" @click="setQuickAge('0-3')">1-3年</view>
-            <view class="quick-age-item" :class="{ active: filterData.ageRange === '3-5' }" @click="setQuickAge('3-5')">3-5年</view>
-            <view class="quick-age-item" :class="{ active: filterData.ageRange === '5-8' }" @click="setQuickAge('5-8')">5-8年</view>
-            <view class="quick-age-item" :class="{ active: filterData.ageRange === '8-20' }" @click="setQuickAge('8-20')">8年以上</view>
+            <view class="quick-age-item" :class="{ active: filterData.ageRange === '0-1' }" @tap.stop="setQuickAge('0-1')">1年以内</view>
+            <view class="quick-age-item" :class="{ active: filterData.ageRange === '1-3' }" @tap.stop="setQuickAge('1-3')">1-3年</view>
+            <view class="quick-age-item" :class="{ active: filterData.ageRange === '3-5' }" @tap.stop="setQuickAge('3-5')">3-5年</view>
+            <view class="quick-age-item" :class="{ active: filterData.ageRange === '5-8' }" @tap.stop="setQuickAge('5-8')">5-8年</view>
+            <view class="quick-age-item" :class="{ active: filterData.ageRange === '8-20' }" @tap.stop="setQuickAge('8-20')">8年以上</view>
           </view>
         </view>
 
@@ -246,11 +254,11 @@
             :show-active-value="false"
           ></u-slider>
           <view class="quick-mileage">
-            <view class="quick-mileage-item" :class="{ active: filterData.mileageRange === '0-1' }" @click="setQuickMileage('0-1')">1万以内</view>
-            <view class="quick-mileage-item" :class="{ active: filterData.mileageRange === '1-3' }" @click="setQuickMileage('1-3')">1-3万</view>
-            <view class="quick-mileage-item" :class="{ active: filterData.mileageRange === '3-5' }" @click="setQuickMileage('3-5')">3-5万</view>
-            <view class="quick-mileage-item" :class="{ active: filterData.mileageRange === '5-10' }" @click="setQuickMileage('5-10')">5-10万</view>
-            <view class="quick-mileage-item" :class="{ active: filterData.mileageRange === '10-50' }" @click="setQuickMileage('10-50')">10万以上</view>
+            <view class="quick-mileage-item" :class="{ active: filterData.mileageRange === '0-1' }" @tap.stop="setQuickMileage('0-1')">1万以内</view>
+            <view class="quick-mileage-item" :class="{ active: filterData.mileageRange === '1-3' }" @tap.stop="setQuickMileage('1-3')">1-3万</view>
+            <view class="quick-mileage-item" :class="{ active: filterData.mileageRange === '3-5' }" @tap.stop="setQuickMileage('3-5')">3-5万</view>
+            <view class="quick-mileage-item" :class="{ active: filterData.mileageRange === '5-10' }" @tap.stop="setQuickMileage('5-10')">5-10万</view>
+            <view class="quick-mileage-item" :class="{ active: filterData.mileageRange === '10-50' }" @tap.stop="setQuickMileage('10-50')">10万以上</view>
           </view>
         </view>
 
@@ -270,11 +278,30 @@
           </view>
         </view>
 
+        <!-- 能源类型 -->
+        <view class="filter-section">
+          <view class="section-title">能源类型</view>
+          <view class="transmission-list">
+            <view
+              class="transmission-item"
+              v-for="energy in energyTypeList"
+              :key="energy.value"
+              :class="{ active: filterData.energyType === energy.value }"
+              @click="selectEnergyType(energy.value)"
+            >
+              {{ energy.label }}
+            </view>
+          </view>
+        </view>
+
+        </view>
+
         <!-- 底部操作按钮 -->
         <view class="filter-footer">
           <view class="btn-reset" @click="resetFilter">重置</view>
           <view class="btn-confirm" @click="applyFilter">确认筛选</view>
         </view>
+      </view>
       </view>
     </u-popup>
   </view>
@@ -311,6 +338,7 @@ export default {
         minMileage: null,
         maxMileage: null,
         transmission: '',
+        energyType: '',
         priceRange: '',
         ageRange: '',
         mileageRange: ''
@@ -321,9 +349,15 @@ export default {
       mileageRange: [0, 50],
       // 变速箱选项
       transmissionList: [
-        { value: '', label: '不限' },
         { value: 'auto', label: '自动' },
         { value: 'manual', label: '手动' }
+      ],
+      // 能源类型选项
+      energyTypeList: [
+        { value: '汽油', label: '汽油' },
+        { value: '柴油', label: '柴油' },
+        { value: '纯电', label: '纯电' },
+        { value: '混动', label: '混动' }
       ],
       // 品牌数据（模拟数据）
       brandList: [
@@ -336,7 +370,7 @@ export default {
       ],
       // 顶部滚动广告位数据
       adList: [
-        { title: '全球二手车出口', subtitle: '一站式出口服务 · 覆盖30+国家', tag: 'HOT', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+        { title: '超级跑车专场', subtitle: '畅享极速体验，限时特惠', tag: 'HOT', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
         { title: 'AI智能车况评估', subtitle: '精准评估 · 快速成交', tag: 'AI', bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
         { title: '厂家认证车源', subtitle: '品质保证 · 放心购买', tag: '精选', bg: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
         { title: '限时降价专场', subtitle: '今日特卖 · 最高立减3万', tag: '限时', bg: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }
@@ -356,6 +390,7 @@ export default {
         { code: 'SEA', name: '东南亚' },
         { code: 'SA', name: '南美' }
       ],
+      currentCity: '全国',
       currentRegion: 'ME',
       exportCountries: [
         { code: 'RU', name: '俄罗斯', flag: '🇷🇺', count: 128 },
@@ -402,8 +437,8 @@ export default {
   computed: {
     // 判断是否有激活的筛选条件
     hasActiveFilter() {
-      const { brandName, minPrice, maxPrice, minAge, maxAge, minMileage, maxMileage, transmission } = this.filterData
-      return !!(brandName || minPrice !== null || maxPrice !== null || minAge !== null || maxAge !== null || minMileage !== null || maxMileage !== null || transmission)
+      const { brandName, minPrice, maxPrice, minAge, maxAge, minMileage, maxMileage, transmission, energyType } = this.filterData
+      return !!(brandName || minPrice !== null || maxPrice !== null || minAge !== null || maxAge !== null || minMileage !== null || maxMileage !== null || transmission || energyType)
     }
   },
   onLoad() {
@@ -447,6 +482,7 @@ export default {
         if (this.filterData.minMileage !== null) params.minMileage = this.filterData.minMileage
         if (this.filterData.maxMileage !== null) params.maxMileage = this.filterData.maxMileage
         if (this.filterData.transmission) params.transmission = this.filterData.transmission
+        if (this.filterData.energyType) params.energyType = this.filterData.energyType
         const res = await getCarList(params)
         const data = res.data
         if (reset || this.page === 1) {
@@ -483,6 +519,18 @@ export default {
       this.page = 1
       this.hasMore = true
       this.fetchCarList(true)
+    },
+    selectCity() {
+      const cities = ['全国', '北京', '上海', '广州', '深圳', '杭州', '成都', '武汉', '西安', '重庆']
+      uni.showActionSheet({
+        itemList: cities,
+        success: (res) => {
+          this.currentCity = cities[res.tapIndex]
+          this.page = 1
+          this.hasMore = true
+          this.fetchCarList(true)
+        }
+      })
     },
     filterByCountry(code) {
       this.page = 1
@@ -570,6 +618,10 @@ export default {
     selectTransmission(value) {
       this.filterData.transmission = value
     },
+    // 选择能源类型
+    selectEnergyType(value) {
+      this.filterData.energyType = value
+    },
     // 重置筛选
     resetFilter() {
       this.filterData = {
@@ -582,6 +634,7 @@ export default {
         minMileage: null,
         maxMileage: null,
         transmission: '',
+        energyType: '',
         priceRange: '',
         ageRange: '',
         mileageRange: ''
@@ -625,7 +678,7 @@ export default {
     formatPrice(price) {
       if (!price) return '面议'
       const wan = price / 10000
-      return wan >= 10 ? wan.toFixed(0) + '万' : wan.toFixed(1) + '万'
+      return wan >= 10 ? wan.toFixed(0) : wan.toFixed(1)
     },
     formatMileage(mileage) {
       if (!mileage) return '0'
@@ -671,19 +724,18 @@ export default {
 
 .ad-swiper {
   width: 100%;
-  height: 340rpx;
+  height: 320rpx;
 }
 
 .ad-slide {
   width: 100%;
-  height: 340rpx;
+  height: 320rpx;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 32rpx;
+  padding: 60rpx 32rpx 0;
   position: relative;
   box-sizing: border-box;
-  animation: fadeInUp 400ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 .ad-text {
@@ -694,7 +746,7 @@ export default {
 .ad-title {
   font-size: 40rpx;
   font-weight: 800;
-  color: #ffffff;
+  color: #FCD34D;
   letter-spacing: 2rpx;
   line-height: 1.2;
 }
@@ -708,17 +760,16 @@ export default {
 
 .ad-tag {
   position: absolute;
-  top: 30rpx;
+  top: 60rpx;
   right: 32rpx;
   font-size: 22rpx;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
+  color: #FCD34D;
+  background: rgba(245, 158, 11, 0.15);
   padding: 8rpx 22rpx;
   border-radius: 24rpx;
   font-weight: 700;
   letter-spacing: 1rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  border: 1rpx solid rgba(245, 158, 11, 0.3);
 }
 
 .status-bar {
@@ -749,42 +800,41 @@ export default {
 }
 
 .ad-logo {
-  font-size: 38rpx;
-  font-weight: 800;
+  font-size: 32rpx;
+  font-weight: 700;
   color: #ffffff;
   letter-spacing: 2rpx;
   line-height: 1.2;
-  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.25);
 }
 
 .ad-subtitle {
   font-size: 20rpx;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.7);
   margin-top: 6rpx;
   letter-spacing: 1rpx;
-  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.25);
 }
 
 .ad-lang {
   display: flex;
   align-items: center;
   gap: 4rpx;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
   padding: 10rpx 20rpx;
-  border-radius: 24rpx;
+  border-radius: 20rpx;
   cursor: pointer;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1rpx solid rgba(255, 255, 255, 0.1);
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: translateY(-2rpx);
-  }
+  border: 1rpx solid rgba(255, 255, 255, 0.15);
 
   &:active {
-    transform: translateY(0) scale(0.98);
+    transform: scale(0.96);
+    background: rgba(255, 255, 255, 0.2);
   }
+}
+
+.ad-lang text {
+  font-size: 24rpx;
+  color: #ffffff;
+  font-weight: 600;
 }
 
 .ad-bottom-mask {
@@ -802,7 +852,7 @@ export default {
 .search-wrap {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 12rpx;
   padding: 16rpx 32rpx 20rpx;
   margin-top: -40rpx;
   position: relative;
@@ -810,43 +860,67 @@ export default {
   animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 100ms both;
 }
 
+/* 城市选择器（原型：白底 + 下拉箭头） */
+.city-picker {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  background: #FFFFFF;
+  padding: 18rpx 20rpx;
+  border-radius: 16rpx;
+  border: 2rpx solid #E2E8F0;
+  box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:active {
+    transform: scale(0.96);
+    border-color: #F59E0B;
+  }
+}
+
+.city-text {
+  font-size: 26rpx;
+  color: #0F172A;
+  font-weight: 600;
+}
+
+.city-arrow {
+  font-size: 20rpx;
+  color: #64748B;
+}
+
 .search-field {
   flex: 1;
   display: flex;
   align-items: center;
-  background: #FFFFFF;
-  padding: 18rpx 24rpx;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.08);
+  background: #F8FAFC;
+  padding: 14rpx 20rpx;
+  border-radius: 16rpx;
   border: 2rpx solid #E2E8F0;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    box-shadow: 0 6rpx 24rpx rgba(15, 23, 42, 0.12);
-    border-color: #CBD5E1;
-  }
 
   &:focus-within {
     border-color: #0369A1;
     background: #ffffff;
-    box-shadow: 0 0 0 6rpx rgba(3, 105, 161, 0.1), 0 4rpx 20rpx rgba(15, 23, 42, 0.08);
-    transform: translateY(-2rpx);
+    box-shadow: 0 0 0 4rpx rgba(3, 105, 161, 0.08);
   }
 }
 
 .search-input {
   flex: 1;
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #0F172A;
-  margin-left: 12rpx;
+  margin-left: 10rpx;
 }
 
 .search-btn {
   flex-shrink: 0;
-  background: linear-gradient(135deg, #0369A1 0%, #0284C7 100%);
-  padding: 18rpx 32rpx;
-  border-radius: 20rpx;
-  box-shadow: 0 6rpx 20rpx rgba(3, 105, 161, 0.35);
+  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+  padding: 16rpx 28rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.35);
   cursor: pointer;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -854,43 +928,34 @@ export default {
     color: #ffffff;
     font-size: 26rpx;
     font-weight: 700;
-    letter-spacing: 2rpx;
-  }
-
-  &:hover {
-    transform: translateY(-2rpx);
-    box-shadow: 0 8rpx 28rpx rgba(3, 105, 161, 0.4);
+    letter-spacing: 1rpx;
   }
 
   &:active {
-    transform: translateY(0) scale(0.97);
-    box-shadow: 0 2rpx 12rpx rgba(3, 105, 161, 0.3);
+    transform: scale(0.96);
+    box-shadow: 0 2rpx 12rpx rgba(245, 158, 11, 0.3);
   }
 }
 
 .filter-icon {
   flex-shrink: 0;
-  width: 76rpx;
-  height: 76rpx;
-  background: #FFFFFF;
-  border-radius: 20rpx;
+  width: 64rpx;
+  height: 64rpx;
+  background: #F9FAFB;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.08);
-  border: 2rpx solid #E2E8F0;
+  border: 2rpx solid #F3F4F6;
   cursor: pointer;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-
-  &:hover {
-    border-color: #0369A1;
-    transform: translateY(-2rpx);
-    box-shadow: 0 6rpx 24rpx rgba(15, 23, 42, 0.12);
-  }
+  color: #4B5563;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 
   &:active {
-    transform: translateY(0) scale(0.95);
+    transform: scale(0.92);
+    border-color: #0369A1;
   }
 }
 
@@ -909,102 +974,91 @@ export default {
 /* ============ 筛选 Tab ============ */
 .tabs-wrap {
   background: #ffffff;
-  padding: 24rpx 32rpx;
-  margin-top: 8rpx;
+  padding: 20rpx 32rpx;
+  margin-top: 4rpx;
   border-bottom: 1rpx solid #F1F5F9;
   animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 200ms both;
 }
 
 .tabs-inner {
   display: flex;
-  gap: 16rpx;
+  gap: 12rpx;
   align-items: center;
 }
 
 .tab-pill {
   flex-shrink: 0;
-  padding: 16rpx 32rpx;
-  background: #F8FAFC;
+  padding: 12rpx 28rpx;
+  background: transparent;
   border: 2rpx solid #E2E8F0;
-  border-radius: 36rpx;
+  border-radius: 32rpx;
   cursor: pointer;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
   &.active {
     background: #0F172A;
     border-color: #0F172A;
-    box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.25);
 
     .tab-label {
       color: #ffffff;
-      font-weight: 700;
+      font-weight: 600;
     }
   }
 
-  &:hover:not(.active) {
+  &:active:not(.active) {
     background: #F1F5F9;
-    border-color: #CBD5E1;
-    transform: translateY(-2rpx);
-  }
-
-  &:active {
-    transform: translateY(0) scale(0.96);
+    transform: scale(0.96);
   }
 }
 
 .tab-label {
   font-size: 26rpx;
-  color: #64748B;
+  color: #475569;
   font-weight: 500;
 }
 
 /* ============ 出口二级区域筛选 ============ */
 .region-wrap {
   background: #ffffff;
-  padding: 12rpx 32rpx 28rpx;
+  padding: 8rpx 32rpx 24rpx;
   border-bottom: 1rpx solid #F1F5F9;
 }
 
 .region-inner {
   display: flex;
-  gap: 12rpx;
+  gap: 10rpx;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .region-pill {
   flex-shrink: 0;
-  padding: 12rpx 24rpx;
+  padding: 10rpx 20rpx;
   background: #F8FAFC;
   border: 2rpx solid #E2E8F0;
-  border-radius: 28rpx;
+  border-radius: 24rpx;
   cursor: pointer;
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 
   &.active {
-    background: #F0F9FF;
+    background: #0369A1;
     border-color: #0369A1;
-    box-shadow: 0 4rpx 12rpx rgba(3, 105, 161, 0.15);
 
     .region-label {
-      color: #0369A1;
+      color: #ffffff;
       font-weight: 600;
     }
   }
 
-  &:hover:not(.active) {
+  &:active:not(.active) {
     background: #F1F5F9;
-    border-color: #CBD5E1;
-  }
-
-  &:active {
     transform: scale(0.96);
   }
 }
 
 .region-label {
   font-size: 24rpx;
-  color: #64748B;
+  color: #475569;
   font-weight: 500;
 }
 
@@ -1013,81 +1067,68 @@ export default {
   padding: 20rpx 32rpx 0;
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  gap: 20rpx;
 }
 
 .car-card {
   display: flex;
   flex-direction: row;
   background: #ffffff;
-  border-radius: 24rpx;
+  border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.06);
-  padding: 24rpx;
-  gap: 24rpx;
+  box-shadow: 0 2rpx 16rpx rgba(15, 23, 42, 0.04);
+  padding: 20rpx;
+  gap: 20rpx;
   border: 1rpx solid #F1F5F9;
   cursor: pointer;
-  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) both;
 
-  &:hover {
-    box-shadow: 0 12rpx 36rpx rgba(15, 23, 42, 0.12);
-    border-color: #0369A1;
-    transform: translateY(-4rpx);
-  }
-
   &:active {
-    transform: translateY(-2rpx) scale(0.995);
-    box-shadow: 0 6rpx 24rpx rgba(15, 23, 42, 0.1);
+    transform: scale(0.98);
+    background: #F8FAFC;
   }
 }
 
 .card-image-wrap {
   position: relative;
-  width: 240rpx;
-  height: 240rpx;
+  width: 220rpx;
+  height: 220rpx;
   flex-shrink: 0;
-  border-radius: 16rpx;
+  border-radius: 12rpx;
   overflow: hidden;
   background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
-  box-shadow: inset 0 2rpx 8rpx rgba(15, 23, 42, 0.04);
 }
 
 .car-image {
   width: 100%;
   height: 100%;
-  transition: transform 400ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.car-card:hover .car-image {
-  transform: scale(1.05);
 }
 
 .image-tags {
   position: absolute;
-  top: 12rpx;
-  left: 12rpx;
+  top: 10rpx;
+  left: 10rpx;
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+  gap: 6rpx;
 }
 
 .tag-energy {
   font-size: 18rpx;
-  padding: 6rpx 14rpx;
-  border-radius: 8rpx;
+  padding: 4rpx 10rpx;
+  border-radius: 6rpx;
   font-weight: 600;
   color: #ffffff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
 
   &.pure {
-    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    background: #10B981;
   }
   &.hybrid {
-    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    background: #F59E0B;
   }
   &.fuel {
-    background: linear-gradient(135deg, #64748B 0%, #475569 100%);
+    background: #64748B;
   }
 }
 
@@ -1097,11 +1138,10 @@ export default {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 }
 
 .car-title {
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 700;
   color: #0F172A;
   line-height: 1.3;
@@ -1115,81 +1155,96 @@ export default {
 .car-sub-row {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  margin-top: 12rpx;
+  gap: 10rpx;
+  margin-top: 8rpx;
 }
 
 .car-sub {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #64748B;
 }
 
 .dot {
   color: #CBD5E1;
-  font-size: 18rpx;
+  font-size: 16rpx;
 }
 
-.deposit-row {
-  margin-top: 12rpx;
+/* 标签行（保证金 + 出口国家） */
+.meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 10rpx;
+  flex-wrap: wrap;
 }
 
 .deposit-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6rpx;
-  background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+  gap: 4rpx;
+  background: #F0F9FF;
   color: #0369A1;
-  font-size: 20rpx;
+  font-size: 18rpx;
   font-weight: 600;
-  padding: 8rpx 16rpx;
-  border-radius: 12rpx;
-  letter-spacing: 1rpx;
+  padding: 4rpx 10rpx;
+  border-radius: 6rpx;
   border: 1rpx solid rgba(3, 105, 161, 0.15);
 }
 
+.export-country-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4rpx;
+  background: #FEF3C7;
+  color: #92400E;
+  font-size: 18rpx;
+  font-weight: 600;
+  padding: 4rpx 10rpx;
+  border-radius: 6rpx;
+  border: 1rpx solid rgba(245, 158, 11, 0.2);
+}
+
+/* 位置/时间行 */
 .location-row {
   display: flex;
   align-items: center;
-  gap: 10rpx;
-  margin-top: 12rpx;
+  gap: 8rpx;
+  margin-top: 10rpx;
   flex-wrap: wrap;
-}
-
-.location,
-.time {
-  font-size: 24rpx;
-  color: #64748B;
+  font-size: 22rpx;
+  color: #94A3B8;
 }
 
 /* 价格行 */
 .price-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-top: 16rpx;
-  padding-top: 16rpx;
-  border-top: 1rpx dashed #E2E8F0;
+  align-items: flex-end;
+  margin-top: 12rpx;
 }
 
 .price-value {
-  font-size: 34rpx;
+  font-size: 36rpx;
   font-weight: 800;
   color: #DC2626;
-  letter-spacing: 1rpx;
-  line-height: 1.2;
-  background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  letter-spacing: 0.5rpx;
+  line-height: 1.1;
+}
+
+.price-unit {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #DC2626;
+  margin-left: 2rpx;
 }
 
 .export-flags {
   display: flex;
-  gap: 10rpx;
+  gap: 8rpx;
 }
 
 .mini-flag {
-  font-size: 32rpx;
+  font-size: 28rpx;
   line-height: 1;
 }
 
@@ -1413,27 +1468,44 @@ export default {
     padding: 14rpx 24rpx;
   }
   .filter-icon {
-    width: 68rpx;
-    height: 68rpx;
+    width: 60rpx;
+    height: 60rpx;
   }
 }
 
 /* ============ 筛选弹窗样式 ============ */
+.filter-popup-wrapper {
+}
+
+.u-popup {
+  z-index: 1100 !important;
+}
+
 .filter-popup {
-  padding: 36rpx 32rpx;
-  padding-bottom: calc(36rpx + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 250rpx);
   background: #ffffff;
   border-radius: 32rpx 32rpx 0 0;
   animation: fadeInUp 400ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  overflow: hidden;
+}
+
+.filter-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 32rpx 20rpx;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .filter-header {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-bottom: 36rpx;
+  padding: 36rpx 32rpx;
   border-bottom: 1rpx solid #F1F5F9;
-  margin-bottom: 36rpx;
+  flex-shrink: 0;
 }
 
 .filter-title {
@@ -1501,6 +1573,8 @@ export default {
   flex-wrap: wrap;
   gap: 16rpx;
   margin-top: 28rpx;
+  position: relative;
+  z-index: 2;
 }
 
 .quick-price-item,
@@ -1577,8 +1651,10 @@ export default {
 .filter-footer {
   display: flex;
   gap: 24rpx;
-  padding-top: 32rpx;
+  padding: 24rpx 32rpx;
   border-top: 1rpx solid #F1F5F9;
+  flex-shrink: 0;
+  background: #ffffff;
 }
 
 .btn-reset {

@@ -1,6 +1,6 @@
 <template>
   <view class="page">
-    <u-navbar title="我的订单" :border-bottom="false" :placeholder="true"></u-navbar>
+    <u-navbar title="我的交易" :border-bottom="false" :placeholder="true"></u-navbar>
 
     <!-- 卖出/买入统计入口 -->
     <view class="entry-row">
@@ -124,7 +124,7 @@ import { requireAuth } from '@/utils/auth'
 const STATUS_MAP = {
   PENDING: '待确认',
   IN_TRANSACTION: '交易中',
-  DISPUTE: '纠纷中',
+  DISPUTE: '争议中',
   COMPLETED: '已完成',
   CANCELLED: '已终止'
 }
@@ -144,7 +144,7 @@ export default {
         { name: '全部' },
         { name: '待确认' },
         { name: '交易中' },
-        { name: '纠纷中' },
+        { name: '争议中' },
         { name: '已完成' },
         { name: '已终止' }
       ],

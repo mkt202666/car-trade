@@ -1,10 +1,9 @@
 <template>
   <view class="page">
-    <u-navbar title="消息中心" :border-bottom="false" :placeholder="true">
-      <view slot="right" class="navbar-right" @click="readAll">
-        <text class="read-all-btn">全部已读</text>
-      </view>
-    </u-navbar>
+    <!-- 顶部标题 -->
+    <view class="header">
+      <text class="header-title">消息订阅</text>
+    </view>
 
     <!-- Tab 切换 -->
     <view class="tabs-wrap">
@@ -13,16 +12,16 @@
         :class="{ active: currentTab === 0 }"
         @click="switchTab(0)"
       >
+        <u-icon name="chat" size="32" :color="currentTab === 0 ? '#F59E0B' : '#94A3B8'"></u-icon>
         <text class="tab-text">消息</text>
-        <view class="tab-indicator" v-if="currentTab === 0"></view>
       </view>
       <view
         class="tab-item"
         :class="{ active: currentTab === 1 }"
         @click="switchTab(1)"
       >
+        <u-icon name="bell" size="32" :color="currentTab === 1 ? '#F59E0B' : '#94A3B8'"></u-icon>
         <text class="tab-text">订阅</text>
-        <view class="tab-indicator" v-if="currentTab === 1"></view>
       </view>
     </view>
 
@@ -149,27 +148,15 @@ export default {
     }
   },
   onLoad() {
-    if (!requireAuth()) return
+    // Message page is accessible without login
   },
   onShow() {
-    if (!requireAuth()) return
-    this.fetchUnreadCount()
-    this.fetchMessages()
-    this.fetchConversations()
-    this.fetchNotificationSettings()
+    // Load demo data for display
+    this.loadDemoData()
   },
   onPullDownRefresh() {
-    if (!requireAuth()) {
-      uni.stopPullDownRefresh()
-      return
-    }
-    Promise.all([
-      this.fetchUnreadCount(),
-      this.fetchMessages(),
-      this.fetchConversations()
-    ]).finally(() => {
-      uni.stopPullDownRefresh()
-    })
+    this.loadDemoData()
+    uni.stopPullDownRefresh()
   },
   methods: {
     getSubtypeIcon(subtype) {
@@ -181,6 +168,20 @@ export default {
         shop_apply: '🏢'
       }
       return map[subtype] || '🔔'
+    },
+    loadDemoData() {
+      // Demo data matching prototype
+      this.systemMessages = [
+        { id: 1, title: '自动推广', content: '您有 20 个车源正在自动拓客', createTime: '13:00:00', isRead: false, subtype: 'auto_promotion' },
+        { id: 2, title: '订单状态更新', content: '您的订单状态已更新，请点击查看详情', createTime: '12:00:00', isRead: false, subtype: 'order_update' },
+        { id: 3, title: '新的订单合同', content: '您有一份新的订单合同待签署或确认', createTime: '11:00:00', isRead: false, subtype: 'contract' },
+        { id: 4, title: '可用保证金不足', content: '您的保证金不足3000，建议及时充值', createTime: '11:00:00', isRead: false, subtype: 'deposit_warning' },
+        { id: 5, title: '新成员申请加入您的车行', content: '有新的员工申请加入，请点此审核', createTime: '11:00:00', isRead: false, subtype: 'shop_apply' }
+      ]
+      this.chatConversations = [
+        { id: 1, name: '张学友', lastMessage: '查博士过了吗?', lastMessageTime: '10:00:00', unreadCount: 0, avatar: '' },
+        { id: 2, name: '华仔', lastMessage: '老板，奔驰那台客户约了下午看车', lastMessageTime: '4-15', unreadCount: 0, avatar: '' }
+      ]
     },
     async fetchUnreadCount() {
       try {
@@ -324,7 +325,7 @@ export default {
 
 <style lang="scss" scoped>
 /* =========================================================
-   5D好车 - 消息中心 - 高级UI设计
+   5D好车 - 消息订阅 - 高级UI设计
    颜色系统: 深蓝主色 #0369A1 | 灰色层次 | 状态色标识
    ========================================================= */
 
@@ -335,81 +336,55 @@ export default {
   padding-bottom: 200rpx;
 }
 
-/* ============ 导航栏右侧 ============ */
-.navbar-right {
-  padding-right: 24rpx;
+/* ============ 顶部标题 ============ */
+.header {
+  background: #ffffff;
+  padding: 32rpx;
+  text-align: center;
+  border-bottom: 1rpx solid #F1F5F9;
 }
-
-.read-all-btn {
-  font-size: 26rpx;
-  color: #0369A1;
-  font-weight: 600;
-  padding: 10rpx 20rpx;
-  border-radius: 24rpx;
-  background: rgba(3, 105, 161, 0.08);
-  transition: all 200ms ease;
-
-  &:active {
-    background: rgba(3, 105, 161, 0.15);
-    transform: scale(0.96);
-  }
+.header-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #0F172A;
 }
 
 /* ============ Tab 切换 ============ */
 .tabs-wrap {
   display: flex;
   background: #ffffff;
-  padding: 0 24rpx;
+  padding: 16rpx 32rpx;
+  gap: 16rpx;
   border-bottom: 1rpx solid rgba(226, 232, 240, 0.6);
 }
 
 .tab-item {
   flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 28rpx 0 20rpx;
-  position: relative;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 20rpx 0;
+  border-radius: 12rpx;
+  background: #F8FAFC;
+  border: 1rpx solid #E2E8F0;
   cursor: pointer;
   transition: all 250ms ease;
 }
 
 .tab-text {
-  font-size: 30rpx;
+  font-size: 28rpx;
   color: #64748B;
   font-weight: 500;
   transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tab-item.active {
+  background: #FFFBEB;
+  border-color: #FDE68A;
   .tab-text {
-    color: #0F172A;
+    color: #D97706;
     font-weight: 700;
-    font-size: 32rpx;
-  }
-}
-
-.tab-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 56rpx;
-  height: 6rpx;
-  background: linear-gradient(90deg, #0369A1 0%, #0284C7 100%);
-  border-radius: 4rpx;
-  box-shadow: 0 2rpx 8rpx rgba(3, 105, 161, 0.3);
-  animation: slideIn 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes slideIn {
-  from {
-    width: 0;
-    opacity: 0;
-  }
-  to {
-    width: 56rpx;
-    opacity: 1;
   }
 }
 

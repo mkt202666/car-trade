@@ -176,7 +176,7 @@ export default {
     async fetchDeposit() {
       try {
         const res = await getDeposit()
-        this.deposit = res.data
+        this.deposit = (res && res.data) || { balance: 0, frozenAmount: 0, totalDeposit: 0 }
       } catch (e) {
         console.error(e)
       }
@@ -185,13 +185,19 @@ export default {
       if (this.loading) return
       this.loading = true
       try {
+        // 后端 PageResult 返回字段名为 "list"（非 "records"）
+        // 使用与项目其他页面一致的防御性取值链：list → records → data → 空数组
         const res = await getDepositRecords({ page: this.page, size: 20 })
+        const data = (res && res.data) || {}
+        const list = data.list || data.records || []
+        const total = data.total || 0
         if (this.page === 1) {
-          this.records = res.data.records
+          this.records = list
         } else {
-          this.records = [...this.records, ...res.data.records]
+          this.records = [...this.records, ...list]
         }
-        this.hasMore = res.data.records.length >= 20
+        // 使用 total 判断是否还有更多数据（比固定 size 更准确）
+        this.hasMore = this.records.length < total
         this.page++
       } catch (e) {
         console.error(e)

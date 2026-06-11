@@ -149,6 +149,66 @@
       "style": {
         "navigationBarTitleText": "车行管理"
       }
+    },
+    {
+      "path": "pages/ai-search-car/index",
+      "style": {
+        "navigationBarTitleText": "智能找车"
+      }
+    },
+    {
+      "path": "pages/ai-market-report/index",
+      "style": {
+        "navigationBarTitleText": "行情分析"
+      }
+    },
+    {
+      "path": "pages/ai-copywriting/index",
+      "style": {
+        "navigationBarTitleText": "文案生成"
+      }
+    },
+    {
+      "path": "pages/deposit/index",
+      "style": {
+        "navigationBarTitleText": "保证金"
+      }
+    },
+    {
+      "path": "pages/membership/index",
+      "style": {
+        "navigationBarTitleText": "会员中心"
+      }
+    },
+    {
+      "path": "pages/my-purchase-demand/index",
+      "style": {
+        "navigationBarTitleText": "我的求购"
+      }
+    },
+    {
+      "path": "pages/trade-rules/index",
+      "style": {
+        "navigationBarTitleText": "交易规则"
+      }
+    },
+    {
+      "path": "pages/finance/index",
+      "style": {
+        "navigationBarTitleText": "金融服务"
+      }
+    },
+    {
+      "path": "pages/settings/index",
+      "style": {
+        "navigationBarTitleText": "设置"
+      }
+    },
+    {
+      "path": "pages/tutorial/index",
+      "style": {
+        "navigationBarTitleText": "新手教程"
+      }
     }
   ],
   "globalStyle": {

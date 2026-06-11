@@ -1,7 +1,5 @@
 <template>
   <view class="page">
-    <u-navbar title="我的" :border-bottom="false" :placeholder="true"></u-navbar>
-
     <!-- 未登录空状态 -->
     <view class="empty-state" v-if="!user && !loading">
       <view class="empty-icon">
@@ -22,112 +20,131 @@
     </view>
 
     <view class="page-content" v-if="user">
-      <!-- 用户信息卡片 -->
+      <!-- 用户信息卡片（深色背景） -->
       <view class="user-card">
         <view class="user-top">
           <view class="avatar-container">
             <image :src="user.avatar || '/static/default-avatar.png'" mode="aspectFill" class="user-avatar"></image>
-            <view class="certified-badge" v-if="user.certificationStatus === 'CERTIFIED'">
-              <u-icon name="checkmark-circle" size="24" color="#10B981"></u-icon>
-            </view>
           </view>
           <view class="user-info">
             <view class="user-name-row">
               <text class="user-name">{{ user.nickname }}</text>
-              <view class="role-badge" v-if="user.shopName">车商</view>
-              <view class="role-badge personal" v-else>个人</view>
             </view>
             <text class="user-phone">{{ user.phone }}</text>
-            <view class="shop-name" v-if="user.shopName">{{ user.shopName }}</view>
-            <view class="user-meta">
-              <view class="credit-badge" :class="'credit-' + user.creditGrade">
-                <text>信用 {{ user.creditGrade }}{{ user.creditLabel }}</text>
+            <view class="user-actions">
+              <view class="action-btn edit" @click="editProfile">
+                <u-icon name="edit-pen" size="24" color="#fff"></u-icon>
+                <text>修改资料</text>
               </view>
-              <text class="deal-count">成交 {{ user.dealCount }}次</text>
+              <view class="action-btn home" @click="toMyHome">
+                <text>我的主页</text>
+              </view>
             </view>
           </view>
         </view>
-        <view class="user-actions">
-          <view class="action-btn" @click="editProfile">
-            <u-icon name="edit-pen" size="28" color="#0F172A"></u-icon>
-            <text>修改资料</text>
+
+        <!-- 角色/车行/成交信息 -->
+        <view class="user-meta">
+          <view class="meta-item">
+            <text class="meta-label">角色:</text>
+            <text class="meta-value">{{ user.role }}</text>
           </view>
-          <view class="action-btn" @click="toMyHome">
-            <u-icon name="home" size="28" color="#0F172A"></u-icon>
-            <text>我的主页</text>
+          <view class="meta-item">
+            <text class="meta-label">车行:</text>
+            <text class="meta-value">{{ user.shopName || '暂无' }}</text>
+          </view>
+          <view class="meta-item">
+            <text class="meta-label">成交:</text>
+            <text class="meta-value">{{ user.dealCount }}次</text>
+          </view>
+          <view class="credit-badge" v-if="user.creditGrade">
+            <text>信用 {{ user.creditGrade }}{{ user.creditLabel }}</text>
           </view>
         </view>
-      </view>
 
-      <!-- 保证金卡片 -->
-      <view class="deposit-card">
-        <view class="deposit-header">
-          <view class="deposit-info">
+        <!-- 保证金信息（在卡片内） -->
+        <view class="deposit-inline">
+          <view class="deposit-left">
             <text class="deposit-label">可用保证金</text>
-            <text class="deposit-amount">¥{{ formatAmount(user.deposit.balance) }}</text>
-            <text class="deposit-total">总额 ¥{{ formatAmount(user.deposit.total) }}</text>
-          </view>
-          <view class="deposit-action">
-            <u-button size="mini" type="primary" :plain="true" shape="circle" @click="toDeposit">立即充值</u-button>
-          </view>
-        </view>
-      </view>
-
-      <!-- 会员信息 -->
-      <view class="member-card">
-        <view class="member-info">
-          <view class="member-left">
-            <u-icon name="star" size="36" color="#F59E0B"></u-icon>
-            <view class="member-text">
-              <text class="member-label">{{ user.memberLevel }}会员</text>
-              <text class="member-expire">到期: {{ user.memberExpireAt }}</text>
+            <view class="deposit-amount-row">
+              <text class="deposit-amount">{{ formatAmount(user.deposit.balance) }}</text>
+              <text class="deposit-total">/ {{ formatAmount(user.deposit.total) }}</text>
             </view>
           </view>
-          <u-button size="mini" type="warning" :plain="true" shape="circle" @click="renewMember">立即续费</u-button>
+          <view class="deposit-arrow">
+            <u-icon name="arrow-right" size="28" color="#94A3B8"></u-icon>
+          </view>
         </view>
       </view>
 
-      <!-- 数据统计 -->
+      <!-- 数据统计（紧凑布局） -->
       <view class="stats-card">
-        <view class="stats-header">
-          <text class="stats-title">数据统计</text>
-        </view>
         <view class="stats-row">
-          <view class="stat-item">
-            <text class="stat-num">{{ user.stats.carCount }}</text>
+          <view class="stat-item main">
+            <text class="stat-num big">{{ user.stats.carCount }}</text>
             <text class="stat-label">车源</text>
           </view>
           <view class="stat-item">
             <text class="stat-num">{{ formatAmount(user.stats.viewCount) }}</text>
             <text class="stat-label">被查看</text>
-            <text class="stat-today">+{{ user.stats.viewCountToday }} 今日</text>
+            <text class="stat-today">今日 +{{ user.stats.viewCountToday }}</text>
           </view>
           <view class="stat-item">
             <text class="stat-num">{{ formatAmount(user.stats.contactCount) }}</text>
             <text class="stat-label">沟通</text>
-            <text class="stat-today">+{{ user.stats.contactCountToday }} 今日</text>
+            <text class="stat-today">今日 +{{ user.stats.contactCountToday }}</text>
           </view>
           <view class="stat-item">
             <text class="stat-num">{{ user.stats.followerCount }}</text>
             <text class="stat-label">粉丝</text>
-            <text class="stat-today">+{{ user.stats.followerCountToday }} 今日</text>
+            <text class="stat-today">今日 +{{ user.stats.followerCountToday }}</text>
           </view>
         </view>
       </view>
 
-      <!-- 已认证标识 -->
-      <view class="certified-banner" v-if="user.certificationStatus === 'CERTIFIED'">
-        <u-icon name="checkmark-circle-fill" size="40" color="#10B981"></u-icon>
-        <text>已认证商家 · 品质保障</text>
+      <!-- 认证车商功能 -->
+      <view class="section-card certified-section" v-if="user.certificationStatus === 'CERTIFIED'">
+        <view class="section-header">
+          <text class="section-title">认证车商功能</text>
+          <view class="certified-badge">
+            <u-icon name="checkmark-circle-fill" size="28" color="#10B981"></u-icon>
+            <text>已认证商家</text>
+          </view>
+        </view>
+        <view class="certified-grid">
+          <view class="certified-item" @click="menuClick(certifiedMenus[0])">
+            <view class="certified-icon">
+              <u-icon name="car" size="48" color="#64748B"></u-icon>
+            </view>
+            <text class="certified-label">我的车源</text>
+          </view>
+          <view class="certified-item" @click="menuClick(certifiedMenus[1])">
+            <view class="certified-icon">
+              <u-icon name="share" size="48" color="#64748B"></u-icon>
+            </view>
+            <text class="certified-label">AI分发车源</text>
+          </view>
+          <view class="certified-item" @click="menuClick(certifiedMenus[2])">
+            <view class="certified-icon">
+              <u-icon name="file-text" size="48" color="#64748B"></u-icon>
+            </view>
+            <text class="certified-label">AI行情简报</text>
+          </view>
+        </view>
       </view>
 
-      <!-- 功能网格 -->
-      <view class="func-grid">
-        <view class="func-item" v-for="item in funcMenus" :key="item.label" @click="menuClick(item)">
-          <view class="func-icon" :style="{ background: item.bg }">
-            <u-icon :name="item.icon" size="40" color="#fff"></u-icon>
+      <!-- 全部功能 -->
+      <view class="section-card">
+        <view class="section-header">
+          <text class="section-title">全部功能</text>
+        </view>
+        <view class="func-grid">
+          <view class="func-item" v-for="item in funcMenus" :key="item.label" @click="menuClick(item)">
+            <view class="func-icon">
+              <u-icon :name="item.icon" size="40" :color="item.color || '#64748B'"></u-icon>
+            </view>
+            <text class="func-label">{{ item.label }}</text>
           </view>
-          <text class="func-label">{{ item.label }}</text>
         </view>
       </view>
 
@@ -147,23 +164,22 @@ export default {
     return {
       user: null,
       loading: false,
-      funcMenus: [
+      certifiedMenus: [
         { label: '我的车源', icon: 'car', bg: 'linear-gradient(135deg, #0369A1, #0284C7)', page: 'publish', params: { tab: 'mine' } },
-        { label: '我的求购', icon: 'search', bg: 'linear-gradient(135deg, #F59E0B, #D97706)', page: 'my-purchase-demand', params: {} },
         { label: 'AI分发车源', icon: 'share', bg: 'linear-gradient(135deg, #7C3AED, #6D28D9)', page: 'ai', params: { mode: 'distribute' } },
-        { label: 'AI行情简报', icon: 'file-text', bg: 'linear-gradient(135deg, #F59E0B, #D97706)', page: 'ai-market-report', params: {} },
-        { label: '收藏车源', icon: 'heart', bg: 'linear-gradient(135deg, #EF4444, #DC2626)', page: 'home', params: { tab: 'favorite' } },
-        { label: '我的车行', icon: 'shop', bg: 'linear-gradient(135deg, #10B981, #059669)', page: 'seller-home', params: { id: this.user && this.user.id } },
-        { label: '浏览记录', icon: 'clock', bg: 'linear-gradient(135deg, #06B6D4, #0891B2)', page: 'home', params: { tab: 'history' } },
-        { label: '我的订单', icon: 'order', bg: 'linear-gradient(135deg, #0369A1, #0284C7)', page: 'trade', params: {} },
-        { label: '金融服务', icon: 'rmb-circle', bg: 'linear-gradient(135deg, #F59E0B, #D97706)', page: 'finance', params: {} },
-        { label: '电子合同', icon: 'file-text', bg: 'linear-gradient(135deg, #10B981, #059669)', page: 'contract-detail', params: {} },
-        { label: '我的关注', icon: 'star', bg: 'linear-gradient(135deg, #EF4444, #DC2626)', page: 'home', params: { tab: 'follow' } },
-        { label: '我的优惠券', icon: 'coupon', bg: 'linear-gradient(135deg, #7C3AED, #6D28D9)', page: 'home', params: { tab: 'coupon' } },
-        { label: '交易规范', icon: 'info-circle', bg: 'linear-gradient(135deg, #06B6D4, #0891B2)', page: 'trade-rules', params: {} },
-        { label: '使用教程', icon: 'play-circle', bg: 'linear-gradient(135deg, #0369A1, #0284C7)', page: 'tutorial', params: {} },
-        { label: '客服支持', icon: 'kefu-ermai', bg: 'linear-gradient(135deg, #10B981, #059669)', page: 'customer-service', params: {} },
-        { label: '系统设置', icon: 'setting', bg: 'linear-gradient(135deg, #64748B, #475569)', page: 'settings', params: {} }
+        { label: 'AI行情简报', icon: 'file-text', bg: 'linear-gradient(135deg, #F59E0B, #D97706)', page: 'ai-market-report', params: {} }
+      ],
+      funcMenus: [
+        { label: '收藏车源', icon: 'heart', color: '#EF4444', page: 'favorites', params: {} },
+        { label: '我的车行', icon: 'shop', color: '#10B981', page: 'seller-home', params: { id: this.user && this.user.id } },
+        { label: '浏览记录', icon: 'clock', color: '#06B6D4', page: 'browsing-history', params: {} },
+        { label: '我的交易', icon: 'order', color: '#0369A1', page: 'trade', params: {} },
+        { label: '金融服务', icon: 'rmb-circle', color: '#F59E0B', page: 'finance', params: {} },
+        { label: '电子合同', icon: 'file-text', color: '#10B981', page: 'contract-detail', params: {} },
+        { label: '我的关注', icon: 'star', color: '#EF4444', page: 'follows', params: {} },
+        { label: '交易规范', icon: 'info-circle', color: '#06B6D4', page: 'trade-rules', params: {} },
+        { label: '客服帮助', icon: 'kefu-ermai', color: '#10B981', page: 'customer-service', params: {} },
+        { label: '系统设置', icon: 'setting', color: '#64748B', page: 'settings', params: {} }
       ]
     }
   },
@@ -179,8 +195,8 @@ export default {
     async fetchUserData() {
       const token = uni.getStorageSync('token')
       if (!token) {
-        this.user = null
-        this.loading = false
+        // Load demo data when not logged in
+        this.loadDemoData()
         return
       }
       this.loading = true
@@ -221,6 +237,33 @@ export default {
         this.loading = false
       }
     },
+    loadDemoData() {
+      // Demo data matching prototype
+      this.user = {
+        nickname: '华仔 (刘德华)',
+        phone: '13066668888',
+        avatar: '',
+        role: '车商',
+        shopName: '天津5D好车',
+        creditGrade: 'S',
+        creditLabel: '优秀',
+        dealCount: 10,
+        certificationStatus: 'CERTIFIED',
+        deposit: {
+          balance: 3000,
+          total: 4200
+        },
+        stats: {
+          carCount: 4,
+          viewCount: 34010,
+          viewCountToday: 231,
+          contactCount: 998,
+          contactCountToday: 45,
+          followerCount: 120,
+          followerCountToday: 3
+        }
+      }
+    },
     formatAmount(val) {
       const n = Number(val) || 0
       return n.toLocaleString()
@@ -239,9 +282,6 @@ export default {
     },
     toDeposit() {
       uni.navigateTo({ url: '/pages/deposit/index' })
-    },
-    renewMember() {
-      uni.navigateTo({ url: '/pages/membership/index' })
     },
     menuClick(item) {
       if (item.page) {
@@ -423,24 +463,11 @@ export default {
 /* ============ 用户卡片 Hero ============ */
 .user-card {
   background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%);
-  padding: 48rpx 32rpx;
+  padding: 40rpx 32rpx;
   color: #fff;
   position: relative;
   overflow: hidden;
   box-shadow: 0 8rpx 32rpx rgba(15, 23, 42, 0.2);
-  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 100ms both;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 300rpx;
-    height: 300rpx;
-    background: radial-gradient(circle, rgba(3, 105, 161, 0.15) 0%, transparent 70%);
-    border-radius: 50%;
-    transform: translate(50%, -50%);
-  }
 }
 
 .user-top {
@@ -456,34 +483,11 @@ export default {
 }
 
 .user-avatar {
-  width: 128rpx;
-  height: 128rpx;
-  border-radius: 64rpx;
-  border: 4rpx solid rgba(255, 255, 255, 0.25);
-  box-shadow: 
-    0 8rpx 24rpx rgba(0, 0, 0, 0.2),
-    inset 0 2rpx 8rpx rgba(255, 255, 255, 0.1);
-  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  &:hover {
-    transform: scale(1.05) rotate(-2deg);
-  }
-}
-
-.certified-badge {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 44rpx;
-  height: 44rpx;
-  border-radius: 22rpx;
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 3rpx solid #0F172A;
-  box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.4);
-  animation: pulseGlow 3s ease-in-out infinite;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  border: 4rpx solid rgba(245, 158, 11, 0.6);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
 }
 
 .user-info {
@@ -495,122 +499,126 @@ export default {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  flex-wrap: wrap;
 }
 
 .user-name {
-  font-size: 38rpx;
-  font-weight: 800;
-  letter-spacing: 1rpx;
-  background: linear-gradient(135deg, #ffffff 0%, #CBD5E1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.role-badge {
-  background: rgba(3, 105, 161, 0.3);
-  font-size: 20rpx;
-  padding: 6rpx 18rpx;
-  border-radius: 24rpx;
-  font-weight: 600;
-  letter-spacing: 1rpx;
-  border: 1rpx solid rgba(3, 105, 161, 0.4);
-
-  &.personal {
-    background: rgba(16, 185, 129, 0.25);
-    border-color: rgba(16, 185, 129, 0.4);
-  }
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #fff;
 }
 
 .user-phone {
   font-size: 24rpx;
-  opacity: 0.85;
+  opacity: 0.8;
   display: block;
-  margin-top: 8rpx;
-  letter-spacing: 1rpx;
-}
-
-.shop-name {
-  font-size: 24rpx;
-  opacity: 0.9;
-  margin-top: 4rpx;
-  color: #FCD34D;
-  font-weight: 500;
-}
-
-.user-meta {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  margin-top: 16rpx;
-  flex-wrap: wrap;
-}
-
-.credit-badge {
-  font-size: 22rpx;
-  padding: 6rpx 18rpx;
-  border-radius: 20rpx;
-  background: rgba(16, 185, 129, 0.25);
-  font-weight: 600;
-  letter-spacing: 1rpx;
-  border: 1rpx solid rgba(16, 185, 129, 0.3);
-
-  &.credit-S { 
-    background: rgba(245, 158, 11, 0.25); 
-    border-color: rgba(245, 158, 11, 0.4);
-  }
-  &.credit-A { 
-    background: rgba(16, 185, 129, 0.25); 
-    border-color: rgba(16, 185, 129, 0.4);
-  }
-  &.credit-B { 
-    background: rgba(3, 105, 161, 0.25); 
-    border-color: rgba(3, 105, 161, 0.4);
-  }
-  &.credit-C { 
-    background: rgba(100, 116, 139, 0.25); 
-    border-color: rgba(100, 116, 139, 0.4);
-  }
-}
-
-.deal-count {
-  font-size: 22rpx;
-  opacity: 0.85;
+  margin-top: 6rpx;
 }
 
 .user-actions {
   display: flex;
-  gap: 20rpx;
-  margin-top: 36rpx;
-  position: relative;
-  z-index: 1;
+  gap: 16rpx;
+  margin-top: 16rpx;
 }
 
 .action-btn {
   display: flex;
   align-items: center;
-  gap: 10rpx;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 18rpx 32rpx;
-  border-radius: 44rpx;
-  font-size: 26rpx;
-  color: #fff;
-  cursor: pointer;
-  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  gap: 8rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 24rpx;
+  font-size: 22rpx;
   font-weight: 500;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: translateY(-2rpx);
-    box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.15);
+  
+  &.edit {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 1rpx solid rgba(255, 255, 255, 0.2);
   }
-
-  &:active {
-    transform: translateY(0) scale(0.97);
-    background: rgba(255, 255, 255, 0.3);
+  
+  &.home {
+    background: rgba(245, 158, 11, 0.2);
+    color: #FCD34D;
+    border: 1rpx solid rgba(245, 158, 11, 0.3);
   }
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.meta-label {
+  font-size: 24rpx;
+  opacity: 0.7;
+}
+
+.meta-value {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #FCD34D;
+}
+
+.credit-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 22rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 16rpx;
+  background: rgba(245, 158, 11, 0.2);
+  color: #FCD34D;
+  font-weight: 600;
+  margin-left: 12rpx;
+}
+
+.deposit-inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.deposit-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.deposit-label {
+  font-size: 22rpx;
+  opacity: 0.7;
+}
+
+.deposit-amount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  margin-top: 8rpx;
+}
+
+.deposit-amount {
+  font-size: 44rpx;
+  font-weight: 800;
+  color: #FCD34D;
+}
+
+.deposit-total {
+  font-size: 24rpx;
+  opacity: 0.7;
+}
+
+.deposit-arrow {
+  opacity: 0.5;
 }
 
 /* ============ 保证金卡片 ============ */
@@ -618,23 +626,12 @@ export default {
   background: #ffffff;
   margin: 28rpx 32rpx;
   border-radius: 24rpx;
-  padding: 36rpx;
+  padding: 32rpx;
   box-shadow: 
     0 8rpx 24rpx rgba(15, 23, 42, 0.06),
     0 2rpx 8rpx rgba(15, 23, 42, 0.04);
   border: 1rpx solid #F1F5F9;
   animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 200ms both;
-  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    box-shadow: 
-      0 12rpx 36rpx rgba(15, 23, 42, 0.1),
-      0 4rpx 12rpx rgba(15, 23, 42, 0.06);
-    transform: translateY(-4rpx);
-  }
-}
-
-.deposit-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -652,11 +649,17 @@ export default {
   letter-spacing: 1rpx;
 }
 
+.deposit-amount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
 .deposit-amount {
   font-size: 52rpx;
   font-weight: 800;
   color: #0F172A;
-  margin-top: 8rpx;
   letter-spacing: 1rpx;
   background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
   -webkit-background-clip: text;
@@ -665,60 +668,21 @@ export default {
 }
 
 .deposit-total {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #94A3B8;
-  margin-top: 6rpx;
 }
 
-/* ============ 会员卡片 ============ */
-.member-card {
-  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 50%, #FDE68A 100%);
-  margin: 0 32rpx 24rpx;
-  border-radius: 24rpx;
-  padding: 32rpx 36rpx;
-  box-shadow: 
-    0 8rpx 24rpx rgba(245, 158, 11, 0.15),
-    0 2rpx 8rpx rgba(245, 158, 11, 0.08);
-  border: 1rpx solid rgba(245, 158, 11, 0.2);
-  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 300ms both;
-  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    box-shadow: 
-      0 12rpx 36rpx rgba(245, 158, 11, 0.2),
-      0 4rpx 12rpx rgba(245, 158, 11, 0.1);
-    transform: translateY(-4rpx);
-  }
+.deposit-badge {
+  background: #F0F9FF;
+  padding: 12rpx 24rpx;
+  border-radius: 12rpx;
+  border: 1rpx solid rgba(3, 105, 161, 0.15);
 }
 
-.member-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.member-left {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.member-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.member-label {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: #78350F;
-  letter-spacing: 1rpx;
-}
-
-.member-expire {
-  font-size: 22rpx;
-  color: #A16207;
-  margin-top: 6rpx;
+.deposit-badge-text {
+  font-size: 24rpx;
+  color: #0369A1;
+  font-weight: 600;
 }
 
 /* ============ 数据统计卡片 ============ */
@@ -732,19 +696,6 @@ export default {
     0 2rpx 8rpx rgba(15, 23, 42, 0.04);
   border: 1rpx solid #F1F5F9;
   animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 400ms both;
-}
-
-.stats-header {
-  margin-bottom: 28rpx;
-  display: flex;
-  align-items: center;
-}
-
-.stats-title {
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #0F172A;
-  letter-spacing: 1rpx;
 }
 
 .stats-row {
@@ -799,25 +750,74 @@ export default {
 .certified-banner {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12rpx;
+  justify-content: space-between;
   background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
   margin: 0 32rpx 24rpx;
   border-radius: 20rpx;
-  padding: 28rpx;
-  font-size: 28rpx;
-  color: #059669;
-  font-weight: 600;
+  padding: 24rpx 28rpx;
   border: 1rpx solid #A7F3D0;
   box-shadow: 0 4rpx 16rpx rgba(16, 185, 129, 0.1);
   animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 450ms both;
 }
 
+.certified-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.certified-label {
+  font-size: 28rpx;
+  color: #059669;
+  font-weight: 600;
+}
+
+.certified-status {
+  font-size: 24rpx;
+  color: #059669;
+  font-weight: 500;
+}
+
+/* ============ 认证车商功能网格 ============ */
+.certified-grid {
+  display: flex;
+  gap: 24rpx;
+}
+
+.certified-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24rpx 16rpx;
+  background: #F8FAFC;
+  border-radius: 16rpx;
+  border: 1rpx solid #E2E8F0;
+}
+
+.certified-icon {
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 50%;
+  margin-bottom: 12rpx;
+  border: 1rpx solid #E2E8F0;
+}
+
+.certified-label {
+  font-size: 24rpx;
+  color: #334155;
+  font-weight: 500;
+}
+
 /* ============ 功能网格 ============ */
 .func-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28rpx 20rpx;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28rpx 16rpx;
   padding: 0 32rpx;
   margin-bottom: 32rpx;
   animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 500ms both;
@@ -853,14 +853,15 @@ export default {
 }
 
 .func-icon {
-  width: 108rpx;
-  height: 108rpx;
-  border-radius: 28rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.12);
-  transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: #F8FAFC;
+  border: 1rpx solid #E2E8F0;
+  margin-bottom: 12rpx;
 }
 
 .func-label {
@@ -942,8 +943,8 @@ export default {
     font-size: 42rpx;
   }
   .func-icon {
-    width: 120rpx;
-    height: 120rpx;
+    width: 108rpx;
+    height: 108rpx;
   }
   .user-avatar {
     width: 144rpx;
@@ -973,7 +974,7 @@ export default {
     font-size: 36rpx;
   }
   .func-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 20rpx 12rpx;
   }
   .stat-num {

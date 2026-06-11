@@ -51,7 +51,7 @@ const URL = 'http://shengtaiprd.pancosky.com/5d/';
   console.log('Clickable items:', JSON.stringify(clickableItems, null, 2));
 
   // Try clicking bottom tabs to see different pages
-  const tabs = ['找车', '交易', '拍卖', 'AI', '消息', '我的'];
+  const tabs = ['找车', '求购', 'AI助理', '消息', '我的'];
   for (let i = 0; i < tabs.length; i++) {
     try {
       const tab = tabs[i];

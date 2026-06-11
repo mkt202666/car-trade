@@ -9,7 +9,7 @@
 
 ## Quick Start
 
-### Backend (Maven, from `car-trade-backend/`)
+### Backend (from `car-trade-backend/`)
 
 ```bash
 cd car-trade-backend
@@ -17,6 +17,8 @@ cd car-trade-backend
 ./mvnw spring-boot:run         # run dev server (port 8080)
 java -jar target/car-trade-backend-1.0.0.jar   # or run JAR directly
 ```
+
+On Windows use `mvnw.cmd` instead of `./mvnw`.
 
 ### Frontend (from `car-trade-frontend/`)
 
@@ -27,7 +29,7 @@ npm run dev:h5          # H5 dev mode (Vite dev server, port 5173)
 npm run build:h5        # production H5 build
 ```
 
-**Note**: `.npmrc` uses `registry.npmmirror.com` (Chinese mirror). Only `dev:h5` and `build:h5` scripts exist — no WeChat Mini Program scripts are configured yet.
+Only `dev:h5` and `build:h5` scripts exist — no WeChat Mini Program scripts are configured. `.npmrc` uses `registry.npmmirror.com` (Chinese mirror).
 
 ## Backend Architecture
 
@@ -107,6 +109,12 @@ Vuex 4 in `src/store/` — only for global state (user info, token). Server data
 - **RocketMQ 5.x** — async message processing (order events, auction settlement, notifications)
 - **WebSocket (STOMP)** — real-time chat, order status push
 - **JWT** — token auth via `JwtUtil` + `AuthenticationInterceptor`
+
+## Testing
+
+- **No backend tests exist** — no test files in `car-trade-backend/src/test/`
+- **No frontend linting/formatting** — no ESLint, Prettier, or similar configured
+- To verify changes: `./mvnw clean compile` (backend), `npm run build:h5` (frontend)
 
 ## Documentation
 
