@@ -58,9 +58,20 @@ public class UserServiceImpl implements UserService {
             user.setCreditGrade("B");
             user.setStatus("ACTIVE");
             user.setCertificationStatus("NONE");
+            // 设置统计字段默认值，避免 null 导致序列化问题
+            user.setDealCount(0);
+            user.setOnSaleCount(0);
+            user.setViewCount(0L);
+            user.setViewCountToday(0);
+            user.setMessageCount(0L);
+            user.setMessageCountToday(0);
+            user.setFollowerCount(0);
+            user.setFollowerCountToday(0);
             userMapper.insert(user);
         } else {
-            // 已注册用户：如果设置了密码，必须验证
+            // 已注册用户：
+            //   - 有密码：必须验证密码
+            //   - 无密码：允许免密登录（演示账号 / 测试账号的典型场景）
             if (StringUtils.hasText(user.getPassword())) {
                 if (!StringUtils.hasText(dto.getPassword())) {
                     throw new BusinessException("请输入密码");
@@ -69,6 +80,15 @@ public class UserServiceImpl implements UserService {
                     throw new BusinessException("密码不正确");
                 }
             }
+            // 确保统计字段非 null
+            if (user.getDealCount() == null) user.setDealCount(0);
+            if (user.getOnSaleCount() == null) user.setOnSaleCount(0);
+            if (user.getViewCount() == null) user.setViewCount(0L);
+            if (user.getViewCountToday() == null) user.setViewCountToday(0);
+            if (user.getMessageCount() == null) user.setMessageCount(0L);
+            if (user.getMessageCountToday() == null) user.setMessageCountToday(0);
+            if (user.getFollowerCount() == null) user.setFollowerCount(0);
+            if (user.getFollowerCountToday() == null) user.setFollowerCountToday(0);
         }
         // 注入 secret（仅需一次，启动后不变）
         JwtUtil.setSecret(jwtSecret);
@@ -101,6 +121,15 @@ public class UserServiceImpl implements UserService {
         user.setCreditGrade("B");
         user.setStatus("ACTIVE");
         user.setCertificationStatus("NONE");
+        // 设置统计字段默认值，避免 null 导致序列化问题
+        user.setDealCount(0);
+        user.setOnSaleCount(0);
+        user.setViewCount(0L);
+        user.setViewCountToday(0);
+        user.setMessageCount(0L);
+        user.setMessageCountToday(0);
+        user.setFollowerCount(0);
+        user.setFollowerCountToday(0);
         userMapper.insert(user);
         return userConverter.toVO(user);
     }

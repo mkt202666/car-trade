@@ -45,6 +45,12 @@ public class User {
     /** 车行名称（若用户为车行/商家账号，展示其店铺名称） */
     private String shopName;
 
+    /** 车行Logo地址（车行品牌Logo图片URL） */
+    private String shopLogo;
+
+    /** 车行简介（车行的文字介绍，用于卖家主页展示） */
+    private String shopDescription;
+
     /** 信用等级（如 S / A / B / C 等，由信用分动态计算得到） */
     private String creditGrade;
 
@@ -83,6 +89,9 @@ public class User {
 
     /** 账号状态（ACTIVE-正常 / FROZEN-冻结 / DELETED-已注销） */
     private String status;
+
+    /** 通知订阅设置（JSON格式：{"system":true,"auto_promotion":true,"order":true,"contract":true,"deposit":true,"shop":true}） */
+    private String notificationSettings;
 
     /** 非持久化字段：用户简介/简介（用于详情页展示，不入库） */
     @TableField(exist = false)

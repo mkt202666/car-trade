@@ -77,6 +77,9 @@ public class CarVO {
     /** 车源标签（如 "准新车"、"官方认证"等） */
     private List<String> tags;
 
+    /** 车源视频URL */
+    private String videoUrl;
+
     /** 拍卖状态（如 NONE / ACTIVE / ENDED / CANCELLED） */
     private String auctionStatus;
 

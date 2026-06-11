@@ -76,3 +76,4 @@ coverage/
 *.lock
 # 保留 package-lock.json（如需严格锁定依赖）
 # !package-lock.json
+.gstack/

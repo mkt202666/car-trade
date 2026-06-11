@@ -1,6 +1,7 @@
 package com.pancosky.newcartrade.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -24,8 +25,8 @@ import java.time.LocalDateTime;
 @TableName("chat_conversations")
 public class ChatConversation {
 
-    /** 会话ID（主键） */
-    @TableId
+    /** 会话ID（主键，PostgreSQL BIGSERIAL 自增） */
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /** 会话类型（PRIVATE=私聊；GROUP=群聊；ORDER_CHAT=订单会话；SUPPORT=客服会话） */

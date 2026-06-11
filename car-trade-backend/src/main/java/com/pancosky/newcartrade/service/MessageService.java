@@ -13,4 +13,6 @@ public interface MessageService {
     void delete(Long id);
     void sendSystem(Message message);
     void sendChat(Message message);
+    String getNotificationSettings();
+    void updateNotificationSettings(String settings);
 }

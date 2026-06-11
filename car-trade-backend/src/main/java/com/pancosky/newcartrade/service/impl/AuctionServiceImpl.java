@@ -7,7 +7,6 @@ import com.pancosky.newcartrade.dto.AuctionCreateDTO;
 import com.pancosky.newcartrade.dto.AuctionQueryDTO;
 import com.pancosky.newcartrade.dto.BidDTO;
 import com.pancosky.newcartrade.entity.*;
-import com.pancosky.newcartrade.enums.AuctionStatus;
 import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.mapper.*;
 import com.pancosky.newcartrade.service.AuctionService;
@@ -47,7 +46,7 @@ public class AuctionServiceImpl implements AuctionService {
     public PageResult<AuctionVO> list(AuctionQueryDTO query) {
         LambdaQueryWrapper<Auction> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(query.getStatus())) {
-            wrapper.eq(Auction::getStatus, AuctionStatus.valueOf(query.getStatus()));
+            wrapper.eq(Auction::getStatus, query.getStatus());
         }
         if (query.getCarId() != null) wrapper.eq(Auction::getCarId, query.getCarId());
         if (query.getSellerId() != null) wrapper.eq(Auction::getSellerId, query.getSellerId());
@@ -107,9 +106,9 @@ public class AuctionServiceImpl implements AuctionService {
         // 根据时间设置状态
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(dto.getStartTime())) {
-            auction.setStatus(AuctionStatus.PENDING);
+            auction.setStatus("PENDING");
         } else {
-            auction.setStatus(AuctionStatus.BIDDING);
+            auction.setStatus("BIDDING");
         }
 
         auctionMapper.insert(auction);
@@ -124,10 +123,10 @@ public class AuctionServiceImpl implements AuctionService {
         Auction auction = auctionMapper.selectById(id);
         if (auction == null) throw new BusinessException("拍卖不存在");
         if (!auction.getSellerId().equals(userId)) throw new BusinessException("只能取消自己的拍卖");
-        if (auction.getStatus() == AuctionStatus.ENDED || auction.getStatus() == AuctionStatus.SETTLED) {
+        if ("ENDED".equals(auction.getStatus()) || "SETTLED".equals(auction.getStatus())) {
             throw new BusinessException("已结束的拍卖不能取消");
         }
-        auction.setStatus(AuctionStatus.CANCELLED);
+        auction.setStatus("CANCELLED");
         auction.setActualEndTime(LocalDateTime.now());
         auctionMapper.updateById(auction);
         log.info("User {} cancelled auction {}", userId, id);
@@ -172,7 +171,7 @@ public class AuctionServiceImpl implements AuctionService {
         try {
             Auction auction = auctionMapper.selectById(dto.getAuctionId());
             if (auction == null) throw new BusinessException("拍卖不存在");
-            if (auction.getStatus() != AuctionStatus.BIDDING) throw new BusinessException("拍卖未在竞拍中");
+            if (!"BIDDING".equals(auction.getStatus())) throw new BusinessException("拍卖未在竞拍中");
             if (LocalDateTime.now().isAfter(auction.getEndTime())) throw new BusinessException("拍卖已结束");
             if (auction.getSellerId().equals(userId)) throw new BusinessException("不能竞拍自己的商品");
 
@@ -232,7 +231,7 @@ public class AuctionServiceImpl implements AuctionService {
     public void settleAuction(Long auctionId) {
         Auction auction = auctionMapper.selectById(auctionId);
         if (auction == null) throw new BusinessException("拍卖不存在");
-        if (auction.getStatus() != AuctionStatus.ENDED) throw new BusinessException("拍卖未结束");
+        if (!"ENDED".equals(auction.getStatus())) throw new BusinessException("拍卖未结束");
 
         // 查找最高出价者
         LambdaQueryWrapper<AuctionBid> winWrapper = new LambdaQueryWrapper<>();
@@ -242,16 +241,16 @@ public class AuctionServiceImpl implements AuctionService {
         if (winner != null) {
             // 检查是否达到保留价
             if (auction.getReservePrice() != null && winner.getBidPrice().compareTo(auction.getReservePrice()) < 0) {
-                auction.setStatus(AuctionStatus.FAILED);
+                auction.setStatus("FAILED");
                 log.info("Auction {} failed: bid {} below reserve {}", auctionId, winner.getBidPrice(), auction.getReservePrice());
             } else {
                 auction.setWinnerId(winner.getBidderId());
                 auction.setWinningPrice(winner.getBidPrice());
-                auction.setStatus(AuctionStatus.SETTLED);
+                auction.setStatus("SETTLED");
                 log.info("Auction {} settled: winner={}, price={}", auctionId, winner.getBidderId(), winner.getBidPrice());
             }
         } else {
-            auction.setStatus(AuctionStatus.FAILED);
+            auction.setStatus("FAILED");
             log.info("Auction {} failed: no bids", auctionId);
         }
 
@@ -307,7 +306,7 @@ public class AuctionServiceImpl implements AuctionService {
                         .eq(AuctionWatch::getUserId, currentUserId);
             vo.setIsWatching(auctionWatchMapper.selectCount(watchWrapper) > 0);
             vo.setCanBid(!auction.getSellerId().equals(currentUserId)
-                    && auction.getStatus() == AuctionStatus.BIDDING
+                    && "BIDDING".equals(auction.getStatus())
                     && LocalDateTime.now().isBefore(auction.getEndTime()));
         }
 
@@ -364,7 +363,7 @@ public class AuctionServiceImpl implements AuctionService {
                         .eq(AuctionWatch::getUserId, currentUserId);
             vo.setIsWatching(auctionWatchMapper.selectCount(watchWrapper) > 0);
             vo.setCanBid(!auction.getSellerId().equals(currentUserId)
-                    && auction.getStatus() == AuctionStatus.BIDDING
+                    && "BIDDING".equals(auction.getStatus())
                     && LocalDateTime.now().isBefore(auction.getEndTime()));
         }
 

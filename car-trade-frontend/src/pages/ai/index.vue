@@ -1,72 +1,148 @@
 <template>
   <view class="page">
-    <u-navbar :title="currentChat ? 'AI对话' : 'AI助理'" :border-bottom="false" :placeholder="true"></u-navbar>
+    <u-navbar title="AI 智能助手" :border-bottom="false" :placeholder="true"></u-navbar>
 
-    <view class="page-content">
-      <!-- AI 快捷功能入口 -->
-      <view class="ai-grid" v-if="!currentChat">
-        <view class="ai-item" v-for="item in aiFunctions" :key="item.id" @click="openFunction(item)">
-          <view class="ai-icon" :style="{ background: item.color }">
-            <u-icon :name="item.icon" size="44" color="#fff"></u-icon>
+    <view class="page-content" v-if="!currentChat">
+      <!-- 顶部 Banner -->
+      <view class="hero-section">
+        <view class="hero-bg"></view>
+        <view class="hero-inner">
+          <view class="hero-icon">
+            <text class="hero-icon-text">✦</text>
           </view>
-          <text class="ai-name">{{ item.name }}</text>
-          <text class="ai-desc">{{ item.desc }}</text>
+          <view class="hero-text-wrap">
+            <text class="hero-title">5D 好车 AI 助手</text>
+            <text class="hero-desc">智能找车 · 行情分析 · 一键文案 · 精准估价</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 快捷功能网格 -->
+      <view class="ai-grid">
+        <view class="grid-title-row">
+          <text class="grid-title">智能工具</text>
+          <text class="grid-subtitle">选择您需要的功能</text>
+        </view>
+        <view class="grid-cards">
+          <view
+            class="ai-card"
+            v-for="(item, index) in aiFunctions"
+            :key="item.id"
+            :class="'ai-card-' + item.id"
+            @click="openFunction(item)"
+            :style="{ animationDelay: (index * 60) + 'ms' }"
+          >
+            <view class="ai-card-icon" :style="{ background: item.bgGrad }">
+              <text class="ai-card-emoji">{{ item.emoji }}</text>
+              <view class="ai-card-shine"></view>
+            </view>
+            <view class="ai-card-body">
+              <text class="ai-card-name">{{ item.name }}</text>
+              <text class="ai-card-desc">{{ item.desc }}</text>
+            </view>
+            <view class="ai-card-arrow">
+              <text>›</text>
+            </view>
+          </view>
         </view>
       </view>
 
       <!-- 最近对话 -->
-      <view class="section" v-if="!currentChat">
+      <view class="section" v-if="historyList.length > 0">
         <view class="section-header">
-          <view class="section-title">最近对话</view>
-          <text class="clear-btn" v-if="historyList.length > 0" @click="clearHistory">清空</text>
-        </view>
-        <view class="history-list" v-if="historyList.length > 0">
-          <view class="history-item" v-for="item in historyList" :key="item.id" @click="loadHistory(item)">
-            <view class="history-left">
-              <u-icon name="chat" size="32" color="#3c9cff"></u-icon>
-              <text class="history-title">{{ item.title }}</text>
-            </view>
-            <text class="history-time">{{ formatTime(item.lastTime) }}</text>
+          <view class="section-title-wrap">
+            <text class="section-title">最近对话</text>
+            <view class="section-badge">{{ historyList.length }}</view>
+          </view>
+          <view class="clear-btn" @click="clearHistory">
+            <text>清空</text>
           </view>
         </view>
-        <u-empty v-else mode="list" text="暂无对话记录"></u-empty>
+        <view class="history-list">
+          <view class="history-item" v-for="(item, idx) in historyList" :key="item.id" @click="loadHistory(item)" :style="{ animationDelay: (idx * 40) + 'ms' }">
+            <view class="history-icon">
+              <text>💬</text>
+            </view>
+            <view class="history-info">
+              <text class="history-title">{{ item.title }}</text>
+              <text class="history-time">{{ formatTime(item.lastTime) }}</text>
+            </view>
+            <view class="history-arrow">
+              <text>›</text>
+            </view>
+          </view>
+        </view>
       </view>
 
       <!-- 快速提问 -->
-      <view class="quick-ask" v-if="!currentChat">
-        <view class="section-title">快速提问</view>
+      <view class="quick-section">
+        <view class="section-title-row">
+          <text class="section-title">试试问我</text>
+        </view>
         <view class="quick-tags">
-          <text class="quick-tag" @click="startChat('最近宝马X5行情怎么样')">最近宝马X5行情怎么样</text>
-          <text class="quick-tag" @click="startChat('帮我找10万以内的SUV')">帮我找10万以内的SUV</text>
-          <text class="quick-tag" @click="startChat('生成一段获客文案')">生成一段获客文案</text>
-          <text class="quick-tag" @click="startChat('分析一下我这个车源')">分析一下我这个车源</text>
+          <view class="quick-tag" v-for="(q, i) in quickQuestions" :key="i" @click="startChat(q)" :style="{ animationDelay: (i * 50) + 'ms' }">
+            <text class="quick-tag-icon">💡</text>
+            <text class="quick-tag-text">{{ q }}</text>
+          </view>
         </view>
       </view>
 
-      <!-- AI 聊天界面 -->
-      <view class="chat-view" v-if="currentChat">
-        <view class="chat-back" @click="closeChat">
-          <u-icon name="arrow-left" size="32" color="#333"></u-icon>
-          <text class="chat-back-text">返回</text>
-        </view>
-        <scroll-view scroll-y class="chat-messages" :scroll-top="scrollTop" :scroll-with-animation="true">
-          <view class="chat-item" v-for="(msg, index) in messages" :key="index" :class="msg.role">
-            <image :src="msg.role === 'user' ? userAvatar : aiAvatar" mode="aspectFill" class="chat-avatar"></image>
-            <view class="chat-bubble">
-              <text class="chat-text">{{ msg.content }}</text>
-              <text class="chat-time" v-if="msg.createTime">{{ formatTime(msg.createTime) }}</text>
-            </view>
-          </view>
-          <view class="loading-item" v-if="isSending">
-            <text class="loading-dot">正在思考...</text>
-          </view>
-        </scroll-view>
+      <view class="footer-space"></view>
+    </view>
 
-        <view class="chat-input-bar">
-          <u-input v-model="inputText" placeholder="输入您的问题..." :border="false" :height="72" @confirm="sendMessage"></u-input>
-          <view class="chat-send-btn" @click="sendMessage" :class="{ disabled: !inputText.trim() }">
-            <u-icon name="arrow-rightward" size="28" color="#fff"></u-icon>
+    <!-- AI 聊天界面 -->
+    <view class="chat-view" v-if="currentChat">
+      <!-- 返回栏 -->
+      <view class="chat-back-bar">
+        <view class="chat-back" @click="closeChat">
+          <text class="back-icon">‹</text>
+          <text class="back-text">返回</text>
+        </view>
+        <view class="chat-status">
+          <view class="status-dot"></view>
+          <text class="status-text">{{ currentFunction ? getFunctionName(currentFunction) : 'AI 助手' }}</text>
+        </view>
+        <view class="chat-placeholder"></view>
+      </view>
+
+      <!-- 消息列表 -->
+      <scroll-view scroll-y class="chat-messages" :scroll-top="scrollTop" :scroll-with-animation="true">
+        <view class="chat-item" v-for="(msg, index) in messages" :key="index" :class="[msg.role, { streaming: msg.streaming }]">
+          <view class="chat-avatar" :class="msg.role">
+            <text class="avatar-emoji">{{ msg.role === 'user' ? '👤' : '🤖' }}</text>
           </view>
+          <view class="chat-bubble-wrap">
+            <view class="chat-bubble" :class="{ 'bubble-streaming': msg.streaming }">
+              <text class="chat-text" v-if="msg.content">{{ msg.content }}</text>
+              <text class="chat-text chat-cursor" v-if="msg.streaming && msg.content">&#8203;</text>
+              <text class="chat-text placeholder" v-if="!msg.content && msg.streaming">{{ msg.loadingText || '正在思考中...' }}</text>
+            </view>
+            <text class="chat-time" v-if="msg.createTime">{{ formatChatTime(msg.createTime) }}</text>
+          </view>
+        </view>
+        <view class="chat-bottom-space"></view>
+      </scroll-view>
+
+      <!-- 输入栏 -->
+      <view class="chat-input-bar">
+        <view class="input-wrap">
+          <input
+            class="chat-input"
+            v-model="inputText"
+            :disabled="isSending"
+            placeholder="请输入您的问题..."
+            placeholder-class="input-placeholder"
+            @confirm="sendMessage"
+            confirm-type="send"
+          />
+        </view>
+        <view
+          class="send-btn"
+          :class="{ disabled: (!inputText.trim() && !isSending), sending: isSending }"
+          @click="sendMessage"
+        >
+          <view v-if="isSending" class="spinner"></view>
+          <text v-else class="send-icon">→</text>
         </view>
       </view>
     </view>
@@ -74,29 +150,34 @@
 </template>
 
 <script>
-import { aiChat, marketAnalysis, aiSearch, generateCopywriting, autoOutreach, carAnalysis, priceEstimate } from '@/api/ai'
+import { aiChat, aiChatStream, marketAnalysis, aiSearch, generateCopywriting, autoOutreach, carAnalysis, priceEstimate } from '@/api/ai'
 import { requireAuth } from '@/utils/auth'
 
 export default {
+  name: 'AiAssistant',
   data() {
     return {
       aiFunctions: [
-        { id: 'search', name: '智能找车', desc: '描述需求，快速匹配', icon: 'search', color: 'linear-gradient(135deg, #3c9cff, #2979ff)' },
-        { id: 'market', name: '行情分析', desc: '掌握市场最新动态', icon: 'chart', color: 'linear-gradient(135deg, #f9ae3d, #f7b731)' },
-        { id: 'copywriting', name: '获客文案', desc: 'AI生成推广文案', icon: 'edit-pen', color: 'linear-gradient(135deg, #a855f7, #8b5cf6)' },
-        { id: 'outreach', name: '自动外联', desc: '智能触达潜在客户', icon: 'man', color: 'linear-gradient(135deg, #5ac725, #4ca81b)' },
-        { id: 'analyze', name: '车源分析', desc: '车源价值评估', icon: 'grid', color: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
-        { id: 'price', name: '估价助手', desc: '快速估算车价', icon: 'rmb-circle', color: 'linear-gradient(135deg, #f56c6c, #e74c3c)' }
+        { id: 'search', name: '智能找车', desc: '描述需求，快速匹配', emoji: '🔍', bgGrad: 'linear-gradient(135deg, #0369A1 0%, #0EA5E9 100%)' },
+        { id: 'market', name: '行情分析', desc: '掌握市场最新动态', emoji: '📈', bgGrad: 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)' },
+        { id: 'copywriting', name: '获客文案', desc: 'AI生成推广文案', emoji: '✍️', bgGrad: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)' },
+        { id: 'outreach', name: '自动外联', desc: '智能触达潜在客户', emoji: '🤝', bgGrad: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)' },
+        { id: 'analyze', name: '车源分析', desc: '车源价值评估', emoji: '🔬', bgGrad: 'linear-gradient(135deg, #06B6D4 0%, #22D3EE 100%)' },
+        { id: 'price', name: '估价助手', desc: '快速估算车价', emoji: '💰', bgGrad: 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)' }
+      ],
+      quickQuestions: [
+        '最近宝马X5行情怎么样？',
+        '帮我找10万以内的SUV',
+        '生成一段获客文案',
+        '分析一下我这个车源'
       ],
       historyList: [],
       currentChat: null,
+      currentFunction: null,
       messages: [],
       inputText: '',
       scrollTop: 0,
-      isSending: false,
-      userAvatar: '/static/default-avatar.png',
-      aiAvatar: '/static/default-car.png',
-      currentFunction: null
+      isSending: false
     }
   },
   mounted() {
@@ -104,6 +185,10 @@ export default {
     this.loadHistoryList()
   },
   methods: {
+    getFunctionName(id) {
+      const fn = this.aiFunctions.find(f => f.id === id)
+      return fn ? fn.name : 'AI 助手'
+    },
     loadHistoryList() {
       try {
         const saved = uni.getStorageSync('ai_chat_history')
@@ -136,9 +221,7 @@ export default {
       if (prompt) {
         const welcomeMsg = this.getWelcomeMessage(this.currentFunction)
         this.messages.push({ role: 'ai', content: welcomeMsg, createTime: new Date() })
-      }
-      this.scrollToBottom()
-      if (prompt) {
+        this.scrollToBottom()
         this.inputText = prompt
         setTimeout(() => this.sendMessage(), 300)
       }
@@ -153,6 +236,40 @@ export default {
         price: '您好！我是估价助手。请告诉我车辆信息，如：品牌、车型、年份、里程、配置等，我来帮您估算合理的价格区间。'
       }
       return welcomeMap[functionId] || '您好！我是5D好车的AI助理，有什么可以帮您？'
+    },
+    getLoadingText(functionId) {
+      const loadingMap = {
+        search: '正在匹配车源数据...',
+        market: '正在分析市场行情...',
+        copywriting: '正在为您构思文案...',
+        outreach: '正在生成触达方案...',
+        analyze: '正在评估车源价值...',
+        price: '正在估算车辆价格...'
+      }
+      return loadingMap[functionId] || '正在处理您的请求...'
+    },
+    // 打字机效果：逐字把文本写入消息
+    typeText(msgObj, text) {
+      return new Promise((resolve) => {
+        const length = text.length
+        let i = 0
+        const interval = Math.max(15, Math.min(40, Math.floor(1200 / Math.max(length, 10))))
+        msgObj.content = ''
+        const timer = setInterval(() => {
+          if (i >= length) {
+            clearInterval(timer)
+            msgObj.content = text
+            this.$nextTick(() => this.scrollToBottom())
+            resolve()
+            return
+          }
+          msgObj.content = text.substring(0, i + 1)
+          i++
+          if (i % 5 === 0 || i === length) {
+            this.$nextTick(() => this.scrollToBottom())
+          }
+        }, interval)
+      })
     },
     loadHistory(item) {
       if (!requireAuth()) return
@@ -176,50 +293,123 @@ export default {
     formatTime(t) {
       if (!t) return ''
       const d = new Date(t)
+      const now = new Date()
+      const diff = now - d
+      if (diff < 60 * 1000) return '刚刚'
+      if (diff < 60 * 60 * 1000) return Math.floor(diff / 60000) + '分钟前'
+      if (diff < 24 * 60 * 60 * 1000) return Math.floor(diff / 3600000) + '小时前'
+      return d.getMonth() + 1 + '月' + d.getDate() + '日'
+    },
+    formatChatTime(t) {
+      if (!t) return ''
+      const d = new Date(t)
       return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0')
     },
+    // 从消息列表中构建多轮对话 history（排除当前轮未完成的 loading 气泡和空内容）
+    // 返回 [{ role: 'user' | 'assistant', content: string }, ...]
+    buildHistory(excludeMsgRefs) {
+      const result = []
+      for (let i = 0; i < this.messages.length; i++) {
+        const m = this.messages[i]
+        // 排除指定的引用（当前轮的 userMsg / 正在打字的 aiMsg）
+        if (excludeMsgRefs && excludeMsgRefs.includes(m)) continue
+        // 排除空内容消息（如尚未回复完的 loading 占位气泡）
+        if (!m.content || !m.content.trim()) continue
+        result.push({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })
+      }
+      // 取最近 10 轮，控制 token
+      return result.slice(-10)
+    },
+
     async sendMessage() {
       const text = this.inputText.trim()
       if (!text || this.isSending) return
       if (!requireAuth()) return
-      
+
+      // 1. 推送用户消息
       const userMsg = { role: 'user', content: text, createTime: new Date() }
       this.messages.push(userMsg)
       this.inputText = ''
       this.isSending = true
-      this.scrollToBottom()
-      
-      try {
-        let res
-        // 根据当前功能调用对应的API
-        if (this.currentFunction === 'search') {
-          res = await aiSearch({ message: text })
-        } else if (this.currentFunction === 'market') {
-          res = await marketAnalysis({ message: text })
-        } else if (this.currentFunction === 'copywriting') {
-          res = await generateCopywriting({ message: text })
-        } else if (this.currentFunction === 'outreach') {
-          res = await autoOutreach({ message: text })
-        } else if (this.currentFunction === 'analyze') {
-          res = await carAnalysis({ message: text })
-        } else if (this.currentFunction === 'price') {
-          res = await priceEstimate({ message: text })
-        } else {
-          // 普通对话
-          res = await aiChat({ message: text, history: this.messages.slice(-6).map(m => ({ role: m.role, content: m.content })) })
-        }
-        
-        const reply = res.data && (res.data.content || res.data.reply || res.data.message || res.data)
-        const aiMsg = { role: 'ai', content: typeof reply === 'string' ? reply : (reply.content || '感谢您的提问'), createTime: new Date() }
-        this.messages.push(aiMsg)
-        this.saveCurrentChat()
-      } catch (e) {
-        console.error('AI请求失败', e)
-        this.messages.push({ role: 'ai', content: '抱歉，AI服务暂时不可用，请稍后再试。', createTime: new Date() })
-      } finally {
-        this.isSending = false
-        this.scrollToBottom()
+
+      // 2. 立即滚动到底部（用户发送）
+      this.$nextTick(() => this.scrollToBottom())
+
+      // 功能模式 → API 映射
+      const funcMap = {
+        search: aiSearch,
+        market: marketAnalysis,
+        copywriting: generateCopywriting,
+        outreach: autoOutreach,
+        analyze: carAnalysis,
+        price: priceEstimate
       }
+
+      // 3. 功能模式（智能找车/行情分析等）：loading 气泡 + history 上下文
+      if (funcMap[this.currentFunction]) {
+        // 立即 push 一个 streaming 气泡（让用户看到系统正在处理）
+        const aiMsg = { role: 'ai', content: '', createTime: new Date(), streaming: true, loadingText: this.getLoadingText(this.currentFunction) }
+        this.messages.push(aiMsg)
+        this.$nextTick(() => this.scrollToBottom())
+
+        // 构建历史上下文（排除当前轮的 userMsg 和 aiMsg）
+        const history = this.buildHistory([userMsg, aiMsg])
+
+        try {
+          const res = await funcMap[this.currentFunction]({ message: text, history: history })
+          const rawReply = res.data && (res.data.content || res.data.reply || res.data.message || res.data)
+          const replyText = typeof rawReply === 'string' ? rawReply : (rawReply && rawReply.content ? rawReply.content : '') || '感谢您的提问'
+          // 打字机效果逐字显示
+          await this.typeText(aiMsg, replyText)
+          aiMsg.streaming = false
+          this.saveCurrentChat()
+        } catch (e) {
+          console.error('AI请求失败', e)
+          const errMsg = (e && e.data && e.data.message) || (e && e.message) || (typeof e === 'string' ? e : '') || 'AI服务暂时不可用，请稍后再试'
+          aiMsg.content = '⚠️ ' + errMsg
+          aiMsg.streaming = false
+        } finally {
+          this.isSending = false
+          this.$nextTick(() => this.scrollToBottom())
+        }
+        return
+      }
+
+      // 4. 默认聊天模式 - 流式输出
+      // 立刻 push 一个空的 AI 气泡（带 streaming 标记）
+      const aiMsg = { role: 'ai', content: '', createTime: new Date(), streaming: true }
+      this.messages.push(aiMsg)
+      this.$nextTick(() => this.scrollToBottom())
+
+      // 构建历史上下文（排除当前轮的 userMsg 和 aiMsg）
+      const history = this.buildHistory([userMsg, aiMsg])
+
+      const controller = aiChatStream({ message: text, history: history }, {
+        onMessage: (piece, fullText) => {
+          aiMsg.content = fullText
+          this.$nextTick(() => this.scrollToBottom())
+        },
+        onDone: (fullText) => {
+          aiMsg.content = fullText
+          aiMsg.streaming = false
+          this.isSending = false
+          this.saveCurrentChat()
+          this.$nextTick(() => this.scrollToBottom())
+        },
+        onError: (err) => {
+          console.error('AI流式请求失败', err)
+          const errMsg = (err && err.message) || 'AI服务暂时不可用，请稍后再试'
+          if (!aiMsg.content) {
+            aiMsg.content = '⚠️ ' + errMsg
+          }
+          aiMsg.streaming = false
+          this.isSending = false
+          this.$nextTick(() => this.scrollToBottom())
+        }
+      })
+
+      // 保存取消句柄（页面关闭时可调用）
+      this._streamController = controller
     },
     saveCurrentChat() {
       if (!this.currentChat || this.messages.length === 0) return
@@ -270,305 +460,805 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/* 设计系统变量 */
-$primary-color: #0F172A;
-$cta-color: #0369A1;
-$bg-color: #F8FAFC;
-$text-color: #020617;
-$text-secondary: #64748B;
-$border-color: #E2E8F0;
-$border-radius: 16rpx;
-$shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.08);
-$transition: all 0.2s ease;
+/* =========================================================
+   5D好车 - AI智能助手 - 高级UI设计
+   设计语言: Motion-Driven | Marketplace | AI Assistant
+   颜色系统: 深蓝主色 #0369A1 | 琥珀金 #F59E0B | 多色渐变
+   ========================================================= */
 
+/* ============ 主容器 ============ */
 .page {
   min-height: 100vh;
-  background: $bg-color;
+  background: linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%);
 }
+
 .page-content {
-  padding-bottom: 40rpx;
+  padding-bottom: 200rpx;
 }
 
-/* AI 功能入口 */
-.ai-grid {
-  background: #fff;
-  padding: 30rpx 20rpx;
-  display: flex;
-  flex-wrap: wrap;
-  margin-bottom: 16rpx;
-  border-radius: $border-radius;
-  margin: 20rpx;
-  box-shadow: $shadow;
+/* ============ Hero 区 ============ */
+.hero-section {
+  margin: 24rpx;
+  border-radius: 32rpx;
+  overflow: hidden;
+  position: relative;
+  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 50ms both;
 }
-.ai-item {
-  width: 33.33%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20rpx 0;
-  cursor: pointer;
-  transition: $transition;
-  border-radius: $border-radius;
 
-  &:active {
-    background: rgba(0, 0, 0, 0.03);
-    transform: scale(0.95);
+.hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 40%, #0369A1 100%);
+  z-index: 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 300rpx;
+    height: 300rpx;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -20%;
+    width: 250rpx;
+    height: 250rpx;
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
   }
 }
-.ai-icon {
+
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  padding: 40rpx 32rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.hero-icon {
   width: 100rpx;
   height: 100rpx;
-  border-radius: 24rpx;
+  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+  border-radius: 28rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 12rpx;
-}
-.ai-name {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: $text-color;
-}
-.ai-desc {
-  font-size: 20rpx;
-  color: $text-secondary;
-  margin-top: 6rpx;
-  text-align: center;
+  box-shadow: 0 12rpx 32rpx rgba(245, 158, 11, 0.4);
+  flex-shrink: 0;
+  animation: float 3s ease-in-out infinite;
 }
 
-/* 通用区块 */
-.section {
-  background: #fff;
-  margin: 20rpx;
-  padding: 30rpx;
-  border-radius: $border-radius;
-  box-shadow: $shadow;
+.hero-icon-text {
+  font-size: 56rpx;
+  color: #ffffff;
+  font-weight: 900;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
 }
-.section-title {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: $text-color;
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8rpx); }
+}
+
+.hero-text-wrap {
+  flex: 1;
+}
+
+.hero-title {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #ffffff;
+  display: block;
+  letter-spacing: 1rpx;
+}
+
+.hero-desc {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 8rpx;
+  display: block;
+}
+
+/* ============ AI 功能网格 ============ */
+.ai-grid {
+  padding: 12rpx 24rpx 0;
+  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 100ms both;
+}
+
+.grid-title-row {
   margin-bottom: 20rpx;
+  padding-left: 8rpx;
 }
+
+.grid-title {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #0F172A;
+  display: block;
+}
+
+.grid-subtitle {
+  font-size: 24rpx;
+  color: #64748B;
+  margin-top: 6rpx;
+  display: block;
+}
+
+.grid-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.ai-card {
+  width: calc(50% - 10rpx);
+  background: #ffffff;
+  border-radius: 28rpx;
+  padding: 28rpx 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06);
+  border: 1rpx solid rgba(226, 232, 240, 0.6);
+  cursor: pointer;
+  transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  position: relative;
+  overflow: hidden;
+
+  &:active {
+    transform: scale(0.96);
+    box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.08);
+  }
+}
+
+.ai-card-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-card-emoji {
+  font-size: 40rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.ai-card-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  animation: cardShine 4s ease-in-out infinite;
+}
+
+@keyframes cardShine {
+  0%, 100% { left: -100%; }
+  50% { left: 150%; }
+}
+
+.ai-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-card-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #0F172A;
+  display: block;
+}
+
+.ai-card-desc {
+  font-size: 22rpx;
+  color: #64748B;
+  margin-top: 4rpx;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-card-arrow {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  text {
+    font-size: 36rpx;
+    color: #CBD5E1;
+    font-weight: 300;
+  }
+}
+
+.ai-card:active .ai-card-arrow text {
+  color: #0369A1;
+  transform: translateX(4rpx);
+  transition: all 200ms ease;
+}
+
+/* ============ Section 通用 ============ */
+.section {
+  margin: 32rpx 24rpx 0;
+  background: #ffffff;
+  border-radius: 28rpx;
+  padding: 28rpx;
+  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06);
+  border: 1rpx solid rgba(226, 232, 240, 0.6);
+  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 150ms both;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20rpx;
 }
-.section-header .section-title {
-  margin-bottom: 0;
+
+.section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
 }
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.section-badge {
+  background: linear-gradient(135deg, #0369A1 0%, #0284C7 100%);
+  color: #ffffff;
+  font-size: 20rpx;
+  font-weight: 600;
+  padding: 4rpx 14rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(3, 105, 161, 0.25);
+}
+
 .clear-btn {
-  font-size: 24rpx;
-  color: $text-secondary;
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
+  background: #F1F5F9;
   cursor: pointer;
-  transition: $transition;
-  padding: 8rpx 16rpx;
-  border-radius: $border-radius;
+  transition: all 200ms ease;
+
+  text {
+    font-size: 24rpx;
+    color: #64748B;
+    font-weight: 500;
+  }
 
   &:active {
-    background: rgba(0, 0, 0, 0.05);
+    background: #E2E8F0;
+    transform: scale(0.96);
   }
 }
 
-/* 最近对话 */
+/* ============ 历史记录 ============ */
 .history-list {
   display: flex;
   flex-direction: column;
+  gap: 12rpx;
 }
+
 .history-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid $border-color;
+  padding: 20rpx;
+  border-radius: 20rpx;
+  background: #F8FAFC;
   cursor: pointer;
-  transition: $transition;
-  border-radius: $border-radius;
-  margin: 0 -10rpx;
-  padding-left: 10rpx;
-  padding-right: 10rpx;
-
-  &:last-child {
-    border-bottom: none;
-  }
+  transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInUp 400ms cubic-bezier(0.4, 0, 0.2, 1) both;
 
   &:active {
-    background: rgba(0, 0, 0, 0.03);
+    background: #E2E8F0;
+    transform: scale(0.98);
   }
 }
-.history-left {
+
+.history-icon {
+  width: 56rpx;
+  height: 56rpx;
+  background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%);
+  border-radius: 16rpx;
   display: flex;
   align-items: center;
-  gap: 16rpx;
-}
-.history-title {
-  font-size: 26rpx;
-  color: $text-color;
-}
-.history-time {
-  font-size: 22rpx;
-  color: $text-secondary;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 16rpx;
+
+  text {
+    font-size: 28rpx;
+  }
 }
 
-/* 快速提问 */
-.quick-ask {
-  background: #fff;
-  margin: 20rpx;
-  padding: 30rpx;
-  border-radius: $border-radius;
-  box-shadow: $shadow;
+.history-info {
+  flex: 1;
+  min-width: 0;
 }
+
+.history-title {
+  font-size: 26rpx;
+  color: #0F172A;
+  font-weight: 500;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-time {
+  font-size: 22rpx;
+  color: #94A3B8;
+  margin-top: 4rpx;
+  display: block;
+}
+
+.history-arrow {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 36rpx;
+    color: #CBD5E1;
+    font-weight: 300;
+  }
+}
+
+/* ============ 快速提问 ============ */
+.quick-section {
+  margin: 32rpx 24rpx 0;
+  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 200ms both;
+}
+
+.section-title-row {
+  margin-bottom: 20rpx;
+  padding-left: 8rpx;
+}
+
 .quick-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
 }
+
 .quick-tag {
-  font-size: 24rpx;
-  color: $cta-color;
-  background: rgba(3, 105, 161, 0.08);
-  padding: 12rpx 24rpx;
-  border-radius: 32rpx;
-  cursor: pointer;
-  transition: $transition;
-  border: 1rpx solid transparent;
-
-  &:active {
-    background: rgba(3, 105, 161, 0.15);
-    transform: scale(0.98);
-  }
-}
-
-/* AI 聊天界面 */
-.chat-view {
-  padding-top: 20rpx;
-}
-.chat-back {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  padding: 16rpx 30rpx;
-  background: #fff;
-  margin-bottom: 16rpx;
-  cursor: pointer;
-  transition: $transition;
-  border-radius: $border-radius;
-  margin: 20rpx;
-  box-shadow: $shadow;
-
-  &:active {
-    opacity: 0.7;
-  }
-}
-.chat-back-text {
-  font-size: 26rpx;
-  color: $text-color;
-}
-.chat-messages {
-  height: calc(100vh - 320rpx);
-  padding: 0 20rpx;
-}
-.chat-item {
-  display: flex;
-  margin-bottom: 30rpx;
-  gap: 16rpx;
-}
-.chat-item.user {
-  flex-direction: row-reverse;
-}
-.chat-avatar {
-  width: 68rpx;
-  height: 68rpx;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: #eee;
-  border: 2rpx solid $border-color;
-}
-.chat-bubble {
-  max-width: 70%;
-  padding: 22rpx;
-  background: #fff;
-  border-radius: $border-radius;
-  line-height: 1.6;
-  box-shadow: $shadow;
-}
-.chat-item.user .chat-bubble {
-  background: $cta-color;
-  color: #fff;
-}
-.chat-text {
-  font-size: 28rpx;
-  color: $text-color;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-.chat-item.user .chat-text {
-  color: #fff;
-}
-.chat-time {
-  font-size: 20rpx;
-  color: $text-secondary;
-  display: block;
-  margin-top: 8rpx;
-}
-.chat-item.user .chat-time {
-  color: rgba(255,255,255,0.7);
-}
-.loading-item {
-  display: flex;
-  justify-content: flex-start;
-  padding-left: 84rpx;
-  margin-bottom: 20rpx;
-}
-.loading-dot {
-  font-size: 24rpx;
-  color: $text-secondary;
-  padding: 16rpx 24rpx;
-  background: #fff;
-  border-radius: $border-radius;
-  box-shadow: $shadow;
-}
-.chat-input-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #fff;
-  padding: 16rpx 20rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 20rpx 24rpx;
   display: flex;
   align-items: center;
   gap: 12rpx;
-  border-top: 1rpx solid $border-color;
-  box-shadow: 0 -4rpx 16rpx rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.06);
+  border: 1rpx solid rgba(226, 232, 240, 0.8);
+  cursor: pointer;
+  transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) both;
+
+  &:active {
+    transform: scale(0.96);
+    background: #F0F9FF;
+    border-color: #0369A1;
+    box-shadow: 0 4rpx 20rpx rgba(3, 105, 161, 0.15);
+  }
 }
-.chat-input-bar u-input {
-  flex: 1;
-  background: $bg-color;
-  border-radius: 40rpx;
-  padding: 0 24rpx;
+
+.quick-tag-icon {
+  font-size: 28rpx;
+  flex-shrink: 0;
 }
-.chat-send-btn {
-  width: 80rpx;
+
+.quick-tag-text {
+  font-size: 26rpx;
+  color: #0F172A;
+  font-weight: 500;
+}
+
+.footer-space {
   height: 80rpx;
-  border-radius: 40rpx;
-  background: $cta-color;
+}
+
+/* ============ 聊天视图 ============ */
+.chat-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+.chat-back-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  padding-top: calc(20rpx + env(safe-area-inset-top));
+  background: #ffffff;
+  border-bottom: 1rpx solid rgba(226, 232, 240, 0.6);
+  box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.04);
+}
+
+.chat-back {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  cursor: pointer;
+  transition: all 200ms ease;
+
+  &:active {
+    background: #F1F5F9;
+  }
+}
+
+.back-icon {
+  font-size: 40rpx;
+  color: #0369A1;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.back-text {
+  font-size: 28rpx;
+  color: #0369A1;
+  font-weight: 500;
+}
+
+.chat-status {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+}
+
+.status-dot {
+  width: 12rpx;
+  height: 12rpx;
+  background: #10B981;
+  border-radius: 50%;
+  box-shadow: 0 0 8rpx #10B981;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-text {
+  font-size: 28rpx;
+  color: #0F172A;
+  font-weight: 600;
+}
+
+.chat-placeholder {
+  width: 80rpx;
+}
+
+/* ============ 消息列表 ============ */
+.chat-messages {
+  flex: 1;
+  min-height: 0;
+  padding: 24rpx;
+  padding-bottom: 40rpx;
+  background: linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%);
+  box-sizing: border-box;
+}
+
+.chat-item {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 28rpx;
+  animation: messageIn 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.user {
+    flex-direction: row-reverse;
+  }
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(10rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 24rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  cursor: pointer;
-  transition: $transition;
+  box-shadow: 0 4rpx 12rpx rgba(15, 23, 42, 0.1);
 
-  &:active {
-    transform: scale(0.95);
-    background: darken($cta-color, 5%);
+  &.ai {
+    background: linear-gradient(135deg, #0369A1 0%, #0EA5E9 100%);
+  }
+
+  &.user {
+    background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+  }
+}
+
+.avatar-emoji {
+  font-size: 36rpx;
+}
+
+.chat-bubble-wrap {
+  max-width: 70%;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-item.user .chat-bubble-wrap {
+  align-items: flex-end;
+}
+
+.chat-bubble {
+  padding: 24rpx 28rpx;
+  border-radius: 28rpx;
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.08);
+  transition: all 200ms ease;
+
+  .chat-item.ai & {
+    background: #ffffff;
+    border: 1rpx solid rgba(226, 232, 240, 0.8);
+    border-top-left-radius: 8rpx;
+  }
+
+  .chat-item.user & {
+    background: linear-gradient(135deg, #0369A1 0%, #0284C7 100%);
+    border-top-right-radius: 8rpx;
+  }
+}
+
+/* 流式中的气泡 - 轻微发光提示 */
+.bubble-streaming {
+  box-shadow: 0 4rpx 16rpx rgba(3, 105, 161, 0.15) !important;
+  animation: bubblePulse 2s ease-in-out infinite;
+}
+
+@keyframes bubblePulse {
+  0%, 100% { box-shadow: 0 4rpx 16rpx rgba(3, 105, 161, 0.12); }
+  50% { box-shadow: 0 4rpx 20rpx rgba(3, 105, 161, 0.25); }
+}
+
+@keyframes placeholderPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.chat-text {
+  font-size: 28rpx;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  .chat-item.ai & {
+    color: #0F172A;
+  }
+
+  .chat-item.user & {
+    color: #ffffff;
+  }
+
+  &.placeholder {
+    color: #64748B;
+    font-style: italic;
+    opacity: 0.85;
+    animation: placeholderPulse 1.4s ease-in-out infinite;
+  }
+}
+
+/* 打字机光标 */
+.chat-cursor {
+  display: inline-block;
+  width: 4rpx;
+  height: 28rpx;
+  margin-left: 4rpx;
+  background: #0369A1;
+  border-radius: 2rpx;
+  vertical-align: middle;
+  animation: cursorBlink 1s step-end infinite;
+  opacity: 0.8;
+}
+
+@keyframes cursorBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.chat-time {
+  font-size: 20rpx;
+  color: #94A3B8;
+  margin-top: 8rpx;
+  padding: 0 8rpx;
+}
+
+.chat-bottom-space {
+  height: 24rpx;
+}
+
+/* ============ 输入栏 ============ */
+.chat-input-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 24rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-top: 1rpx solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 -4rpx 16rpx rgba(15, 23, 42, 0.04);
+}
+
+.input-wrap {
+  flex: 1;
+  background: #F8FAFC;
+  border-radius: 40rpx;
+  padding: 0 28rpx;
+  border: 2rpx solid transparent;
+  transition: all 250ms ease;
+
+  &:focus-within {
+    border-color: #0369A1;
+    background: #ffffff;
+    box-shadow: 0 0 0 6rpx rgba(3, 105, 161, 0.08);
+  }
+}
+
+.chat-input {
+  height: 80rpx;
+  font-size: 28rpx;
+  color: #0F172A;
+}
+
+.input-placeholder {
+  color: #94A3B8;
+}
+
+.send-btn {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 44rpx;
+  background: linear-gradient(135deg, #0369A1 0%, #0284C7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(3, 105, 161, 0.35);
+  cursor: pointer;
+  transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+
+  &:active:not(.disabled) {
+    transform: scale(0.9);
+    box-shadow: 0 4rpx 12rpx rgba(3, 105, 161, 0.4);
   }
 
   &.disabled {
-    background: $border-color;
+    background: #CBD5E1;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  &.sending {
+    background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+    box-shadow: 0 8rpx 24rpx rgba(3, 105, 161, 0.45);
+  }
+}
+
+.send-icon {
+  font-size: 40rpx;
+  color: #ffffff;
+  font-weight: 300;
+}
+
+.spinner {
+  width: 36rpx;
+  height: 36rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============ 入场动画 ============ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============ 响应式适配 ============ */
+@media (max-width: 320px) {
+  .hero-title {
+    font-size: 32rpx;
+  }
+  .hero-desc {
+    font-size: 22rpx;
+  }
+  .hero-icon {
+    width: 80rpx;
+    height: 80rpx;
+  }
+  .hero-icon-text {
+    font-size: 48rpx;
+  }
+  .ai-card {
+    width: 100%;
+  }
+  .chat-bubble-wrap {
+    max-width: 75%;
+  }
+}
+
+@media (min-width: 376px) {
+  .hero-title {
+    font-size: 40rpx;
+  }
+  .ai-card-name {
+    font-size: 30rpx;
+  }
+  .ai-card-desc {
+    font-size: 24rpx;
+  }
+}
+
+/* ============ 减少动画偏好 ============ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 </style>

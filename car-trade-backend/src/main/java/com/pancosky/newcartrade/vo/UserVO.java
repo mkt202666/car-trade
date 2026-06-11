@@ -31,6 +31,12 @@ public class UserVO {
     /** 车行名称（若为商家账号则展示） */
     private String shopName;
 
+    /** 车行Logo地址 */
+    private String shopLogo;
+
+    /** 车行简介 */
+    private String shopDescription;
+
     /** 信用等级（如 S / A / B / C） */
     private String creditGrade;
 

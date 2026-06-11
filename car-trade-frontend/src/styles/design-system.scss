@@ -1,0 +1,604 @@
+/* =========================================================
+   5D好车 - 高级设计系统 (Advanced Design System)
+   设计语言: Motion-Driven | Marketplace
+   颜色系统: 深蓝主色 + 深色层次 + 红色CTA
+   ========================================================= */
+
+/* ============ 1. COLOR SYSTEM 颜色系统 ============ */
+
+/* 品牌色 Brand Colors */
+$primary: #0369A1;           /* 主色 - 专业深蓝 */
+$primary-light: #0284C7;     /* 主色浅 */
+$primary-dark: #075985;      /* 主色深 */
+$primary-50: #F0F9FF;        /* 主色-50 背景 */
+$primary-100: #E0F2FE;       /* 主色-100 */
+$primary-200: #BAE6FD;       /* 主色-200 */
+
+/* 中性色 Neutral Colors */
+$text-primary: #0F172A;      /* 主文字 */
+$text-secondary: #334155;    /* 次文字 */
+$text-muted: #64748B;        /* 辅助文字 */
+$text-light: #94A3B8;        /* 浅文字 */
+$text-white: #FFFFFF;        /* 白文字 */
+
+$bg-primary: #F8FAFC;        /* 主背景 */
+$bg-secondary: #FFFFFF;      /* 卡片背景 */
+$bg-dark: #0F172A;           /* 深色背景 */
+$bg-hover: #F1F5F9;          /* 悬停背景 */
+
+/* 功能色 Functional Colors */
+$cta: #DC2626;               /* CTA红色 */
+$cta-light: #FEE2E2;         /* CTA浅 */
+$success: #10B981;           /* 成功绿 */
+$success-light: #D1FAE5;     /* 成功浅 */
+$warning: #F59E0B;           /* 警告橙 */
+$warning-light: #FEF3C7;     /* 警告浅 */
+$info: #0EA5E9;              /* 信息蓝 */
+$info-light: #E0F2FE;        /* 信息浅 */
+
+/* 边框色 Border Colors */
+$border-light: #E2E8F0;      /* 浅边框 */
+$border-medium: #CBD5E1;     /* 中边框 */
+$border-dark: #94A3B8;       /* 深边框 */
+
+/* 金色强调色 Gold Accent (用于突出按钮) */
+$gold: #F59E0B;              /* 琥珀金 */
+$gold-light: #FDE68A;        /* 浅金 */
+$gold-dark: #D97706;         /* 深金 */
+$gold-gradient: linear-gradient(180deg, #FDE68A 0%, #FCD34D 30%, #F59E0B 100%);
+
+/* ============ 2. TYPOGRAPHY 排版系统 ============ */
+
+/* 字号层级 Font Size Hierarchy */
+$font-xs: 20rpx;             /* 极小 - 辅助文字 */
+$font-sm: 22rpx;             /* 小 - 标签/说明 */
+$font-base: 26rpx;           /* 基准 - 正文 */
+$font-md: 28rpx;             /* 中 - 重要正文 */
+$font-lg: 32rpx;             /* 大 - 小标题 */
+$font-xl: 36rpx;             /* 特大 - 标题 */
+$font-2xl: 40rpx;            /* 超特大 - 大标题 */
+$font-3xl: 48rpx;            /* 巨大 - Hero文字 */
+
+/* 字重 Font Weight */
+$weight-light: 300;
+$weight-regular: 400;
+$weight-medium: 500;
+$weight-semibold: 600;
+$weight-bold: 700;
+$weight-extrabold: 800;
+
+/* 行高 Line Height */
+$line-tight: 1.2;
+$line-normal: 1.5;
+$line-relaxed: 1.75;
+
+/* 字间距 Letter Spacing */
+$letter-tight: -0.5rpx;
+$letter-normal: 0;
+$letter-wide: 0.5rpx;
+$letter-widest: 1rpx;
+
+/* ============ 3. SPACING 间距系统 ============ */
+/* 8的倍数 8-based system */
+$space-1: 4rpx;
+$space-2: 8rpx;
+$space-3: 12rpx;
+$space-4: 16rpx;
+$space-5: 20rpx;
+$space-6: 24rpx;
+$space-7: 28rpx;
+$space-8: 32rpx;
+$space-9: 36rpx;
+$space-10: 40rpx;
+$space-12: 48rpx;
+$space-14: 56rpx;
+$space-16: 64rpx;
+$space-20: 80rpx;
+
+/* ============ 4. BORDER RADIUS 圆角系统 ============ */
+$radius-sm: 8rpx;            /* 小圆角 */
+$radius-md: 12rpx;           /* 中圆角 */
+$radius-lg: 16rpx;           /* 大圆角 */
+$radius-xl: 20rpx;           /* 特大圆角 */
+$radius-2xl: 24rpx;          /* 卡片圆角 */
+$radius-3xl: 32rpx;          /* 大卡片圆角 */
+$radius-full: 9999rpx;       /* 圆形 */
+
+/* ============ 5. SHADOW 阴影系统 ============ */
+/* 4层阴影层次 4-level shadow hierarchy */
+$shadow-sm: 0 2rpx 8rpx rgba(15, 23, 42, 0.04);
+$shadow-md: 0 4rpx 16rpx rgba(15, 23, 42, 0.08);
+$shadow-lg: 0 8rpx 32rpx rgba(15, 23, 42, 0.12);
+$shadow-xl: 0 16rpx 48rpx rgba(15, 23, 42, 0.18);
+
+/* 特殊阴影 - 主色阴影 */
+$shadow-primary: 0 8rpx 24rpx rgba(3, 105, 161, 0.25);
+$shadow-primary-lg: 0 12rpx 36rpx rgba(3, 105, 161, 0.35);
+
+/* 特殊阴影 - 金色阴影 */
+$shadow-gold: 0 8rpx 24rpx rgba(245, 158, 11, 0.35);
+$shadow-gold-lg: 0 12rpx 48rpx rgba(245, 158, 11, 0.45);
+
+/* 特殊阴影 - 红色阴影 */
+$shadow-cta: 0 8rpx 24rpx rgba(220, 38, 38, 0.25);
+
+/* 内阴影 - 用于输入框凹入感 */
+$shadow-inset: inset 0 2rpx 4rpx rgba(15, 23, 42, 0.06);
+
+/* ============ 6. TRANSITIONS 过渡动画系统 ============ */
+$duration-fast: 150ms;       /* 快速 - 点击反馈 */
+$duration-normal: 200ms;     /* 标准 - 悬停/状态切换 */
+$duration-slow: 300ms;       /* 慢速 - 重要过渡 */
+$duration-slower: 500ms;     /* 更慢 - 入场动画 */
+
+$timing-standard: cubic-bezier(0.4, 0, 0.2, 1);    /* 标准曲线 */
+$timing-ease-out: cubic-bezier(0.0, 0, 0.2, 1);     /* 减速 */
+$timing-ease-in: cubic-bezier(0.4, 0, 1, 1);        /* 加速 */
+$timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
+
+/* ============ 7. COMPONENT STYLES 组件样式 ============ */
+
+/* --- 按钮 Button --- */
+.btn-primary {
+  background: $primary;
+  color: $text-white;
+  font-weight: $weight-semibold;
+  padding: $space-4 $space-8;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-primary;
+  transition: all $duration-normal $timing-standard;
+  cursor: pointer;
+  border: none;
+  font-size: $font-md;
+
+  &:active {
+    transform: scale(0.97);
+    box-shadow: $shadow-sm;
+    background: $primary-dark;
+  }
+
+  &:hover {
+    background: $primary-light;
+    box-shadow: $shadow-primary-lg;
+  }
+}
+
+.btn-gold {
+  background: $gold-gradient;
+  color: $text-white;
+  font-weight: $weight-bold;
+  padding: $space-4 $space-8;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-gold;
+  transition: all $duration-normal $timing-standard;
+  cursor: pointer;
+  border: none;
+
+  &:active {
+    transform: scale(0.97);
+    box-shadow: $shadow-md;
+  }
+
+  &:hover {
+    box-shadow: $shadow-gold-lg;
+  }
+}
+
+.btn-outline {
+  background: transparent;
+  color: $primary;
+  border: 2rpx solid $primary;
+  font-weight: $weight-medium;
+  padding: $space-4 $space-8;
+  border-radius: $radius-lg;
+  transition: all $duration-normal $timing-standard;
+  cursor: pointer;
+
+  &:active {
+    background: $primary-50;
+  }
+
+  &:hover {
+    background: $primary;
+    color: $text-white;
+  }
+}
+
+.btn-ghost {
+  background: transparent;
+  color: $text-secondary;
+  font-weight: $weight-medium;
+  padding: $space-4 $space-6;
+  border-radius: $radius-md;
+  transition: all $duration-fast $timing-standard;
+  cursor: pointer;
+
+  &:active,
+  &:hover {
+    background: $bg-hover;
+  }
+}
+
+/* --- 卡片 Card --- */
+.card {
+  background: $bg-secondary;
+  border-radius: $radius-2xl;
+  box-shadow: $shadow-md;
+  transition: all $duration-normal $timing-standard;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: $shadow-lg;
+    transform: translateY(-4rpx);
+  }
+
+  &:active {
+    transform: translateY(-2rpx);
+    box-shadow: $shadow-md;
+  }
+}
+
+.card-static {
+  background: $bg-secondary;
+  border-radius: $radius-2xl;
+  box-shadow: $shadow-md;
+}
+
+/* --- 输入框 Input --- */
+.input-field {
+  width: 100%;
+  padding: $space-4 $space-5;
+  background: $bg-primary;
+  border: 2rpx solid $border-light;
+  border-radius: $radius-lg;
+  font-size: $font-md;
+  color: $text-primary;
+  transition: all $duration-normal $timing-standard;
+
+  &:focus,
+  &:active {
+    border-color: $primary;
+    background: $text-white;
+    box-shadow: 0 0 0 6rpx $primary-50;
+  }
+
+  &::placeholder {
+    color: $text-light;
+  }
+}
+
+/* --- 徽章 Badge --- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-2 $space-4;
+  font-size: $font-xs;
+  font-weight: $weight-medium;
+  border-radius: $radius-md;
+  background: $primary-100;
+  color: $primary;
+}
+
+.badge-gold {
+  background: $gold-light;
+  color: $gold-dark;
+}
+
+.badge-red {
+  background: $cta-light;
+  color: $cta;
+}
+
+.badge-green {
+  background: $success-light;
+  color: $success;
+}
+
+/* --- 标签 Tag --- */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: $space-2 $space-4;
+  font-size: $font-xs;
+  color: $text-muted;
+  background: $bg-hover;
+  border-radius: $radius-md;
+}
+
+/* --- 分隔线 Divider --- */
+.divider {
+  height: 2rpx;
+  background: $border-light;
+  margin: $space-6 0;
+}
+
+/* --- 图标容器 Icon Container --- */
+.icon-circle {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: $radius-full;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $primary-50;
+  color: $primary;
+  transition: all $duration-normal $timing-standard;
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: $shadow-primary;
+  }
+}
+
+/* ============ 8. EFFECTS 特效 ============ */
+
+/* 玻璃态 Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20rpx);
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(20rpx);
+  border: 2rpx solid rgba(255, 255, 255, 0.1);
+}
+
+/* 渐变背景 Gradient Backgrounds */
+.gradient-primary {
+  background: linear-gradient(135deg, $primary 0%, $primary-light 100%);
+}
+
+.gradient-gold {
+  background: $gold-gradient;
+}
+
+.gradient-dark {
+  background: linear-gradient(135deg, $bg-dark 0%, $primary 100%);
+}
+
+/* 光晕效果 Glow Effect */
+.glow-primary {
+  box-shadow: 0 0 40rpx rgba(3, 105, 161, 0.3);
+}
+
+.glow-gold {
+  box-shadow: 0 0 40rpx rgba(245, 158, 11, 0.4);
+}
+
+/* ============ 9. ANIMATIONS 动画 ============ */
+
+/* 淡入 Fade In */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 上浮 Fade In Up */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 缩放 Scale In */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 脉冲 Pulse */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* 浮动 Floating */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10rpx);
+  }
+}
+
+/* 微震动 Shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -468rpx 0;
+  }
+  100% {
+    background-position: 468rpx 0;
+  }
+}
+
+/* 动画类 Animation Classes */
+.animate-fade-in {
+  animation: fadeIn $duration-slow $timing-ease-out both;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp $duration-slow $timing-ease-out both;
+}
+
+.animate-scale-in {
+  animation: scaleIn $duration-slow $timing-spring both;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ============ 10. LAYOUT HELPERS 布局辅助 ============ */
+
+/* Flex布局 */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-start { justify-content: flex-start; }
+.justify-end { justify-content: flex-end; }
+.gap-2 { gap: $space-2; }
+.gap-4 { gap: $space-4; }
+.gap-6 { gap: $space-6; }
+.gap-8 { gap: $space-8; }
+
+/* 宽度 Width */
+.w-full { width: 100%; }
+.w-auto { width: auto; }
+
+/* 高度 Height */
+.h-full { height: 100%; }
+.h-auto { height: auto; }
+
+/* 内边距 Padding */
+.p-4 { padding: $space-4; }
+.p-6 { padding: $space-6; }
+.p-8 { padding: $space-8; }
+.px-4 { padding-left: $space-4; padding-right: $space-4; }
+.px-6 { padding-left: $space-6; padding-right: $space-6; }
+.px-8 { padding-left: $space-8; padding-right: $space-8; }
+.py-4 { padding-top: $space-4; padding-bottom: $space-4; }
+.py-6 { padding-top: $space-6; padding-bottom: $space-6; }
+.py-8 { padding-top: $space-8; padding-bottom: $space-8; }
+
+/* 外边距 Margin */
+.m-4 { margin: $space-4; }
+.mt-4 { margin-top: $space-4; }
+.mt-6 { margin-top: $space-6; }
+.mt-8 { margin-top: $space-8; }
+.mb-4 { margin-bottom: $space-4; }
+.mb-6 { margin-bottom: $space-6; }
+.mb-8 { margin-bottom: $space-8; }
+
+/* ============ 11. TEXT UTILITIES 文字辅助 ============ */
+
+.text-primary { color: $primary; }
+.text-white { color: $text-white; }
+.text-dark { color: $text-primary; }
+.text-secondary { color: $text-secondary; }
+.text-muted { color: $text-muted; }
+.text-light { color: $text-light; }
+
+.text-xs { font-size: $font-xs; }
+.text-sm { font-size: $font-sm; }
+.text-base { font-size: $font-base; }
+.text-md { font-size: $font-md; }
+.text-lg { font-size: $font-lg; }
+.text-xl { font-size: $font-xl; }
+.text-2xl { font-size: $font-2xl; }
+
+.font-light { font-weight: $weight-light; }
+.font-regular { font-weight: $weight-regular; }
+.font-medium { font-weight: $weight-medium; }
+.font-semibold { font-weight: $weight-semibold; }
+.font-bold { font-weight: $weight-bold; }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+/* ============ 12. RESPONSIVE 响应式断点 ============ */
+/* Mobile-first approach */
+
+/* 超小设备 (<=320px) */
+@mixin mobile-small {
+  @media (max-width: 320px) {
+    @content;
+  }
+}
+
+/* 标准移动设备 (321px-375px) 默认样式 */
+@mixin mobile {
+  @media (min-width: 321px) and (max-width: 375px) {
+    @content;
+  }
+}
+
+/* 大屏手机 (376px-480px) */
+@mixin mobile-large {
+  @media (min-width: 376px) and (max-width: 480px) {
+    @content;
+  }
+}
+
+/* 平板及以上 (>=768px) */
+@mixin tablet {
+  @media (min-width: 768px) {
+    @content;
+  }
+}
+
+/* 桌面及以上 (>=1024px) */
+@mixin desktop {
+  @media (min-width: 1024px) {
+    @content;
+  }
+}
+
+/* ============ 13. ACCESSIBILITY 无障碍 ============ */
+
+/* 焦点样式 Focus styles */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 6rpx $primary-100, 0 0 0 2rpx $primary;
+  border-radius: $radius-md;
+}
+
+/* 减少动画偏好 - 尊重用户偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============ 14. Z-INDEX LAYER SYSTEM 层级系统 ============ */
+
+$z-base: 1;
+$z-dropdown: 10;
+$z-sticky: 20;
+$z-fixed: 100;
+$z-modal: 200;
+$z-toast: 300;
+$z-tooltip: 400;
+
+/* ============ 15. GLOBAL RESET & DEFAULTS 全局重置 ============ */
+
+/* 全局全局重置应用于page样式 */
+
+/* ===== End of Design System ===== */

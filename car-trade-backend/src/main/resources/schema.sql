@@ -1,4 +1,33 @@
 -- 数据库迁移：添加新字段
+
+-- 用户表：确保 password 字段存在（用于密码登录、BCrypt 加密存储）
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR(100);
+
+-- 用户表：通知订阅设置（JSON格式，存储各通知类型的开关状态）
+ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_settings JSONB DEFAULT '{"system":true,"auto_promotion":true,"order":true,"contract":true,"deposit":true,"shop":true}';
+
+-- 消息表：确保 sender_id 字段存在（发送人ID，系统消息可为 NULL）
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS sender_id BIGINT;
+
+-- 用户优惠券表：确保 received_at 字段存在（领取时间）
+ALTER TABLE user_coupons ADD COLUMN IF NOT EXISTS received_at TIMESTAMP;
+
+-- 用户会员表：确保 end_at 字段存在（结束时间/退款标记）
+ALTER TABLE user_membership ADD COLUMN IF NOT EXISTS end_at TIMESTAMP;
+
+-- 聊天消息表：确保整张表存在（实时聊天功能）
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id              BIGSERIAL PRIMARY KEY,
+    conversation_id BIGINT NOT NULL REFERENCES chat_conversations(id),
+    sender_id       BIGINT,
+    content         TEXT,
+    message_type    VARCHAR(20),
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_conv ON chat_messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_sender ON chat_messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created ON chat_messages(created_at DESC);
+
 -- 车源表新字段
 ALTER TABLE car_sources ADD COLUMN IF NOT EXISTS vin VARCHAR(50);
 ALTER TABLE car_sources ADD COLUMN IF NOT EXISTS transmission VARCHAR(20);
@@ -12,6 +41,11 @@ ALTER TABLE car_sources ADD COLUMN IF NOT EXISTS certificate_materials JSONB;
 ALTER TABLE car_sources ADD COLUMN IF NOT EXISTS support_lock_negotiation BOOLEAN DEFAULT FALSE;
 ALTER TABLE car_sources ADD COLUMN IF NOT EXISTS ai_auto_promote BOOLEAN DEFAULT FALSE;
 ALTER TABLE car_sources ADD COLUMN IF NOT EXISTS is_draft BOOLEAN DEFAULT FALSE;
+ALTER TABLE car_sources ADD COLUMN IF NOT EXISTS video_url VARCHAR(500);
+
+-- 用户表新字段
+ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_logo VARCHAR(500);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_description TEXT;
 
 -- 订单表新字段
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS contract_content TEXT;
@@ -306,6 +340,7 @@ CREATE TABLE IF NOT EXISTS credit_accounts (
 CREATE TABLE IF NOT EXISTS messages (
     id              BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES users(id),
+    sender_id       BIGINT,
     type            VARCHAR(20) NOT NULL,
     title           VARCHAR(200),
     content         TEXT,
@@ -714,9 +749,9 @@ CREATE TABLE IF NOT EXISTS purchase_demands (
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_purchase_demands_user_id ON purchase_demands(user_id);
-CREATE INDEX idx_purchase_demands_status ON purchase_demands(status);
-CREATE INDEX idx_purchase_demands_created_at ON purchase_demands(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_purchase_demands_user_id ON purchase_demands(user_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_demands_status ON purchase_demands(status);
+CREATE INDEX IF NOT EXISTS idx_purchase_demands_created_at ON purchase_demands(created_at DESC);
 COMMENT ON TABLE purchase_demands IS '求购意向表';
 COMMENT ON COLUMN purchase_demands.user_id IS '求购用户ID';
 COMMENT ON COLUMN purchase_demands.brand_name IS '意向品牌';

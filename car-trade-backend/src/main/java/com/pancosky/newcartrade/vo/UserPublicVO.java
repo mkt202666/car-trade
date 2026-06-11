@@ -24,6 +24,12 @@ public class UserPublicVO {
     /** 车行名称 */
     private String shopName;
 
+    /** 车行Logo地址 */
+    private String shopLogo;
+
+    /** 车行简介 */
+    private String shopDescription;
+
     /** 信用等级（S / A / B / C 等） */
     private String creditGrade;
 

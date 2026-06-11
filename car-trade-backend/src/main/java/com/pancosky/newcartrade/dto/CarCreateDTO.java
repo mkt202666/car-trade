@@ -113,6 +113,9 @@ public class CarCreateDTO {
     /** 是否仅保存为草稿（true=草稿，不展示给买家） */
     private Boolean isDraft;
 
+    /** 车源视频URL */
+    private String videoUrl;
+
     /** 车源图片URL列表（主图、外观、内饰等顺序由前端排序后传入） */
     private List<String> images;
 

@@ -1,11 +1,19 @@
 package com.pancosky.newcartrade.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.service.AIService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * AI 智能服务控制器
@@ -17,17 +25,20 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/ai")
 @RequiredArgsConstructor
+@Slf4j
 public class AIController {
 
     private final AIService aiService;
 
+    // 使用 ObjectMapper 构造合法的 JSON（避免手工拼接 JSON 出现转义错误）
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    // 活跃的 SSE 连接（用于可追踪和优雅关闭）
+    private final Map<String, SseEmitter> activeEmitters = new ConcurrentHashMap<>();
+
     /**
-     * AI 对话（车源买卖咨询/通用问答）
+     * AI 对话（一次性返回）
      * HTTP: POST /api/v1/ai/chat
-     * 请求参数：body（JSON，常见字段如 message、contextId、history）
-     * 响应：ApiResponse&lt;Map&lt;String, Object&gt;&gt; —— AI 回复内容、推荐相关车源等。
-     * 认证要求：必须登录。
-     * 限流：单用户每分钟最多 30 次请求。
      */
     @PostMapping("/chat")
     public ApiResponse<Map<String, Object>> chat(@RequestBody Map<String, Object> params) {
@@ -35,11 +46,83 @@ public class AIController {
     }
 
     /**
-     * 智能找车（基于用户偏好、条件的个性化推荐）
+     * AI 对话（流式输出 - SSE）
+     * HTTP: POST /api/v1/ai/chat/stream
+     * Content-Type: text/event-stream
+     * 事件格式：
+     *   event: message
+     *   data: {"content": "字"}
+     *
+     *   event: done
+     *   data: {"content": "完整内容"}
+     *
+     *   event: error
+     *   data: {"message": "错误信息"}
+     */
+    @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter chatStream(@RequestBody Map<String, Object> params) {
+        // 创建 SSE 连接，超时 2 分钟
+        SseEmitter emitter = new SseEmitter(TimeUnit.MINUTES.toMillis(2));
+        String emitterId = "emitter-" + System.currentTimeMillis() + "-" + Thread.currentThread().getId();
+
+        emitter.onCompletion(() -> {
+            activeEmitters.remove(emitterId);
+            log.debug("[AI-SSE] {} 连接完成", emitterId);
+        });
+        emitter.onTimeout(() -> {
+            activeEmitters.remove(emitterId);
+            log.warn("[AI-SSE] {} 连接超时", emitterId);
+        });
+        emitter.onError(e -> {
+            activeEmitters.remove(emitterId);
+            log.warn("[AI-SSE] {} 连接异常: {}", emitterId, e.getMessage());
+        });
+
+        activeEmitters.put(emitterId, emitter);
+        log.info("[AI-SSE] {} 建立流式连接", emitterId);
+
+        aiService.chatStream(params,
+                piece -> sendMessage(emitter, emitterId, "message", Map.of("content", piece)),
+                fullText -> {
+                    sendMessage(emitter, emitterId, "done", Map.of("content", fullText));
+                    safeComplete(emitter, emitterId);
+                },
+                error -> {
+                    sendMessage(emitter, emitterId, "error", Map.of("message", error.getMessage() != null ? error.getMessage() : "AI 服务异常"));
+                    safeComplete(emitter, emitterId);
+                });
+
+        return emitter;
+    }
+
+    /**
+     * 发送一条 SSE 事件，使用 Jackson 构造合法 JSON，避免特殊字符转义错误
+     */
+    private void sendMessage(SseEmitter emitter, String emitterId, String eventName, Map<String, Object> payload) {
+        try {
+            String json = objectMapper.writeValueAsString(payload);
+            emitter.send(SseEmitter.event().name(eventName).data(json));
+        } catch (IOException e) {
+            log.warn("[AI-SSE] {} 发送 {} 事件失败: {}", emitterId, eventName, e.getMessage());
+        } catch (Exception e) {
+            log.warn("[AI-SSE] {} 发送 {} 事件异常: {}", emitterId, eventName, e.getMessage());
+        }
+    }
+
+    /**
+     * 优雅地关闭 emitter（吞掉已关闭的异常）
+     */
+    private void safeComplete(SseEmitter emitter, String emitterId) {
+        try {
+            emitter.complete();
+        } catch (Exception e) {
+            log.debug("[AI-SSE] {} complete 失败: {}", emitterId, e.getMessage());
+        }
+    }
+
+    /**
+     * 智能找车
      * HTTP: POST /api/v1/ai/search
-     * 请求参数：body（JSON，含品牌、预算、里程、能源类型、用途等条件）。
-     * 响应：ApiResponse&lt;Map&lt;String, Object&gt;&gt; —— 推荐车源列表及评分说明。
-     * 认证要求：必须登录。
      */
     @PostMapping("/search")
     public ApiResponse<Map<String, Object>> search(@RequestBody Map<String, Object> params) {
@@ -47,11 +130,8 @@ public class AIController {
     }
 
     /**
-     * 行情分析（按品牌/车系/地区的价格走势与供需评估）
+     * 行情分析
      * HTTP: POST /api/v1/ai/market-analysis
-     * 请求参数：body（JSON，含 brandId、seriesId、region 等）。
-     * 响应：ApiResponse&lt;Map&lt;String, Object&gt;&gt; —— 价格走势、均价、保值率、供需指数等。
-     * 认证要求：必须登录。
      */
     @PostMapping("/market-analysis")
     public ApiResponse<Map<String, Object>> marketAnalysis(@RequestBody Map<String, Object> params) {
@@ -59,11 +139,8 @@ public class AIController {
     }
 
     /**
-     * 获客文案生成（卖家用于车源描述、营销文案生成）
+     * 获客文案生成
      * HTTP: POST /api/v1/ai/customer-generation
-     * 请求参数：body（JSON，含 carId、tone、length 等）。
-     * 响应：ApiResponse&lt;Map&lt;String, Object&gt;&gt; —— 生成的文案内容及可选的图片提示词。
-     * 认证要求：必须登录；建议仅向已认证卖家开放。
      */
     @PostMapping("/customer-generation")
     public ApiResponse<Map<String, Object>> generateCopywriting(@RequestBody Map<String, Object> params) {
@@ -71,11 +148,8 @@ public class AIController {
     }
 
     /**
-     * 自动外联（系统自动向潜在买家推送车源信息）
+     * 自动外联
      * HTTP: POST /api/v1/ai/auto-outreach
-     * 请求参数：body（JSON，含 carId、targetUsers、渠道等）。
-     * 响应：ApiResponse&lt;Map&lt;String, Object&gt;&gt; —— 执行结果统计、发送数、到达数。
-     * 认证要求：必须登录；建议仅向已认证卖家/管理员开放。
      */
     @PostMapping("/auto-outreach")
     public ApiResponse<Map<String, Object>> autoOutreach(@RequestBody Map<String, Object> params) {
@@ -83,11 +157,8 @@ public class AIController {
     }
 
     /**
-     * 车源分配（平台根据线索将车源分配给销售或店铺）
+     * 车源分配
      * HTTP: POST /api/v1/ai/distribute
-     * 请求参数：body（JSON，含 carId、店铺/销售信息等）。
-     * 响应：ApiResponse&lt;Map&lt;String, Object&gt;&gt; —— 分配结果。
-     * 认证要求：必须登录；管理员或运营角色可用。
      */
     @PostMapping("/distribute")
     public ApiResponse<Map<String, Object>> distributeCar(@RequestBody Map<String, Object> params) {
@@ -95,11 +166,8 @@ public class AIController {
     }
 
     /**
-     * 车源分析（基于车源信息分析车况、性价比、市场热度等）
+     * 车源分析
      * HTTP: POST /api/v1/ai/car-analysis
-     * 请求参数：body（JSON，含 carId 或车辆特征信息）。
-     * 响应：ApiResponse&lt;Map&lt;String, Object&gt;&gt; —— 分析结果，含车况评分、性价比、风险提示。
-     * 认证要求：必须登录。
      */
     @PostMapping("/car-analysis")
     public ApiResponse<Map<String, Object>> carAnalysis(@RequestBody Map<String, Object> params) {
@@ -107,11 +175,8 @@ public class AIController {
     }
 
     /**
-     * 估价助手（根据品牌、车系、年份、里程、地区等估算二手车参考价）
+     * 估价助手
      * HTTP: POST /api/v1/ai/price-estimate
-     * 请求参数：body（JSON，含 brandId、seriesId、year、mileage、city 等）。
-     * 响应：ApiResponse&lt;Map&lt;String, Object&gt;&gt; —— 估价结果、最低价/最高价、置信度。
-     * 认证要求：必须登录。
      */
     @PostMapping("/price-estimate")
     public ApiResponse<Map<String, Object>> priceEstimate(@RequestBody Map<String, Object> params) {

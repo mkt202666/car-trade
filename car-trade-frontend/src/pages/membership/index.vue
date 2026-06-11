@@ -1,80 +1,80 @@
 
-&lt;template&gt;
-  &lt;view class="page"&gt;
-    &lt;u-navbar title="会员中心" :border-bottom="false" :placeholder="true"&gt;&lt;/u-navbar&gt;
+<template>
+  <view class="page">
+    <u-navbar title="会员中心" :border-bottom="false" :placeholder="true"></u-navbar>
 
-    &lt;view class="page-content"&gt;
-      &lt;!-- 我的会员 --&gt;
-      &lt;view class="my-member-card"&gt;
-        &lt;view class="card-top"&gt;
-          &lt;view class="member-info"&gt;
-            &lt;text class="member-level"&gt;{{ myMembership ? myMembership.level : '普通' }}会员&lt;/text&gt;
-            &lt;text class="member-status" :class="{ active: isActive }"&gt;
+    <view class="page-content">
+      <!-- 我的会员 -->
+      <view class="my-member-card">
+        <view class="card-top">
+          <view class="member-info">
+            <text class="member-level">{{ myMembership ? myMembership.level : '普通' }}会员</text>
+            <text class="member-status" :class="{ active: isActive }">
               {{ isActive ? '已开通' : '未开通' }}
-            &lt;/text&gt;
-          &lt;/view&gt;
-          &lt;u-icon name="vip-crown" size="60" color="#f9ae3d"&gt;&lt;/u-icon&gt;
-        &lt;/view&gt;
-        &lt;view class="card-bottom" v-if="myMembership &amp;&amp; isActive"&gt;
-          &lt;text class="expire-text"&gt;有效期至: {{ formatTime(myMembership.endAt) }}&lt;/text&gt;
-        &lt;/view&gt;
-      &lt;/view&gt;
+            </text>
+          </view>
+          <u-icon name="vip-crown" size="60" color="#f9ae3d"></u-icon>
+        </view>
+        <view class="card-bottom" v-if="myMembership && isActive">
+          <text class="expire-text">有效期至: {{ formatTime(myMembership.endAt) }}</text>
+        </view>
+      </view>
 
-      &lt;!-- 套餐选择 --&gt;
-      &lt;view class="plans-section"&gt;
-        &lt;view class="section-header"&gt;
-          &lt;text class="section-title"&gt;选择套餐&lt;/text&gt;
-        &lt;/view&gt;
-        &lt;view class="plans-list"&gt;
-          &lt;view 
+      <!-- 套餐选择 -->
+      <view class="plans-section">
+        <view class="section-header">
+          <text class="section-title">选择套餐</text>
+        </view>
+        <view class="plans-list">
+          <view 
             v-for="plan in plans" 
             :key="plan.id" 
             class="plan-item" 
             :class="{ selected: selectedPlanId === plan.id }"
             @click="selectedPlanId = plan.id"
-          &gt;
-            &lt;view class="plan-top"&gt;
-              &lt;text class="plan-name"&gt;{{ plan.name }}&lt;/text&gt;
-              &lt;view class="plan-tag" v-if="plan.sortOrder === 1"&gt;推荐&lt;/view&gt;
-            &lt;/view&gt;
-            &lt;view class="plan-price"&gt;
-              &lt;text class="price-symbol"&gt;¥&lt;/text&gt;
-              &lt;text class="price-num"&gt;{{ formatAmount(plan.price) }}&lt;/text&gt;
-            &lt;/view&gt;
-            &lt;text class="plan-duration"&gt;{{ plan.durationDays }}天&lt;/text&gt;
-            &lt;view class="plan-benefits"&gt;
-              &lt;text class="benefit-item" v-for="(benefit, idx) in planBenefits" :key="idx"&gt;
+          >
+            <view class="plan-top">
+              <text class="plan-name">{{ plan.name }}</text>
+              <view class="plan-tag" v-if="plan.sortOrder === 1">推荐</view>
+            </view>
+            <view class="plan-price">
+              <text class="price-symbol">¥</text>
+              <text class="price-num">{{ formatAmount(plan.price) }}</text>
+            </view>
+            <text class="plan-duration">{{ plan.durationDays }}天</text>
+            <view class="plan-benefits">
+              <text class="benefit-item" v-for="(benefit, idx) in planBenefits" :key="idx">
                 {{ benefit }}
-              &lt;/text&gt;
-            &lt;/view&gt;
-          &lt;/view&gt;
-        &lt;/view&gt;
+              </text>
+            </view>
+          </view>
+        </view>
 
-        &lt;!-- 权益说明 --&gt;
-        &lt;view class="benefits-section"&gt;
-          &lt;view class="section-header"&gt;
-            &lt;text class="section-title"&gt;会员权益&lt;/text&gt;
-          &lt;/view&gt;
-          &lt;view class="benefits-list"&gt;
-            &lt;view class="benefit-item" v-for="(item, idx) in benefitsList" :key="idx"&gt;
-              &lt;u-icon :name="item.icon" size="40" :color="item.color"&gt;&lt;/u-icon&gt;
-              &lt;text class="benefit-text"&gt;{{ item.text }}&lt;/text&gt;
-            &lt;/view&gt;
-          &lt;/view&gt;
-        &lt;/view&gt;
+        <!-- 权益说明 -->
+        <view class="benefits-section">
+          <view class="section-header">
+            <text class="section-title">会员权益</text>
+          </view>
+          <view class="benefits-list">
+            <view class="benefit-item" v-for="(item, idx) in benefitsList" :key="idx">
+              <u-icon :name="item.icon" size="40" :color="item.color"></u-icon>
+              <text class="benefit-text">{{ item.text }}</text>
+            </view>
+          </view>
+        </view>
 
-        &lt;!-- 开通按钮 --&gt;
-        &lt;view class="bottom-action"&gt;
-          &lt;u-button type="primary" shape="circle" :disabled="!selectedPlanId" @click="handleSubscribe"&gt;
+        <!-- 开通按钮 -->
+        <view class="bottom-action">
+          <u-button type="primary" shape="circle" :disabled="!selectedPlanId" @click="handleSubscribe">
             {{ isActive ? '立即续费' : '立即开通' }}
-          &lt;/u-button&gt;
-        &lt;/view&gt;
-      &lt;/view&gt;
-    &lt;/view&gt;
-  &lt;/view&gt;
-&lt;/template&gt;
+          </u-button>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
 
-&lt;script&gt;
+<script>
 import { getPlans, getMyMembership, renewMembership } from '@/api/membership'
 
 export default {
@@ -97,7 +97,7 @@ export default {
     isActive() {
       if (!this.myMembership) return false
       if (this.myMembership.status !== 'ACTIVE') return false
-      return new Date(this.myMembership.endAt) &gt; new Date()
+      return new Date(this.myMembership.endAt) > new Date()
     }
   },
   onLoad() {
@@ -109,8 +109,8 @@ export default {
         const [plansRes, myRes] = await Promise.all([getPlans(), getMyMembership()])
         this.plans = plansRes.data
         this.myMembership = myRes.data
-        if (this.plans.length &gt; 0) {
-          const recommended = this.plans.find(p =&gt; p.sortOrder === 1) || this.plans[0]
+        if (this.plans.length > 0) {
+          const recommended = this.plans.find(p => p.sortOrder === 1) || this.plans[0]
           this.selectedPlanId = recommended.id
         }
       } catch (e) {
@@ -138,9 +138,9 @@ export default {
     }
   }
 }
-&lt;/script&gt;
+</script>
 
-&lt;style lang="scss" scoped&gt;
+<style lang="scss" scoped>
 /* 设计系统变量 */
 $primary-color: #0F172A;
 $cta-color: #0369A1;
@@ -315,4 +315,4 @@ $transition: all 0.2s ease;
 .bottom-action {
   margin-top: 40rpx;
 }
-&lt;/style&gt;
+</style>

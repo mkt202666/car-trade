@@ -82,4 +82,26 @@ public class MessageController {
         messageService.delete(id);
         return ApiResponse.success();
     }
+
+    /**
+     * 获取通知订阅设置
+     * HTTP: GET /api/v1/messages/notification-settings
+     * 响应：ApiResponse&lt;String&gt; —— JSON格式的订阅设置
+     */
+    @GetMapping("/notification-settings")
+    public ApiResponse<String> getNotificationSettings() {
+        return ApiResponse.success(messageService.getNotificationSettings());
+    }
+
+    /**
+     * 更新通知订阅设置
+     * HTTP: PUT /api/v1/messages/notification-settings
+     * 请求体：JSON字符串 {"system":true,"auto_promotion":true,...}
+     * 响应：ApiResponse&lt;Void&gt;
+     */
+    @PutMapping("/notification-settings")
+    public ApiResponse<Void> updateNotificationSettings(@RequestBody String settings) {
+        messageService.updateNotificationSettings(settings);
+        return ApiResponse.success();
+    }
 }

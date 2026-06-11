@@ -93,6 +93,9 @@ public class CarDetailVO {
     /** 车源标签列表 */
     private List<String> tags;
 
+    /** 车源视频URL */
+    private String videoUrl;
+
     /** 拍卖状态 */
     private String auctionStatus;
 

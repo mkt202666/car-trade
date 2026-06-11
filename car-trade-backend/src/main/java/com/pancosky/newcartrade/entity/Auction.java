@@ -1,7 +1,6 @@
 package com.pancosky.newcartrade.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.pancosky.newcartrade.enums.AuctionStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -50,10 +49,10 @@ public class Auction {
     /** 实际结束时间（拍卖真实结束时间，含延时策略） */
     private LocalDateTime actualEndTime;
 
-    /** 拍卖状态（PENDING=待开始；RUNNING=进行中；ENDED=已结束；
-     *  RESERVED=已达保留价；FAILED=流拍；CANCELLED=已取消） */
+    /** 拍卖状态（PENDING=待开始；BIDDING=竞拍中；ENDED=已结束；
+     *  SETTLED=已结算；CANCELLED=已取消；FAILED=流拍） */
     @TableField("status")
-    private AuctionStatus status = AuctionStatus.PENDING;
+    private String status = "PENDING";
 
     /** 中标人ID（竞价结束后最高出价者，关联 users.id） */
     private Long winnerId;

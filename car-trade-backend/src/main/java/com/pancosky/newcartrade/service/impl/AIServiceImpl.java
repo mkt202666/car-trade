@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 @Service
 @Slf4j
@@ -14,20 +15,48 @@ import java.util.*;
 public class AIServiceImpl implements AIService {
 
     private final AiClient aiClient;
+    private static final String SYSTEM_PROMPT = "你是5D好车的AI助理，专注于二手车交易领域。你可以帮助用户：找车、行情分析、估价、获客文案生成等。回复要专业、简洁、有帮助。";
+
+    // ==================== 消息构建（统一处理 history 的 role 规范化） ====================
+
+    private List<Map<String, String>> buildMessages(String userMessage, List<Map<String, String>> history) {
+        return buildMessages(SYSTEM_PROMPT, userMessage, history);
+    }
+
+    private List<Map<String, String>> buildMessages(String systemPrompt, String userMessage, List<Map<String, String>> history) {
+        List<Map<String, String>> messages = new ArrayList<>();
+        if (systemPrompt != null && !systemPrompt.isEmpty()) {
+            messages.add(Map.of("role", "system", "content", systemPrompt));
+        }
+        if (history != null) {
+            for (Map<String, String> msg : history) {
+                String role = msg.get("role");
+                String content = msg.get("content");
+                if (role == null || content == null) continue;
+                // role 规范化：ai/assistant -> assistant, 其他非法角色 -> user
+                String normalizedRole = switch (role) {
+                    case "ai", "assistant" -> "assistant";
+                    case "user", "human" -> "user";
+                    case "system" -> "system";
+                    default -> "user";
+                };
+                messages.add(Map.of("role", normalizedRole, "content", content));
+            }
+        }
+        if (userMessage != null && !userMessage.isEmpty()) {
+            messages.add(Map.of("role", "user", "content", userMessage));
+        }
+        return messages;
+    }
+
+    // ==================== chat - 一次性返回 ====================
 
     @Override
     public Map<String, Object> chat(Map<String, Object> params) {
         String message = (String) params.get("message");
         List<Map<String, String>> history = (List<Map<String, String>>) params.get("history");
 
-        List<Map<String, String>> messages = new ArrayList<>();
-        messages.add(Map.of("role", "system", "content",
-                "你是5D好车的AI助理，专注于二手车交易领域。你可以帮助用户：找车、行情分析、估价、获客文案生成等。回复要专业、简洁、有帮助。"));
-        if (history != null) {
-            messages.addAll(history);
-        }
-        messages.add(Map.of("role", "user", "content", message));
-
+        List<Map<String, String>> messages = buildMessages(message, history);
         String reply = aiClient.chat(messages);
         if (reply == null) {
             reply = generateSmartReply(message);
@@ -39,22 +68,78 @@ public class AIServiceImpl implements AIService {
         return result;
     }
 
+    // ==================== chatStream - 流式输出（SSE） ====================
+
+    @Override
+    public void chatStream(Map<String, Object> params,
+                           Consumer<String> onNext,
+                           Consumer<String> onComplete,
+                           Consumer<Exception> onError) {
+        String message = (String) params.get("message");
+        List<Map<String, String>> history = (List<Map<String, String>>) params.get("history");
+
+        List<Map<String, String>> messages = buildMessages(message, history);
+
+        // 如果 AI 未启用，返回模拟的"流式"回复（一个字一个字打出来）
+        if (!aiClient.isEnabled()) {
+            final String fallbackText = generateSmartReply(message);
+            new Thread(() -> {
+                try {
+                    // 模拟打字机效果：每个字间隔 30ms
+                    for (int i = 0; i < fallbackText.length(); i++) {
+                        onNext.accept(String.valueOf(fallbackText.charAt(i)));
+                        Thread.sleep(30);
+                    }
+                    onComplete.accept(fallbackText);
+                } catch (InterruptedException e) {
+                    onError.accept(e);
+                }
+            }, "ai-stream-fallback").start();
+            return;
+        }
+
+        // 真正调用大模型流式接口
+        aiClient.chatStream(messages,
+                onNext,
+                onComplete,
+                e -> {
+                    log.error("[AI] 流式调用失败: {}", e.getMessage());
+                    // 失败时 fallback：把 mock 内容流式输出给用户
+                    String fallbackText = generateSmartReply(message);
+                    new Thread(() -> {
+                        try {
+                            for (int i = 0; i < fallbackText.length(); i++) {
+                                onNext.accept(String.valueOf(fallbackText.charAt(i)));
+                                Thread.sleep(30);
+                            }
+                            onComplete.accept(fallbackText);
+                        } catch (InterruptedException ie) {
+                            // ignore
+                        }
+                    }, "ai-stream-error-fallback").start();
+                });
+    }
+
+    // ==================== 其他 AI 能力（均支持多轮会话：message + history） ====================
+
+    private static final String SYSTEM_SEARCH = "你是一名有10年经验的二手车购车顾问。请基于用户的全部对话上下文，理解其真实购车需求（预算、车型、品牌、年份、用途等），给出精准、可落地的车型推荐。如果用户信息不完整，请明确询问缺少的要素。回复结构：1)需求分析 2)车型推荐（3-5款，含价格区间、优缺点、推荐理由）3)购买建议。";
+    private static final String SYSTEM_MARKET = "你是一名二手车市场分析师。请基于对话上下文理解用户关注的品牌/车型/细分市场，用数据说话。回复结构：1)市场概览 2)热门车型及参考价格 3)近期价格走势 4)购买/出手时机建议。";
+    private static final String SYSTEM_COPY = "你是一名资深二手车营销文案策划。请基于用户提供的车辆信息和目标平台，创作有感染力的推广文案。回复结构：3个不同风格的文案方案，每个方案含标题+正文，适合直接复制发布。";
+    private static final String SYSTEM_OUTREACH = "你是一名B端二手车销售顾问。请基于对话上下文理解目标客户画像和车辆信息，制定分阶段的智能外联话术。回复结构：1)首次接触话术 2)跟进培育话术 3)临门促成话术。";
+    private static final String SYSTEM_ANALYZE = "你是一名资深二手车评估师。请基于对话上下文理解目标车辆信息（品牌、车型、年份、里程、车况等），给出专业的价值分析。回复结构：1)综合评分 2)优势亮点 3)风险/注意点 4)市场同级别对比 5)销售建议 6)估价区间。";
+    private static final String SYSTEM_PRICE = "你是一名二手车估价师。请基于对话上下文中的车辆信息（品牌、车型、年份、里程、配置、车况），给出专业的价格评估。如果关键信息缺失，请明确询问。回复结构：1)参考成交价区间 2)建议零售价 3)车商收购价 4)价格影响因素分析 5)同级别车型参考。";
+    private static final String SYSTEM_DISTRIBUTE = "你是一名二手车运营专家。请基于车源信息制定智能分发策略。回复结构：1)推荐投放渠道 2)目标客户画像 3)定价建议 4)推广优先级。";
+
     @Override
     public Map<String, Object> search(Map<String, Object> params) {
-        String budget = (String) params.getOrDefault("budget", "");
-        String carType = (String) params.getOrDefault("carType", "");
-        String brand = (String) params.getOrDefault("brand", "");
-        String year = (String) params.getOrDefault("year", "");
-        String requirements = (String) params.getOrDefault("requirements", "");
+        String message = (String) params.getOrDefault("message", "");
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> history = (List<Map<String, String>>) params.getOrDefault("history", null);
 
-        String prompt = String.format(
-                "你是二手车专家。用户想找车，需求如下：预算=%s, 车型=%s, 品牌=%s, 年份=%s, 其他需求=%s。" +
-                "请推荐3-5款车型，每款说明推荐理由、参考价格区间、优缺点。格式清晰。",
-                budget, carType, brand, year, requirements);
-
-        String reply = aiClient.chat(null, prompt);
+        List<Map<String, String>> messages = buildMessages(SYSTEM_SEARCH, message, history);
+        String reply = aiClient.chat(messages);
         if (reply == null) {
-            reply = buildFallbackSearch(budget, carType, brand);
+            reply = buildFallbackSearch("", "", "");
         }
 
         Map<String, Object> result = new HashMap<>();
@@ -66,17 +151,14 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public Map<String, Object> marketAnalysis(Map<String, Object> params) {
-        String brand = (String) params.getOrDefault("brand", "");
-        String carType = (String) params.getOrDefault("carType", "");
+        String message = (String) params.getOrDefault("message", "");
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> history = (List<Map<String, String>>) params.getOrDefault("history", null);
 
-        String prompt = String.format(
-                "你是二手车市场分析师。请分析当前二手车市场行情，品牌=%s, 车型类型=%s。" +
-                "包含：市场概览、热门车型及价格、价格走势、购买建议。用数据说话。",
-                brand, carType);
-
-        String reply = aiClient.chat(null, prompt);
+        List<Map<String, String>> messages = buildMessages(SYSTEM_MARKET, message, history);
+        String reply = aiClient.chat(messages);
         if (reply == null) {
-            reply = buildFallbackMarketAnalysis(brand);
+            reply = buildFallbackMarketAnalysis("");
         }
 
         Map<String, Object> result = new HashMap<>();
@@ -87,18 +169,14 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public Map<String, Object> generateCopywriting(Map<String, Object> params) {
-        String carInfo = (String) params.getOrDefault("carInfo", "");
-        String platform = (String) params.getOrDefault("platform", "朋友圈");
-        String style = (String) params.getOrDefault("style", "吸引人");
+        String message = (String) params.getOrDefault("message", "");
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> history = (List<Map<String, String>>) params.getOrDefault("history", null);
 
-        String prompt = String.format(
-                "你是营销文案专家。为以下二手车生成推广文案：\n车辆信息：%s\n发布平台：%s\n风格：%s\n" +
-                "生成3个不同风格的文案方案，每个方案有标题和正文，适合直接复制发布。",
-                carInfo, platform, style);
-
-        String reply = aiClient.chat(null, prompt);
+        List<Map<String, String>> messages = buildMessages(SYSTEM_COPY, message, history);
+        String reply = aiClient.chat(messages);
         if (reply == null) {
-            reply = buildFallbackCopywriting(carInfo);
+            reply = buildFallbackCopywriting("");
         }
 
         Map<String, Object> result = new HashMap<>();
@@ -109,15 +187,12 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public Map<String, Object> autoOutreach(Map<String, Object> params) {
-        String customerInfo = (String) params.getOrDefault("customerInfo", "");
-        String carInfo = (String) params.getOrDefault("carInfo", "");
+        String message = (String) params.getOrDefault("message", "");
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> history = (List<Map<String, String>>) params.getOrDefault("history", null);
 
-        String prompt = String.format(
-                "你是汽车销售顾问。根据客户信息生成智能外联话术：\n客户信息：%s\n车辆信息：%s\n" +
-                "生成首次接触、跟进、促成三个阶段的话术。",
-                customerInfo, carInfo);
-
-        String reply = aiClient.chat(null, prompt);
+        List<Map<String, String>> messages = buildMessages(SYSTEM_OUTREACH, message, history);
+        String reply = aiClient.chat(messages);
         if (reply == null) {
             reply = buildFallbackOutreach();
         }
@@ -130,17 +205,14 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public Map<String, Object> distributeCar(Map<String, Object> params) {
-        String carId = (String) params.getOrDefault("carId", "");
-        String city = (String) params.getOrDefault("city", "");
+        String message = (String) params.getOrDefault("message", "");
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> history = (List<Map<String, String>>) params.getOrDefault("history", null);
 
-        String prompt = String.format(
-                "你是二手车运营专家。为车源ID=%s（所在城市=%s）制定智能分发策略。" +
-                "包含：推荐投放渠道、目标客户画像、定价建议、推广策略。",
-                carId, city);
-
-        String reply = aiClient.chat(null, prompt);
+        List<Map<String, String>> messages = buildMessages(SYSTEM_DISTRIBUTE, message, history);
+        String reply = aiClient.chat(messages);
         if (reply == null) {
-            reply = buildFallbackDistribute(carId);
+            reply = buildFallbackDistribute("");
         }
 
         Map<String, Object> result = new HashMap<>();
@@ -151,19 +223,14 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public Map<String, Object> carAnalysis(Map<String, Object> params) {
-        String brand = (String) params.getOrDefault("brand", "");
-        String model = (String) params.getOrDefault("model", "");
-        String year = (String) params.getOrDefault("year", "");
-        String mileage = (String) params.getOrDefault("mileage", "");
+        String message = (String) params.getOrDefault("message", "");
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> history = (List<Map<String, String>>) params.getOrDefault("history", null);
 
-        String prompt = String.format(
-                "你是二手车评估师。对以下车辆进行价值评估分析：品牌=%s, 车型=%s, 年份=%s, 里程=%s公里。" +
-                "包含：综合评分、优势分析、注意事项、市场对比、销售建议、估价区间。",
-                brand, model, year, mileage);
-
-        String reply = aiClient.chat(null, prompt);
+        List<Map<String, String>> messages = buildMessages(SYSTEM_ANALYZE, message, history);
+        String reply = aiClient.chat(messages);
         if (reply == null) {
-            reply = buildFallbackCarAnalysis(brand, model, year, mileage);
+            reply = buildFallbackCarAnalysis("", "", "", "");
         }
 
         Map<String, Object> result = new HashMap<>();
@@ -174,20 +241,14 @@ public class AIServiceImpl implements AIService {
 
     @Override
     public Map<String, Object> priceEstimate(Map<String, Object> params) {
-        String brand = (String) params.getOrDefault("brand", "");
-        String model = (String) params.getOrDefault("model", "");
-        String year = (String) params.getOrDefault("year", "");
-        String mileage = (String) params.getOrDefault("mileage", "");
-        String condition = (String) params.getOrDefault("condition", "");
+        String message = (String) params.getOrDefault("message", "");
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> history = (List<Map<String, String>>) params.getOrDefault("history", null);
 
-        String prompt = String.format(
-                "你是二手车估价师。对以下车辆进行估价：品牌=%s, 车型=%s, 年份=%s, 里程=%s公里, 车况=%s。" +
-                "给出估价区间、建议售价、价格影响因素分析、历史成交参考。",
-                brand, model, year, mileage, condition);
-
-        String reply = aiClient.chat(null, prompt);
+        List<Map<String, String>> messages = buildMessages(SYSTEM_PRICE, message, history);
+        String reply = aiClient.chat(messages);
         if (reply == null) {
-            reply = buildFallbackPriceEstimate(brand, model, year);
+            reply = buildFallbackPriceEstimate("", "", "");
         }
 
         Map<String, Object> result = new HashMap<>();

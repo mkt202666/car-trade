@@ -78,6 +78,9 @@ public class CarUpdateDTO {
     /** 车源描述（富文本） */
     private String description;
 
+    /** 车源视频URL */
+    private String videoUrl;
+
     /** 车源标题 */
     private String title;
 

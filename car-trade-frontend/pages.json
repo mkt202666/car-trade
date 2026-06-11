@@ -158,8 +158,9 @@
     "backgroundColor": "#F5F5F5"
   },
   "tabBar": {
-    "color": "#7A7E83",
-    "selectedColor": "#3c9cff",
+    "custom": true,
+    "color": "#64748B",
+    "selectedColor": "#0369A1",
     "borderStyle": "black",
     "backgroundColor": "#FFFFFF",
     "list": [
@@ -173,7 +174,7 @@
         "pagePath": "pages/trade/index",
         "iconPath": "static/tab/trade.png",
         "selectedIconPath": "static/tab/trade-active.png",
-        "text": "交易"
+        "text": "求购"
       },
       {
         "pagePath": "pages/ai/index",

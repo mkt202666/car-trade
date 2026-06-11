@@ -2,8 +2,10 @@ package com.pancosky.newcartrade.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pancosky.newcartrade.entity.Message;
+import com.pancosky.newcartrade.entity.User;
 import com.pancosky.newcartrade.manager.MessageProducer;
 import com.pancosky.newcartrade.mapper.MessageMapper;
+import com.pancosky.newcartrade.mapper.UserMapper;
 import com.pancosky.newcartrade.service.MessageService;
 import com.pancosky.newcartrade.util.SecurityUtils;
 import com.pancosky.newcartrade.vo.MessageVO;
@@ -21,12 +23,14 @@ import java.util.stream.Collectors;
 public class MessageServiceImpl implements MessageService {
 
     private final MessageMapper messageMapper;
+    private final UserMapper userMapper;
 
     @Autowired(required = false)
     private MessageProducer messageProducer;
 
-    public MessageServiceImpl(MessageMapper messageMapper) {
+    public MessageServiceImpl(MessageMapper messageMapper, UserMapper userMapper) {
         this.messageMapper = messageMapper;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -101,6 +105,27 @@ public class MessageServiceImpl implements MessageService {
             messageProducer.sendChatMessage(message);
         } else {
             log.debug("RocketMQ not available, chat message saved to DB only");
+        }
+    }
+
+    @Override
+    public String getNotificationSettings() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user = userMapper.selectById(userId);
+        if (user == null || user.getNotificationSettings() == null) {
+            return "{\"system\":true,\"auto_promotion\":true,\"order\":true,\"contract\":true,\"deposit\":true,\"shop\":true}";
+        }
+        return user.getNotificationSettings();
+    }
+
+    @Override
+    @Transactional
+    public void updateNotificationSettings(String settings) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user = userMapper.selectById(userId);
+        if (user != null) {
+            user.setNotificationSettings(settings);
+            userMapper.updateById(user);
         }
     }
 

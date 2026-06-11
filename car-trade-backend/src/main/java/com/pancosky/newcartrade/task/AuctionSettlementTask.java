@@ -2,7 +2,6 @@ package com.pancosky.newcartrade.task;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pancosky.newcartrade.entity.Auction;
-import com.pancosky.newcartrade.enums.AuctionStatus;
 import com.pancosky.newcartrade.mapper.AuctionMapper;
 import com.pancosky.newcartrade.service.AuctionService;
 import lombok.RequiredArgsConstructor;
@@ -29,14 +28,14 @@ public class AuctionSettlementTask {
     public void settleExpiredAuctions() {
         // 查找状态为 BIDDING 且已过结束时间的拍卖
         LambdaQueryWrapper<Auction> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Auction::getStatus, AuctionStatus.BIDDING)
+        wrapper.eq(Auction::getStatus, "BIDDING")
                .le(Auction::getEndTime, LocalDateTime.now());
         List<Auction> expired = auctionMapper.selectList(wrapper);
 
         for (Auction auction : expired) {
             try {
                 // 先标记为 ENDED
-                auction.setStatus(AuctionStatus.ENDED);
+                auction.setStatus("ENDED");
                 auctionMapper.updateById(auction);
 
                 // 执行结算
@@ -52,13 +51,13 @@ public class AuctionSettlementTask {
     public void startPendingAuctions() {
         // 查找状态为 PENDING 且已到开始时间的拍卖
         LambdaQueryWrapper<Auction> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Auction::getStatus, AuctionStatus.PENDING)
+        wrapper.eq(Auction::getStatus, "PENDING")
                .le(Auction::getStartTime, LocalDateTime.now());
         List<Auction> ready = auctionMapper.selectList(wrapper);
 
         for (Auction auction : ready) {
             try {
-                auction.setStatus(AuctionStatus.BIDDING);
+                auction.setStatus("BIDDING");
                 auctionMapper.updateById(auction);
                 log.info("Auto-started auction {}", auction.getId());
             } catch (Exception e) {

@@ -43,6 +43,7 @@ public class CarConverter {
         vo.setUsageType(source.getUsageType());
         vo.setIsMortgaged(source.getIsMortgaged());
         vo.setCoverImage(source.getCoverImage());
+        vo.setVideoUrl(source.getVideoUrl());
         vo.setAuctionStatus(source.getAuctionStatus());
         vo.setAuctionRemaining(calcAuctionRemaining(source.getAuctionEndTime()));
         vo.setHasParticipated(false);
@@ -98,6 +99,7 @@ public class CarConverter {
         vo.setKeyCount(source.getKeyCount());
         vo.setDescription(source.getDescription());
         vo.setCoverImage(source.getCoverImage());
+        vo.setVideoUrl(source.getVideoUrl());
         vo.setAuctionStatus(source.getAuctionStatus());
         vo.setAuctionEndTime(source.getAuctionEndTime());
         vo.setCreatedAt(source.getCreatedAt());

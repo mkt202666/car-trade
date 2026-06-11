@@ -1,6 +1,5 @@
 package com.pancosky.newcartrade.vo;
 
-import com.pancosky.newcartrade.enums.AuctionStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -59,8 +58,8 @@ public class AuctionDetailVO {
     /** 拍卖结束时间 */
     private LocalDateTime endTime;
 
-    /** 拍卖状态 */
-    private AuctionStatus status;
+    /** 拍卖状态（PENDING=待开始；BIDDING=竞拍中；ENDED=已结束；SETTLED=已结算；CANCELLED=已取消；FAILED=流拍） */
+    private String status;
 
     /** 卖家ID */
     private Long sellerId;

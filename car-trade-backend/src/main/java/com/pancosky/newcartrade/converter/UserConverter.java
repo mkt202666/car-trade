@@ -5,6 +5,8 @@ import com.pancosky.newcartrade.vo.UserPublicVO;
 import com.pancosky.newcartrade.vo.UserVO;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
 @Component
 public class UserConverter {
 
@@ -17,17 +19,22 @@ public class UserConverter {
         vo.setPhone(maskPhone(user.getPhone()));
         vo.setAvatar(user.getAvatarUrl());
         vo.setShopName(user.getShopName());
+        vo.setShopLogo(user.getShopLogo());
+        vo.setShopDescription(user.getShopDescription());
         vo.setCreditGrade(user.getCreditGrade());
         vo.setCreditScore(user.getCreditScore());
-        vo.setDealCount(user.getDealCount());
+        vo.setDealCount(user.getDealCount() == null ? 0 : user.getDealCount());
         vo.setMemberExpireAt(user.getMemberExpireAt());
-        vo.setOnSaleCount(user.getOnSaleCount());
-        vo.setViewCount(user.getViewCount());
-        vo.setViewCountToday(user.getViewCountToday());
-        vo.setMessageCount(user.getMessageCount());
-        vo.setMessageCountToday(user.getMessageCountToday());
-        vo.setFollowerCount(user.getFollowerCount());
-        vo.setFollowerCountToday(user.getFollowerCountToday());
+        // 保证金账户信息（演示环境下设置默认值，实际应由财务账户表查询）
+        vo.setDepositBalance(BigDecimal.ZERO);
+        vo.setDepositTotal(BigDecimal.ZERO);
+        vo.setOnSaleCount(user.getOnSaleCount() == null ? 0 : user.getOnSaleCount());
+        vo.setViewCount(user.getViewCount() == null ? 0L : user.getViewCount());
+        vo.setViewCountToday(user.getViewCountToday() == null ? 0 : user.getViewCountToday());
+        vo.setMessageCount(user.getMessageCount() == null ? 0L : user.getMessageCount());
+        vo.setMessageCountToday(user.getMessageCountToday() == null ? 0 : user.getMessageCountToday());
+        vo.setFollowerCount(user.getFollowerCount() == null ? 0 : user.getFollowerCount());
+        vo.setFollowerCountToday(user.getFollowerCountToday() == null ? 0 : user.getFollowerCountToday());
         vo.setCertificationStatus(user.getCertificationStatus());
         vo.setDescription(user.getDescription());
         vo.setCreatedAt(user.getCreatedAt());
@@ -41,6 +48,8 @@ public class UserConverter {
         vo.setNickname(user.getNickname());
         vo.setAvatar(user.getAvatarUrl());
         vo.setShopName(user.getShopName());
+        vo.setShopLogo(user.getShopLogo());
+        vo.setShopDescription(user.getShopDescription());
         vo.setCreditGrade(user.getCreditGrade());
         vo.setDealCount(user.getDealCount());
         vo.setOnSaleCount(user.getOnSaleCount());

@@ -136,6 +136,9 @@ public class CarSource {
     /** 是否草稿（true=未发布草稿状态，不展示给买家） */
     private Boolean isDraft;
 
+    /** 车源视频URL（支持视频格式，用于车源详情页视频展示） */
+    private String videoUrl;
+
     /** 拍卖状态（仅当pricingType=AUCTION时有值，参考 enums.AuctionStatus） */
     private String auctionStatus;
 
