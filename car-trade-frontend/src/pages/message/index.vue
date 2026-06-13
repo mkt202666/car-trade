@@ -119,6 +119,9 @@
         <text class="footer-text">💡 开启订阅后，您将及时收到重要通知</text>
       </view>
     </view>
+
+    <!-- 自定义底部导航栏 -->
+    <custom-tab-bar />
   </view>
 </template>
 
@@ -126,9 +129,13 @@
 import { getMessageList, markAllRead, markRead, getUnreadCount, getNotificationSettings, updateNotificationSettings } from '@/api/message'
 import { getConversations } from '@/api/chat'
 import { requireAuth } from '@/utils/auth'
+import CustomTabBar from '@/custom-tab-bar/index.vue'
 
 export default {
   name: 'MessageCenter',
+  components: {
+    CustomTabBar
+  },
   data() {
     return {
       currentTab: 0,
@@ -325,37 +332,65 @@ export default {
 
 <style lang="scss" scoped>
 /* =========================================================
-   5D好车 - 消息订阅 - 高级UI设计
-   颜色系统: 深蓝主色 #0369A1 | 灰色层次 | 状态色标识
+   5D好车 - 消息中心 - Liquid Glass Premium Design
+   设计语言: Glassmorphism | Dimensional Layering | Motion
+   颜色系统: 深海军蓝 #0F172A | CTA蓝 #0369A1 | 琥珀金 #F59E0B
    ========================================================= */
 
 /* ============ 主容器 ============ */
 .page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%);
-  padding-bottom: 200rpx;
+  background:
+    radial-gradient(ellipse at top left, rgba(3, 105, 161, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(245, 158, 11, 0.04) 0%, transparent 50%),
+    linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%);
+  padding-bottom: 220rpx;
 }
 
-/* ============ 顶部标题 ============ */
+/* ============ 顶部标题 Hero ============ */
 .header {
-  background: #ffffff;
-  padding: 32rpx;
+  position: relative;
+  padding: 56rpx 32rpx 40rpx;
   text-align: center;
-  border-bottom: 1rpx solid #F1F5F9;
-}
-.header-title {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #0F172A;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 200rpx;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.04) 0%, transparent 100%);
+    pointer-events: none;
+  }
 }
 
-/* ============ Tab 切换 ============ */
+.header-title {
+  font-size: 42rpx;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: 1rpx;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============ Tab 切换 - Glass Pill Style ============ */
 .tabs-wrap {
   display: flex;
-  background: #ffffff;
-  padding: 16rpx 32rpx;
-  gap: 16rpx;
-  border-bottom: 1rpx solid rgba(226, 232, 240, 0.6);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  padding: 12rpx;
+  margin: 0 24rpx 24rpx;
+  gap: 12rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06), 0 1rpx 4rpx rgba(15, 23, 42, 0.03);
 }
 
 .tab-item {
@@ -364,40 +399,48 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 12rpx;
-  padding: 20rpx 0;
-  border-radius: 12rpx;
-  background: #F8FAFC;
-  border: 1rpx solid #E2E8F0;
+  padding: 24rpx 16rpx;
+  border-radius: 18rpx;
+  background: transparent;
   cursor: pointer;
-  transition: all 250ms ease;
+  transition: all 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  &:active {
+    transform: scale(0.97);
+  }
 }
 
 .tab-text {
   font-size: 28rpx;
   color: #64748B;
   font-weight: 500;
-  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 .tab-item.active {
-  background: #FFFBEB;
-  border-color: #FDE68A;
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  box-shadow:
+    0 4rpx 20rpx rgba(15, 23, 42, 0.25),
+    0 1rpx 4rpx rgba(15, 23, 42, 0.1),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.1);
+
   .tab-text {
-    color: #D97706;
+    color: #ffffff;
     font-weight: 700;
+    letter-spacing: 0.5rpx;
   }
 }
 
 /* ============ Tab 内容 ============ */
 .tab-content {
-  padding: 24rpx;
-  animation: fadeInUp 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0 24rpx;
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(16rpx);
+    transform: translateY(20rpx);
   }
   to {
     opacity: 1;
@@ -405,57 +448,67 @@ export default {
   }
 }
 
-/* ============ 消息分组 ============ */
+/* ============ 消息分组 - Liquid Glass Card ============ */
 .message-group {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16rpx);
   border-radius: 28rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06);
-  border: 1rpx solid rgba(226, 232, 240, 0.6);
+  box-shadow:
+    0 4rpx 24rpx rgba(15, 23, 42, 0.08),
+    0 1rpx 4rpx rgba(15, 23, 42, 0.04);
+  border: 1rpx solid rgba(226, 232, 240, 0.7);
   overflow: hidden;
+  position: relative;
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) 100ms both;
 }
 
 .group-header {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  padding: 24rpx 28rpx;
-  border-bottom: 1rpx solid #F1F5F9;
+  gap: 16rpx;
+  padding: 28rpx 28rpx;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(241, 245, 249, 0.5) 100%);
+  border-bottom: 1rpx solid rgba(226, 232, 240, 0.5);
 }
 
 .group-icon {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 14rpx;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 18rpx;
   background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2rpx 8rpx rgba(3, 105, 161, 0.15);
 
   text {
-    font-size: 24rpx;
+    font-size: 26rpx;
   }
 
   &.chat {
     background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+    box-shadow: 0 2rpx 8rpx rgba(245, 158, 11, 0.2);
   }
 }
 
 .group-title {
-  font-size: 28rpx;
+  font-size: 30rpx;
   font-weight: 700;
   color: #0F172A;
   flex: 1;
+  letter-spacing: 0.3rpx;
 }
 
 .group-date {
   font-size: 22rpx;
   color: #94A3B8;
+  font-weight: 500;
 }
 
 /* ============ 消息列表 ============ */
 .msg-list {
-  padding: 8rpx 0;
+  padding: 4rpx 0;
 }
 
 .msg-item {
@@ -463,45 +516,68 @@ export default {
   align-items: center;
   padding: 24rpx 28rpx;
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 120rpx;
+    right: 28rpx;
+    bottom: 0;
+    height: 1rpx;
+    background: linear-gradient(90deg, transparent 0%, rgba(226, 232, 240, 0.7) 10%, rgba(226, 232, 240, 0.7) 90%, transparent 100%);
+  }
+
+  &:last-child::after {
+    display: none;
+  }
 
   &:active {
-    background: #F8FAFC;
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.7) 100%);
+    transform: scale(0.995);
   }
 }
 
 .msg-icon {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 20rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 24rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 20rpx;
   flex-shrink: 0;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1), inset 0 1rpx 0 rgba(255, 255, 255, 0.25);
 
   .msg-icon-text {
-    font-size: 32rpx;
+    font-size: 34rpx;
+    filter: drop-shadow(0 2rpx 4rpx rgba(0, 0, 0, 0.2));
   }
 
   &.icon-auto_promotion {
     background: linear-gradient(135deg, #0369A1 0%, #0EA5E9 100%);
+    box-shadow: 0 4rpx 16rpx rgba(3, 105, 161, 0.35), inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
   }
   &.icon-order_update {
     background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+    box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.35), inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
   }
   &.icon-contract {
     background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+    box-shadow: 0 4rpx 16rpx rgba(16, 185, 129, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
   }
   &.icon-deposit_warning {
     background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
+    box-shadow: 0 4rpx 16rpx rgba(239, 68, 68, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
   }
   &.icon-shop_apply {
     background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+    box-shadow: 0 4rpx 16rpx rgba(139, 92, 246, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
   }
   &.icon-system {
-    background: linear-gradient(135deg, #64748B 0%, #94A3B8 100%);
+    background: linear-gradient(135deg, #475569 0%, #64748B 100%);
+    box-shadow: 0 4rpx 16rpx rgba(71, 85, 105, 0.25), inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
   }
 }
 
@@ -511,27 +587,29 @@ export default {
 }
 
 .msg-title {
-  font-size: 28rpx;
-  font-weight: 600;
+  font-size: 30rpx;
+  font-weight: 700;
   color: #0F172A;
   display: block;
-  margin-bottom: 6rpx;
+  margin-bottom: 8rpx;
+  letter-spacing: 0.3rpx;
 }
 
 .msg-content {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #64748B;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.5;
 }
 
 .msg-meta {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 10rpx;
+  gap: 12rpx;
   margin-left: 16rpx;
   flex-shrink: 0;
 }
@@ -539,23 +617,28 @@ export default {
 .msg-time {
   font-size: 22rpx;
   color: #94A3B8;
+  font-weight: 500;
 }
 
 .msg-unread {
-  width: 16rpx;
-  height: 16rpx;
-  background: #EF4444;
+  width: 18rpx;
+  height: 18rpx;
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
   border-radius: 50%;
-  box-shadow: 0 2rpx 8rpx rgba(239, 68, 68, 0.4);
+  box-shadow: 0 2rpx 10rpx rgba(239, 68, 68, 0.5), 0 0 0 4rpx rgba(239, 68, 68, 0.12);
 }
 
 /* ============ 聊天对话列表 ============ */
 .chat-group {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16rpx);
   border-radius: 28rpx;
-  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06);
-  border: 1rpx solid rgba(226, 232, 240, 0.6);
+  box-shadow:
+    0 4rpx 24rpx rgba(15, 23, 42, 0.08),
+    0 1rpx 4rpx rgba(15, 23, 42, 0.04);
+  border: 1rpx solid rgba(226, 232, 240, 0.7);
   overflow: hidden;
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) 200ms both;
 }
 
 .chat-item {
@@ -563,15 +646,26 @@ export default {
   align-items: center;
   padding: 24rpx 28rpx;
   cursor: pointer;
-  transition: all 200ms ease;
-  border-bottom: 1rpx solid #F1F5F9;
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  position: relative;
 
-  &:last-child {
-    border-bottom: none;
+  &::after {
+    content: '';
+    position: absolute;
+    left: 136rpx;
+    right: 28rpx;
+    bottom: 0;
+    height: 1rpx;
+    background: linear-gradient(90deg, transparent 0%, rgba(226, 232, 240, 0.7) 10%, rgba(226, 232, 240, 0.7) 90%, transparent 100%);
+  }
+
+  &:last-child::after {
+    display: none;
   }
 
   &:active {
-    background: #F8FAFC;
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.7) 100%);
+    transform: scale(0.995);
   }
 }
 
@@ -582,23 +676,23 @@ export default {
 }
 
 .chat-avatar {
-  width: 88rpx;
-  height: 88rpx;
-  border-radius: 24rpx;
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 28rpx;
   background: linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%);
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.1), inset 0 1rpx 0 rgba(255, 255, 255, 0.5);
 }
 
 .chat-online {
   position: absolute;
-  right: 4rpx;
-  bottom: 4rpx;
-  width: 20rpx;
-  height: 20rpx;
-  background: #10B981;
+  right: 6rpx;
+  bottom: 6rpx;
+  width: 22rpx;
+  height: 22rpx;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   border-radius: 50%;
-  border: 3rpx solid #ffffff;
-  box-shadow: 0 2rpx 8rpx rgba(16, 185, 129, 0.4);
+  border: 4rpx solid #ffffff;
+  box-shadow: 0 2rpx 8rpx rgba(16, 185, 129, 0.5);
 }
 
 .chat-info {
@@ -610,13 +704,14 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8rpx;
+  margin-bottom: 10rpx;
 }
 
 .chat-name {
-  font-size: 28rpx;
-  font-weight: 600;
+  font-size: 30rpx;
+  font-weight: 700;
   color: #0F172A;
+  letter-spacing: 0.3rpx;
 }
 
 .chat-time {
@@ -624,6 +719,7 @@ export default {
   color: #94A3B8;
   flex-shrink: 0;
   margin-left: 16rpx;
+  font-weight: 500;
 }
 
 .chat-bottom {
@@ -633,38 +729,46 @@ export default {
 }
 
 .chat-msg {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #64748B;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-right: 16rpx;
+  line-height: 1.5;
 }
 
 .chat-badge {
-  min-width: 40rpx;
-  height: 40rpx;
-  background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
-  border-radius: 20rpx;
+  min-width: 44rpx;
+  height: 44rpx;
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  border-radius: 22rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 12rpx;
+  padding: 0 14rpx;
   flex-shrink: 0;
-  box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.3);
-  animation: badgePulse 2s ease-in-out infinite;
+  box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.35), inset 0 1rpx 0 rgba(255, 255, 255, 0.25);
+  animation: badgePulse 2.4s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
 
   text {
     font-size: 22rpx;
     color: #ffffff;
     font-weight: 700;
+    letter-spacing: 0.5rpx;
   }
 }
 
 @keyframes badgePulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.35), inset 0 1rpx 0 rgba(255, 255, 255, 0.25);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 6rpx 20rpx rgba(239, 68, 68, 0.45), inset 0 1rpx 0 rgba(255, 255, 255, 0.25);
+  }
 }
 
 /* ============ 空状态 ============ */
@@ -673,63 +777,82 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 120rpx 40rpx;
-  background: #ffffff;
+  padding: 140rpx 40rpx;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16rpx);
   border-radius: 28rpx;
-  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06);
+  box-shadow:
+    0 4rpx 24rpx rgba(15, 23, 42, 0.08),
+    0 1rpx 4rpx rgba(15, 23, 42, 0.04);
+  border: 1rpx solid rgba(226, 232, 240, 0.7);
 }
 
 .empty-icon-wrap {
-  width: 160rpx;
-  height: 160rpx;
+  width: 180rpx;
+  height: 180rpx;
   background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
-  border-radius: 48rpx;
+  border-radius: 56rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 32rpx;
+  margin-bottom: 36rpx;
+  box-shadow: inset 0 2rpx 8rpx rgba(15, 23, 42, 0.06), 0 4rpx 16rpx rgba(15, 23, 42, 0.06);
 }
 
 .empty-icon {
-  font-size: 80rpx;
+  font-size: 88rpx;
+  opacity: 0.7;
 }
 
 .empty-title {
-  font-size: 32rpx;
+  font-size: 34rpx;
   color: #0F172A;
   font-weight: 700;
-  margin-bottom: 12rpx;
+  margin-bottom: 14rpx;
+  letter-spacing: 0.5rpx;
 }
 
 .empty-desc {
   font-size: 26rpx;
   color: #64748B;
+  line-height: 1.6;
+  text-align: center;
 }
 
-/* ============ 订阅页面 ============ */
+/* ============ 订阅管理页面 ============ */
 .subscribe-header {
-  padding: 32rpx 8rpx;
+  padding: 8rpx 8rpx 32rpx;
+  position: relative;
 }
 
 .subscribe-header-title {
-  font-size: 36rpx;
+  font-size: 40rpx;
   font-weight: 800;
   color: #0F172A;
   display: block;
+  letter-spacing: 1rpx;
+  background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .subscribe-header-desc {
   font-size: 26rpx;
   color: #64748B;
-  margin-top: 8rpx;
+  margin-top: 12rpx;
   display: block;
+  line-height: 1.6;
 }
 
 .subscribe-list {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16rpx);
   border-radius: 28rpx;
-  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.06);
-  border: 1rpx solid rgba(226, 232, 240, 0.6);
+  box-shadow:
+    0 4rpx 24rpx rgba(15, 23, 42, 0.08),
+    0 1rpx 4rpx rgba(15, 23, 42, 0.04);
+  border: 1rpx solid rgba(226, 232, 240, 0.7);
   overflow: hidden;
 }
 
@@ -737,39 +860,39 @@ export default {
   display: flex;
   align-items: center;
   padding: 28rpx;
-  border-bottom: 1rpx solid #F1F5F9;
-  transition: all 200ms ease;
+  border-bottom: 1rpx solid rgba(226, 232, 240, 0.5);
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
   &:last-child {
     border-bottom: none;
   }
 
   &:active {
-    background: #F8FAFC;
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.7) 100%);
   }
 }
 
 .sub-icon {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 20rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 24rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 20rpx;
   flex-shrink: 0;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.08), inset 0 1rpx 0 rgba(255, 255, 255, 0.6);
 
   text {
-    font-size: 32rpx;
+    font-size: 34rpx;
   }
 
-  &.sub-1 { background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%); }
-  &.sub-2 { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); }
-  &.sub-3 { background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%); }
-  &.sub-4 { background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%); }
-  &.sub-5 { background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); }
-  &.sub-6 { background: linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%); }
+  &.sub-1 { background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%); box-shadow: 0 4rpx 16rpx rgba(3, 105, 161, 0.2), inset 0 1rpx 0 rgba(255, 255, 255, 0.6); }
+  &.sub-2 { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.2), inset 0 1rpx 0 rgba(255, 255, 255, 0.6); }
+  &.sub-3 { background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%); box-shadow: 0 4rpx 16rpx rgba(59, 130, 246, 0.2), inset 0 1rpx 0 rgba(255, 255, 255, 0.6); }
+  &.sub-4 { background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%); box-shadow: 0 4rpx 16rpx rgba(16, 185, 129, 0.2), inset 0 1rpx 0 rgba(255, 255, 255, 0.6); }
+  &.sub-5 { background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); box-shadow: 0 4rpx 16rpx rgba(239, 68, 68, 0.15), inset 0 1rpx 0 rgba(255, 255, 255, 0.6); }
+  &.sub-6 { background: linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%); box-shadow: 0 4rpx 16rpx rgba(139, 92, 246, 0.2), inset 0 1rpx 0 rgba(255, 255, 255, 0.6); }
 }
 
 .sub-info {
@@ -778,37 +901,40 @@ export default {
 }
 
 .sub-title {
-  font-size: 28rpx;
-  font-weight: 600;
+  font-size: 30rpx;
+  font-weight: 700;
   color: #0F172A;
   display: block;
-  margin-bottom: 6rpx;
+  margin-bottom: 8rpx;
+  letter-spacing: 0.3rpx;
 }
 
 .sub-desc {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #64748B;
   display: block;
+  line-height: 1.5;
 }
 
 .sub-switch-wrap {
   padding: 8rpx;
   cursor: pointer;
-  margin-left: 16rpx;
+  margin-left: 20rpx;
+  flex-shrink: 0;
 }
 
 .sub-switch {
-  width: 88rpx;
-  height: 48rpx;
-  border-radius: 24rpx;
-  background: #E2E8F0;
+  width: 96rpx;
+  height: 52rpx;
+  border-radius: 26rpx;
+  background: linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%);
   position: relative;
-  transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: inset 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+  transition: all 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  box-shadow: inset 0 2rpx 6rpx rgba(15, 23, 42, 0.1);
 
   &.active {
-    background: linear-gradient(135deg, #0369A1 0%, #0284C7 100%);
-    box-shadow: 0 4rpx 16rpx rgba(3, 105, 161, 0.3);
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+    box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.35), inset 0 1rpx 0 rgba(255, 255, 255, 0.1);
   }
 }
 
@@ -816,15 +942,15 @@ export default {
   position: absolute;
   top: 6rpx;
   left: 6rpx;
-  width: 36rpx;
-  height: 36rpx;
+  width: 40rpx;
+  height: 40rpx;
   border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
-  transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: linear-gradient(135deg, #ffffff 0%, #F8FAFC 100%);
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.15), 0 1rpx 2rpx rgba(15, 23, 42, 0.1);
+  transition: all 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
   .sub-switch.active & {
-    left: 46rpx;
+    left: 50rpx;
   }
 }
 
@@ -836,48 +962,37 @@ export default {
 .footer-text {
   font-size: 24rpx;
   color: #94A3B8;
+  line-height: 1.6;
 }
 
 /* ============ 响应式适配 ============ */
 @media (max-width: 320px) {
   .msg-icon {
-    width: 60rpx;
-    height: 60rpx;
-    border-radius: 16rpx;
-
-    .msg-icon-text {
-      font-size: 26rpx;
-    }
+    width: 64rpx;
+    height: 64rpx;
+    border-radius: 20rpx;
+    .msg-icon-text { font-size: 28rpx; }
   }
   .chat-avatar {
-    width: 72rpx;
-    height: 72rpx;
-    border-radius: 20rpx;
+    width: 76rpx;
+    height: 76rpx;
+    border-radius: 22rpx;
   }
   .sub-icon {
-    width: 60rpx;
-    height: 60rpx;
-    border-radius: 16rpx;
-
-    text {
-      font-size: 26rpx;
-    }
+    width: 64rpx;
+    height: 64rpx;
+    border-radius: 20rpx;
+    text { font-size: 28rpx; }
   }
-  .subscribe-header-title {
-    font-size: 32rpx;
-  }
+  .subscribe-header-title { font-size: 34rpx; }
+  .header-title { font-size: 36rpx; }
 }
 
 @media (min-width: 376px) {
-  .msg-title {
-    font-size: 30rpx;
-  }
-  .chat-name {
-    font-size: 30rpx;
-  }
-  .sub-title {
-    font-size: 30rpx;
-  }
+  .msg-title { font-size: 32rpx; }
+  .chat-name { font-size: 32rpx; }
+  .sub-title { font-size: 32rpx; }
+  .msg-content, .chat-msg, .sub-desc { font-size: 28rpx; }
 }
 
 /* ============ 减少动画偏好 ============ */

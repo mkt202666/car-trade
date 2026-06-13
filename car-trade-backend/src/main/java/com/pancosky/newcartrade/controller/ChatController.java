@@ -1,4 +1,6 @@
 package com.pancosky.newcartrade.controller;
+import com.pancosky.newcartrade.common.RequiresAuth;
+import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.dto.CreateConversationDTO;
@@ -20,6 +22,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/chat")
 @RequiredArgsConstructor
+@RequiresAuth(AuthLevel.PROTECTED)
 public class ChatController {
 
     private final ChatService chatService;

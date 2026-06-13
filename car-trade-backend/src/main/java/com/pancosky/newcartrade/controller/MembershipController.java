@@ -1,4 +1,6 @@
 package com.pancosky.newcartrade.controller;
+import com.pancosky.newcartrade.common.RequiresAuth;
+import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.service.MembershipService;
@@ -19,6 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/membership")
 @RequiredArgsConstructor
+@RequiresAuth(AuthLevel.PROTECTED)
 public class MembershipController {
 
     private final MembershipService membershipService;
@@ -30,6 +33,7 @@ public class MembershipController {
      * 认证要求：公开。
      */
     @GetMapping("/plans")
+    @RequiresAuth(AuthLevel.PUBLIC)
     public ApiResponse<List<MemberPlanVO>> listPlans() {
         return ApiResponse.success(membershipService.listPlans());
     }

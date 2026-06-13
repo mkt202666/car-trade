@@ -68,15 +68,22 @@ Controller → Service → Manager → Mapper
 ### Profile & Config
 
 - Profiles: `local`, `test`, `prod` — activated via `SPRING_PROFILES_ACTIVE` env var (defaults to `local`)
-- DB init: `spring.sql.init.mode=always` — runs `schema.sql` + `data.sql` on startup
+- **DB init**: Handled by `StartupRunner` when `car-trade.init-db=true` (NOT `spring.sql.init.mode=always`)
 - API prefix: `/api/v1` (configured in `application.properties`)
 - AI config: env vars `AI_ENABLED`, `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL`
+
+**Required environment variables for local dev** (via `.env.local` or export):
+
+- `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` — PostgreSQL connection
+- `REDIS_HOST`, `REDIS_PASSWORD` — Redis connection
+- `JWT_SECRET` — JWT signing key (fail-fast if missing)
+- `AI_API_KEY` — Volcengine Ark API key
 
 ## Frontend Architecture
 
 ### Page structure (`pages.json`)
 
-24 pages registered. 5-tab custom tab bar: 找车 / 求购 / AI助理 / 消息 / 我的
+24+ pages registered. 5-tab custom tab bar: 找车 / 求购 / AI助理 / 消息 / 我的
 
 ### API layer (`src/api/`)
 
@@ -104,7 +111,7 @@ Vuex 4 in `src/store/` — only for global state (user info, token). Server data
 
 ## Infrastructure
 
-- **PostgreSQL 16** — 28 tables, schema in `car-trade-backend/src/main/resources/schema.sql`
+- **PostgreSQL 16** — 34 tables, schema in `car-trade-backend/src/main/resources/schema.sql`
 - **Redis 7** — car source caching, token storage, hot data
 - **RocketMQ 5.x** — async message processing (order events, auction settlement, notifications)
 - **WebSocket (STOMP)** — real-time chat, order status push
@@ -114,7 +121,7 @@ Vuex 4 in `src/store/` — only for global state (user info, token). Server data
 
 - **No backend tests exist** — no test files in `car-trade-backend/src/test/`
 - **No frontend linting/formatting** — no ESLint, Prettier, or similar configured
-- To verify changes: `./mvnw clean compile` (backend), `npm run build:h5` (frontend)
+- To verify changes: `mvn compile -q` (backend), `npm run build:h5` (frontend)
 
 ## Documentation
 

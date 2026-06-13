@@ -12,6 +12,7 @@ import com.pancosky.newcartrade.dto.CreateConversationDTO;
 import com.pancosky.newcartrade.entity.*;
 import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.mapper.*;
+import com.pancosky.newcartrade.security.OwnerAssert;
 import com.pancosky.newcartrade.service.BrowsingHistoryService;
 import com.pancosky.newcartrade.service.CarService;
 import com.pancosky.newcartrade.service.ChatService;
@@ -102,6 +103,64 @@ public class CarServiceImpl implements CarService {
         int size = query.getSize() == null || query.getSize() < 1 ? 10 : query.getSize();
         IPage<CarSource> pageInfo = carMapper.selectPage(new Page<>(page, size), wrapper);
 
+        List<CarVO> vos = assembleCarVOs(pageInfo.getRecords());
+        return PageResult.of(vos, pageInfo.getTotal(), page, size);
+    }
+
+    @Override
+    public PageResult<CarVO> listByUser(CarQueryDTO query) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            throw new BusinessException("请先登录");
+        }
+        
+        LambdaQueryWrapper<CarSource> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CarSource::getUserId, userId);
+        wrapper.eq(CarSource::getStatus, "ACTIVE");
+        
+        if (StringUtils.hasText(query.getKeyword())) {
+            wrapper.like(CarSource::getTitle, query.getKeyword());
+        }
+
+        int page = query.getPage() == null || query.getPage() < 1 ? 1 : query.getPage();
+        int size = query.getSize() == null || query.getSize() < 1 ? 10 : query.getSize();
+        
+        IPage<CarSource> pageInfo = carMapper.selectPage(new Page<>(page, size), wrapper);
+        List<CarVO> vos = assembleCarVOs(pageInfo.getRecords());
+        return PageResult.of(vos, pageInfo.getTotal(), page, size);
+    }
+
+    @Override
+    public PageResult<CarVO> listFavorites(CarQueryDTO query) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            throw new BusinessException("请先登录");
+        }
+
+        // 先查询用户收藏的车源ID
+        List<UserFavorite> favorites = userFavoriteMapper.selectList(
+                new LambdaQueryWrapper<UserFavorite>().eq(UserFavorite::getUserId, userId)
+        );
+        if (favorites.isEmpty()) {
+            int page = query.getPage() == null || query.getPage() < 1 ? 1 : query.getPage();
+            int size = query.getSize() == null || query.getSize() < 1 ? 10 : query.getSize();
+            return PageResult.of(Collections.emptyList(), 0L, page, size);
+        }
+
+        List<Long> carIds = favorites.stream().map(UserFavorite::getCarId).collect(Collectors.toList());
+
+        LambdaQueryWrapper<CarSource> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(CarSource::getId, carIds);
+        wrapper.eq(CarSource::getStatus, "ACTIVE");
+
+        if (StringUtils.hasText(query.getKeyword())) {
+            wrapper.like(CarSource::getTitle, query.getKeyword());
+        }
+
+        int page = query.getPage() == null || query.getPage() < 1 ? 1 : query.getPage();
+        int size = query.getSize() == null || query.getSize() < 1 ? 10 : query.getSize();
+
+        IPage<CarSource> pageInfo = carMapper.selectPage(new Page<>(page, size), wrapper);
         List<CarVO> vos = assembleCarVOs(pageInfo.getRecords());
         return PageResult.of(vos, pageInfo.getTotal(), page, size);
     }
@@ -231,8 +290,10 @@ public class CarServiceImpl implements CarService {
     @Override
     @Transactional
     public CarVO update(Long id, CarUpdateDTO dto) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
         CarSource entity = carMapper.selectById(id);
         if (entity == null) throw new BusinessException("Car not found");
+        OwnerAssert.assertOwner(currentUserId, entity.getUserId());
         if (dto.getBrandId() != null) entity.setBrandId(dto.getBrandId());
         if (dto.getSeriesId() != null) entity.setSeriesId(dto.getSeriesId());
         if (dto.getModelId() != null) entity.setModelId(dto.getModelId());
@@ -258,8 +319,10 @@ public class CarServiceImpl implements CarService {
     @Override
     @Transactional
     public void delete(Long id) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
         CarSource entity = carMapper.selectById(id);
         if (entity == null) throw new BusinessException("Car not found");
+        OwnerAssert.assertOwner(currentUserId, entity.getUserId());
         carMapper.deleteById(id);
     }
 

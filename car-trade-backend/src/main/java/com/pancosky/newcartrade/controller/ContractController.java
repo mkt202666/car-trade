@@ -1,4 +1,6 @@
 package com.pancosky.newcartrade.controller;
+import com.pancosky.newcartrade.common.RequiresAuth;
+import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.service.ContractService;
@@ -18,6 +20,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/contracts")
 @RequiredArgsConstructor
+@RequiresAuth(AuthLevel.PROTECTED)
 public class ContractController {
 
     private final ContractService contractService;

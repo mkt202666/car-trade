@@ -1,4 +1,6 @@
 package com.pancosky.newcartrade.controller;
+import com.pancosky.newcartrade.common.RequiresAuth;
+import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.service.ShopMemberService;
@@ -18,6 +20,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/shop")
 @RequiredArgsConstructor
+@RequiresAuth(AuthLevel.PROTECTED)
 public class ShopMemberController {
 
     private final ShopMemberService shopMemberService;
@@ -54,8 +57,8 @@ public class ShopMemberController {
      * 认证要求：必须登录；店铺主账号才能审核。
      */
     @PutMapping("/members/{id}/approve")
-    public ApiResponse<Void> approve(@PathVariable Long id) {
-        shopMemberService.approve(id);
+    public ApiResponse<Void> approve(@PathVariable Long id, @RequestParam boolean approve) {
+        shopMemberService.approve(id, approve);
         return ApiResponse.success();
     }
 

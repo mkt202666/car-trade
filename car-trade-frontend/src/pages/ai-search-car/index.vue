@@ -102,7 +102,7 @@
 
         <!-- 加载中 -->
         <view class="loading" v-if="loading">
-          <u-loading-icon></u-loading-icon>
+          <view class="custom-spinner"></view>
           <text class="loading-text">正在搜索全网车源...</text>
         </view>
       </view>
@@ -453,7 +453,17 @@ $transition: all 0.2s ease;
   align-items: center;
   padding: 60rpx 0;
 }
-
+.custom-spinner {
+  width: 64rpx;
+  height: 64rpx;
+  border: 6rpx solid #e5e7eb;
+  border-top-color: #0369A1;
+  border-radius: 50%;
+  animation: aisc-spin 0.8s linear infinite;
+}
+@keyframes aisc-spin {
+  to { transform: rotate(360deg); }
+}
 .loading-text {
   font-size: 28rpx;
   color: $text-secondary;

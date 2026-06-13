@@ -5,7 +5,9 @@ import com.pancosky.newcartrade.entity.User;
 import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.mapper.ContractMapper;
 import com.pancosky.newcartrade.mapper.UserMapper;
+import com.pancosky.newcartrade.security.OwnerAssert;
 import com.pancosky.newcartrade.service.ContractService;
+import com.pancosky.newcartrade.util.SecurityUtils;
 import com.pancosky.newcartrade.vo.ContractDetailVO;
 import com.pancosky.newcartrade.vo.ContractVO;
 import lombok.RequiredArgsConstructor;
@@ -55,8 +57,12 @@ public class ContractServiceImpl implements ContractService {
 
     @Override
     public ContractDetailVO detail(Long id) {
+        OwnerAssert.assertValidId(id);
         Contract contract = contractMapper.selectById(id);
         if (contract == null) throw new BusinessException("Contract not found");
+        // IDOR 防护：仅买家、卖家、平台 admin 可读合同
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        OwnerAssert.assertBuyerOrSeller(currentUserId, contract.getBuyerId(), contract.getSellerId());
         ContractDetailVO vo = new ContractDetailVO();
         vo.setId(contract.getId());
         vo.setContractNo(contract.getContractNo());

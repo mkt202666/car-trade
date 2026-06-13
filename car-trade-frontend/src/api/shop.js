@@ -1,4 +1,5 @@
-export const listMembers = (params) => uni.$u.http.get('/shop/members', { params })
-export const inviteMember = (userId) => uni.$u.http.post('/shop/members/invite', { userId })
-export const approveMember = (id, approve) => uni.$u.http.put(`/shop/members/${id}/approve`, {}, { params: { approve } })
-export const removeMember = (id) => uni.$u.http.delete(`/shop/members/${id}`)
+export const listMembers = (params) => uni.http.get('/shop/members', { params })
+export const getShopMembers = listMembers
+export const inviteMember = (data) => uni.http.post('/shop/members/invite', data)
+export const approveMember = (id) => uni.http.put(`/shop/members/${id}/approve`)
+export const removeMember = (id) => uni.http.delete(`/shop/members/${id}`)

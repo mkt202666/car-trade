@@ -7,6 +7,6 @@ import java.util.List;
 public interface ShopMemberService {
     List<ShopMemberVO> listMembers();
     void invite(Long userId);
-    void approve(Long id);
+    void approve(Long id, boolean approve);
     void remove(Long id);
 }

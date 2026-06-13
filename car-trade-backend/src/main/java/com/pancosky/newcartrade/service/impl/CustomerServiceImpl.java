@@ -3,7 +3,9 @@ package com.pancosky.newcartrade.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pancosky.newcartrade.dto.TicketCreateDTO;
 import com.pancosky.newcartrade.entity.CustomerServiceTicket;
+import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.mapper.CustomerServiceTicketMapper;
+import com.pancosky.newcartrade.security.OwnerAssert;
 import com.pancosky.newcartrade.service.CustomerService;
 import com.pancosky.newcartrade.util.SecurityUtils;
 import com.pancosky.newcartrade.vo.TicketDetailVO;
@@ -66,8 +68,12 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public TicketDetailVO ticketDetail(Long id) {
+        OwnerAssert.assertValidId(id);
         CustomerServiceTicket ticket = ticketMapper.selectById(id);
-        if (ticket == null) return null;
+        if (ticket == null) throw new BusinessException("Ticket not found");
+        // IDOR 防护：仅工单 owner 或客服 admin 可读
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        OwnerAssert.assertOwner(currentUserId, ticket.getUserId());
         TicketDetailVO vo = new TicketDetailVO();
         vo.setId(ticket.getId());
         vo.setTitle(ticket.getTitle());

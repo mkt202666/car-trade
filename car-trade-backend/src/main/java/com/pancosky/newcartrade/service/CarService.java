@@ -12,6 +12,8 @@ import java.util.Map;
 
 public interface CarService {
     PageResult<CarVO> list(CarQueryDTO query);
+    PageResult<CarVO> listByUser(CarQueryDTO query);
+    PageResult<CarVO> listFavorites(CarQueryDTO query);
     CarDetailVO detail(Long id);
     CarVO create(CarCreateDTO dto);
     CarVO update(Long id, CarUpdateDTO dto);

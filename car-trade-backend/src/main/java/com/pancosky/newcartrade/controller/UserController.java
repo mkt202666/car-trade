@@ -1,4 +1,6 @@
 package com.pancosky.newcartrade.controller;
+import com.pancosky.newcartrade.common.RequiresAuth;
+import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.dto.ChangePasswordDTO;
@@ -7,13 +9,16 @@ import com.pancosky.newcartrade.dto.RegisterDTO;
 import com.pancosky.newcartrade.service.BrowsingHistoryService;
 import com.pancosky.newcartrade.service.SmsService;
 import com.pancosky.newcartrade.service.UserService;
+import com.pancosky.newcartrade.service.cache.TokenBlacklistService;
 import com.pancosky.newcartrade.util.SecurityUtils;
 import com.pancosky.newcartrade.vo.BrowsingHistoryVO;
 import com.pancosky.newcartrade.vo.LoginVO;
 import com.pancosky.newcartrade.vo.UserPublicVO;
 import com.pancosky.newcartrade.vo.UserStatsVO;
 import com.pancosky.newcartrade.vo.UserVO;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,11 +34,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
+@RequiresAuth(AuthLevel.PROTECTED)
+@Slf4j
 public class UserController {
 
     private final UserService userService;
     private final BrowsingHistoryService browsingHistoryService;
     private final SmsService smsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     /**
      * 用户登录
@@ -44,6 +52,7 @@ public class UserController {
      * 限流：同一手机号每分钟最多 5 次登录请求；连续失败 5 次锁定 10 分钟。
      */
     @PostMapping("/login")
+    @RequiresAuth(AuthLevel.PUBLIC)
     public ApiResponse<LoginVO> login(@RequestBody LoginDTO dto) {
         return ApiResponse.success(userService.login(dto));
     }
@@ -56,8 +65,29 @@ public class UserController {
      * 认证要求：公开。
      */
     @PostMapping("/register")
+    @RequiresAuth(AuthLevel.PUBLIC)
     public ApiResponse<UserVO> register(@RequestBody RegisterDTO dto) {
         return ApiResponse.success(userService.register(dto));
+    }
+
+    /**
+     * 刷新 token
+     * HTTP: POST /api/v1/users/refresh
+     * 请求体：{ refreshToken: "..." }
+     * 行为：
+     *   - 校验 refreshToken 有效 + 类型 = refresh
+     *   - 旧 refreshToken 立即拉黑
+     *   - 返回新的 accessToken + refreshToken（token 轮转）
+     * 认证要求：公开（refreshToken 本身就是身份证明）。
+     */
+    @PostMapping("/refresh")
+    @RequiresAuth(AuthLevel.PUBLIC)
+    public ApiResponse<LoginVO> refresh(@RequestBody Map<String, String> body) {
+        String refreshToken = body.get("refreshToken");
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new com.pancosky.newcartrade.exception.BusinessException(401, "refreshToken 不能为空");
+        }
+        return ApiResponse.success(userService.refresh(refreshToken));
     }
 
     /**
@@ -126,6 +156,7 @@ public class UserController {
      * 认证要求：公开。
      */
     @GetMapping("/{id}")
+    @RequiresAuth(AuthLevel.PUBLIC)
     public ApiResponse<UserPublicVO> getUser(@PathVariable Long id) {
         return ApiResponse.success(userService.getUserPublicInfo(id));
     }
@@ -185,10 +216,41 @@ public class UserController {
     }
 
     @PostMapping("/sms/send")
+    @RequiresAuth(AuthLevel.PUBLIC)
     public ApiResponse<Void> sendSms(@RequestBody Map<String, String> body) {
         String phone = body.get("phone");
         boolean sent = smsService.sendVerificationCode(phone);
         if (!sent) throw new com.pancosky.newcartrade.exception.BusinessException("验证码发送失败");
         return ApiResponse.success();
+    }
+
+    /**
+     * 用户登出（注销当前 token）
+     * HTTP: POST /api/v1/users/logout
+     * 行为：
+     *   - 从请求头读取当前 token
+     *   - 将 token 加入 Redis 黑名单，TTL = token 剩余有效时间
+     *   - 之后该 token 持有者的所有请求将被 AuthenticationInterceptor 拒绝（401）
+     * 认证要求：必须登录。
+     */
+    @PostMapping("/logout")
+    public ApiResponse<Map<String, Object>> logout(HttpServletRequest request) {
+        String auth = request.getHeader("Authorization");
+        String rawToken = null;
+        if (auth != null && auth.length() > 7 && auth.regionMatches(true, 0, "Bearer ", 0, 7)) {
+            rawToken = auth.substring(7).trim();
+        }
+        Long userId = SecurityUtils.getCurrentUserId();
+        boolean ok = rawToken != null && tokenBlacklistService.blacklist(rawToken);
+        if (!ok) {
+            // token 已过期 / 解析失败 也算登出成功 —— 反正拦截器下次也不会再让它进来
+            log.info("[Logout] userId={} token invalid/expired, treat as logged out", userId);
+        } else {
+            log.info("[Logout] userId={} token blacklisted", userId);
+        }
+        Map<String, Object> data = new java.util.HashMap<>();
+        data.put("userId", userId);
+        data.put("loggedOut", true);
+        return ApiResponse.success(data);
     }
 }

@@ -1,18 +1,35 @@
 package com.pancosky.newcartrade.controller;
+import com.pancosky.newcartrade.common.RequiresAuth;
+import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.common.PageResult;
 import com.pancosky.newcartrade.dto.CarCreateDTO;
 import com.pancosky.newcartrade.dto.CarQueryDTO;
 import com.pancosky.newcartrade.dto.CarUpdateDTO;
+import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.service.CarService;
+import com.pancosky.newcartrade.util.UrlSafetyValidator;
 import com.pancosky.newcartrade.vo.CarDetailVO;
 import com.pancosky.newcartrade.vo.CarVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 车源管理控制器
@@ -25,9 +42,30 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/cars")
 @RequiredArgsConstructor
+@Slf4j
+@RequiresAuth(AuthLevel.PUBLIC)
 public class CarController {
 
     private final CarService carService;
+
+    /**
+     * 图片代理域名白名单（application.properties 中可覆盖）。
+     * 留空表示仅做内网/协议黑名单，允许任意公网域。
+     */
+    @Value("${car.proxy.image-domains:}")
+    private String imageProxyDomains;
+
+    private Set<String> getImageDomainWhitelist() {
+        if (imageProxyDomains == null || imageProxyDomains.isBlank()) {
+            return Collections.emptySet();
+        }
+        Set<String> set = new HashSet<>();
+        for (String s : imageProxyDomains.split(",")) {
+            String t = s.trim().toLowerCase();
+            if (!t.isEmpty()) set.add(t);
+        }
+        return set;
+    }
 
     /**
      * 分页查询车源列表
@@ -65,6 +103,7 @@ public class CarController {
      * 特殊处理：isDraft=true 时保存为草稿，不进入列表展示。
      */
     @PostMapping
+    @RequiresAuth(AuthLevel.PROTECTED)
     public ApiResponse<CarVO> create(@RequestBody CarCreateDTO dto) {
         return ApiResponse.success(carService.create(dto));
     }
@@ -77,6 +116,7 @@ public class CarController {
      * 认证要求：必须登录，且必须是车源的发布者或管理员。
      */
     @PutMapping("/{id}")
+    @RequiresAuth(AuthLevel.PROTECTED)
     public ApiResponse<CarVO> update(@PathVariable Long id, @RequestBody CarUpdateDTO dto) {
         return ApiResponse.success(carService.update(id, dto));
     }
@@ -90,6 +130,7 @@ public class CarController {
      * 注意：实际是否物理删除由业务层决定（通常为软删除或更新状态为 OFFLINE）。
      */
     @DeleteMapping("/{id}")
+    @RequiresAuth(AuthLevel.PROTECTED)
     public ApiResponse<Void> delete(@PathVariable Long id) {
         carService.delete(id);
         return ApiResponse.success();
@@ -103,6 +144,7 @@ public class CarController {
      * 认证要求：必须登录。
      */
     @PostMapping("/{id}/favorite")
+    @RequiresAuth(AuthLevel.PROTECTED)
     public ApiResponse<Void> favorite(@PathVariable Long id) {
         carService.favorite(id);
         return ApiResponse.success();
@@ -116,9 +158,36 @@ public class CarController {
      * 认证要求：必须登录。
      */
     @DeleteMapping("/{id}/favorite")
+    @RequiresAuth(AuthLevel.PROTECTED)
     public ApiResponse<Void> unfavorite(@PathVariable Long id) {
         carService.unfavorite(id);
         return ApiResponse.success();
+    }
+
+    /**
+     * 获取当前用户发布的车源列表
+     * HTTP: GET /api/v1/cars/mine
+     * 请求参数：CarQueryDTO（keyword、page、size）
+     * 响应：ApiResponse&lt;PageResult&lt;CarVO&gt;&gt; —— 用户发布的车源分页列表。
+     * 认证要求：必须登录。
+     */
+    @GetMapping("/mine")
+    @RequiresAuth(AuthLevel.PROTECTED)
+    public ApiResponse<PageResult<CarVO>> myCars(CarQueryDTO params) {
+        return ApiResponse.success(carService.listByUser(params));
+    }
+
+    /**
+     * 获取当前用户收藏的车源列表
+     * HTTP: GET /api/v1/cars/favorites
+     * 请求参数：CarQueryDTO（keyword、page、size）
+     * 响应：ApiResponse&lt;PageResult&lt;CarVO&gt;&gt; —— 用户收藏的车源分页列表。
+     * 认证要求：必须登录。
+     */
+    @GetMapping("/favorites")
+    @RequiresAuth(AuthLevel.PROTECTED)
+    public ApiResponse<PageResult<CarVO>> favorites(CarQueryDTO params) {
+        return ApiResponse.success(carService.listFavorites(params));
     }
 
     /**
@@ -164,7 +233,62 @@ public class CarController {
      * 认证要求：必须登录；需要绑定手机号才能查看卖家完整联系方式。
      */
     @PostMapping("/{id}/contact")
-    public ApiResponse<Map<String, Object>> contactSeller(@PathVariable Long id) {
+    @RequiresAuth(AuthLevel.PROTECTED)
+    public ApiResponse<Map<String, Object>> contact(@PathVariable Long id) {
         return ApiResponse.success(carService.contactSeller(id));
+    }
+
+    /**
+     * 图片代理接口 - 解决浏览器ORB拦截外部图片问题
+     * HTTP: GET /api/v1/cars/images/proxy?url=https://images.unsplash.com/...
+     * 请求参数：url（query，原始图片URL，Base64编码或直接传递）
+     * 响应：图片二进制数据，Content-Type根据图片类型自动设置
+     * 认证要求：公开访问
+     */
+    @GetMapping("/images/proxy")
+    public ResponseEntity<Resource> proxyImage(@RequestParam String url) {
+        // SSRF 防护：URL 必须为 http/https，禁止内网/回环/链路本地；可选域名白名单
+        URI safeUri;
+        try {
+            safeUri = UrlSafetyValidator.validatePublicUrl(url, getImageDomainWhitelist());
+        } catch (SecurityException e) {
+            log.warn("Image proxy rejected URL '{}': {}", url, e.getMessage());
+            throw new BusinessException("不允许的图片地址");
+        }
+        try {
+            // 禁用重定向，限定读取字节数（10MB）
+            org.springframework.http.client.SimpleClientHttpRequestFactory rf =
+                new org.springframework.http.client.SimpleClientHttpRequestFactory();
+            rf.setConnectTimeout(3000);
+            rf.setReadTimeout(5000);
+            // 关闭 followRedirects（SimpleClientHttpRequestFactory 默认为 true，置 false）
+            java.net.HttpURLConnection.setFollowRedirects(false);
+            RestTemplate restTemplate = new RestTemplate(rf);
+            byte[] imageBytes = restTemplate.getForObject(safeUri.toString(), byte[].class);
+            if (imageBytes == null || imageBytes.length == 0) {
+                return ResponseEntity.notFound().build();
+            }
+            if (imageBytes.length > 10 * 1024 * 1024) {
+                throw new BusinessException("图片过大");
+            }
+            HttpHeaders headers = new HttpHeaders();
+            String lowerUrl = url.toLowerCase();
+            if (lowerUrl.contains(".png")) {
+                headers.setContentType(MediaType.IMAGE_PNG);
+            } else if (lowerUrl.contains(".jpg") || lowerUrl.contains(".jpeg")) {
+                headers.setContentType(MediaType.IMAGE_JPEG);
+            } else if (lowerUrl.contains(".webp")) {
+                headers.setContentType(MediaType.parseMediaType("image/webp"));
+            } else {
+                headers.setContentType(MediaType.IMAGE_JPEG);
+            }
+            headers.setContentLength(imageBytes.length);
+            headers.set("Cache-Control", "public, max-age=86400");
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(new ByteArrayResource(imageBytes));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

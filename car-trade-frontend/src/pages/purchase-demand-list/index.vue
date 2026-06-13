@@ -105,15 +105,19 @@
       </view>
     </scroll-view>
 
-    <!-- 底部 TabBar 占位 -->
-    <view class="tabbar-placeholder"></view>
+    <!-- 自定义底部导航栏 -->
+    <custom-tab-bar />
   </view>
 </template>
 
 <script>
 import { getPurchaseList, deletePurchase } from '@/api/purchase'
+import CustomTabBar from '@/custom-tab-bar/index.vue'
 
 export default {
+  components: {
+    CustomTabBar
+  },
   data() {
     return {
       demandList: [],
@@ -146,7 +150,7 @@ export default {
       this.loading = true
       try {
         const res = await getPurchaseList({ page: this.page, size: 10 })
-        const data = res.data
+        const data = res && res.data ? res.data : {}
         let records = []
         if (data && data.list) {
           records = data.list
@@ -216,82 +220,184 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+/* =========================================================
+   5D好车 - 求购大厅 - Liquid Glass Premium
+   设计语言: Glassmorphism | Multi-layer Shadow | Subtle Gradient
+   颜色系统: #0F172A 深海军蓝 | #F59E0B 琥珀金 | #0369A1 CTA蓝
+   ========================================================= */
+
 .page {
   min-height: 100vh;
-  background: #F8FAFC;
+  background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+  animation: fadeIn 500ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+  padding-bottom: 200rpx;
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ 顶部 Hero Header ============ */
 .header {
-  background: #fff;
-  padding: 24rpx 32rpx;
-  border-bottom: 1rpx solid #F1F5F9;
+  position: relative;
+  padding: calc(var(--status-bar-height, 44px) + 20rpx) 32rpx 28rpx;
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #0F172A 100%);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -40rpx;
+    right: -40rpx;
+    width: 320rpx;
+    height: 320rpx;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 40rpx;
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0) 0%, rgba(248, 250, 252, 1) 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
 }
+
 .header-content {
+  position: relative;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .header-title {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #0F172A;
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 1rpx;
 }
+
+.header-subtitle {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 8rpx;
+  letter-spacing: 0.5rpx;
+}
+
+/* 发布按钮 - 琥珀金渐变 */
 .publish-btn {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  background: linear-gradient(135deg, #F59E0B, #D97706);
-  color: #fff;
-  padding: 16rpx 28rpx;
-  border-radius: 32rpx;
+  gap: 10rpx;
+  background: linear-gradient(135deg, #FDE68A 0%, #FBBF24 50%, #F59E0B 100%);
+  color: #0F172A;
+  padding: 18rpx 32rpx;
+  border-radius: 40rpx;
   font-size: 26rpx;
-  font-weight: 600;
-  box-shadow: 0 4rpx 12rpx rgba(245, 158, 11, 0.3);
+  font-weight: 700;
+  letter-spacing: 0.5rpx;
+  box-shadow: 0 6rpx 24rpx rgba(245, 158, 11, 0.45), inset 0 2rpx 4rpx rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  &:active {
+    transform: scale(0.96);
+    box-shadow: 0 3rpx 12rpx rgba(245, 158, 11, 0.4);
+  }
 }
+
+/* ============ 列表区域 ============ */
 .list-wrap {
-  height: calc(100vh - 120rpx);
-  padding: 20rpx 24rpx;
+  position: relative;
+  z-index: 3;
+  padding: 16rpx 24rpx 40rpx;
+  margin-top: -24rpx;
 }
+
+/* ============ 求购卡片 - Liquid Glass ============ */
 .demand-card {
-  background: #fff;
-  border-radius: 16rpx;
+  background: #ffffff;
+  border-radius: 28rpx;
   margin-bottom: 24rpx;
   overflow: hidden;
-  border-left: 8rpx solid #F59E0B;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.08), 0 1rpx 4rpx rgba(15, 23, 42, 0.04);
+  border: 1rpx solid rgba(226, 232, 240, 0.7);
+  position: relative;
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6rpx;
+    background: linear-gradient(180deg, #FDE68A 0%, #F59E0B 50%, #D97706 100%);
+    border-radius: 28rpx 0 0 28rpx;
+  }
+
+  &:active {
+    transform: translateY(-2rpx) scale(0.995);
+    box-shadow: 0 8rpx 32rpx rgba(15, 23, 42, 0.12);
+  }
 }
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24rpx 24rpx 8rpx;
+  padding: 28rpx 28rpx 12rpx 32rpx;
 }
+
 .car-info {
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  gap: 14rpx;
 }
+
 .car-name {
   font-size: 32rpx;
-  font-weight: 700;
+  font-weight: 800;
   color: #0F172A;
+  letter-spacing: 0.3rpx;
 }
+
+/* 状态徽章 - Liquid Gold */
 .status-tag {
   display: flex;
   align-items: center;
   gap: 8rpx;
   font-size: 22rpx;
-  padding: 6rpx 16rpx;
-  border-radius: 20rpx;
-  background: #FEF3C7;
+  padding: 8rpx 18rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, rgba(254, 243, 199, 0.9) 0%, rgba(253, 230, 138, 0.6) 100%);
   color: #D97706;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.3rpx;
+  border: 1rpx solid rgba(245, 158, 11, 0.3);
 }
+
 .status-dot {
   width: 12rpx;
   height: 12rpx;
   border-radius: 50%;
-  background: #F59E0B;
+  background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+  box-shadow: 0 0 8rpx rgba(245, 158, 11, 0.5);
 }
+
 .publish-time {
   font-size: 22rpx;
   color: #94A3B8;
@@ -299,73 +405,120 @@ export default {
   display: block;
 }
 .card-body {
-  padding: 0 24rpx 20rpx;
+  padding: 0 32rpx 24rpx;
 }
+
 .info-section {
   display: flex;
   align-items: flex-start;
   margin-bottom: 16rpx;
+  flex-wrap: wrap;
 }
+
 .section-label {
   font-size: 24rpx;
   color: #64748B;
   flex-shrink: 0;
+  font-weight: 500;
+  margin-right: 12rpx;
 }
+
 .tag-list {
   display: flex;
   flex-wrap: wrap;
   gap: 12rpx;
 }
+
 .model-tag {
   font-size: 22rpx;
-  padding: 6rpx 16rpx;
-  border-radius: 8rpx;
-  background: #F1F5F9;
+  padding: 8rpx 18rpx;
+  border-radius: 16rpx;
+  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
   color: #334155;
-  border: 1rpx solid #E2E8F0;
+  border: 1rpx solid rgba(226, 232, 240, 0.9);
+  font-weight: 600;
+  transition: all 200ms ease;
+
+  &:active {
+    background: #E2E8F0;
+    transform: scale(0.97);
+  }
 }
+
 .info-row {
   display: flex;
-  gap: 32rpx;
-  margin-bottom: 12rpx;
+  gap: 40rpx;
+  margin-bottom: 14rpx;
+  flex-wrap: wrap;
 }
+
 .info-item {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: 10rpx;
 }
+
 .info-label {
   font-size: 24rpx;
   color: #94A3B8;
-}
-.info-value {
-  font-size: 24rpx;
-  color: #334155;
   font-weight: 500;
+}
+
+.info-value {
+  font-size: 26rpx;
+  color: #1E293B;
+  font-weight: 600;
+
   &.price {
-    color: #F59E0B;
-    font-weight: 700;
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    font-size: 28rpx;
+    letter-spacing: 0.3rpx;
   }
 }
+
 .desc-section {
-  margin-top: 16rpx;
-  padding: 16rpx;
-  background: #F8FAFC;
-  border-radius: 12rpx;
+  margin-top: 18rpx;
+  padding: 20rpx 24rpx;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.6) 100%);
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(226, 232, 240, 0.8);
+  position: relative;
+
+  &::before {
+    content: '"';
+    position: absolute;
+    left: 16rpx;
+    top: -10rpx;
+    font-size: 60rpx;
+    color: rgba(245, 158, 11, 0.2);
+    font-family: serif;
+    font-weight: 900;
+  }
 }
+
 .desc-text {
   font-size: 24rpx;
-  color: #64748B;
-  line-height: 1.6;
+  color: #475569;
+  line-height: 1.7;
   font-style: italic;
+  padding-left: 12rpx;
 }
+
 .card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16rpx 24rpx;
-  border-top: 1rpx solid #F1F5F9;
+  padding: 20rpx 32rpx;
+  margin: 0 24rpx 24rpx;
+  border-top: 1rpx solid rgba(226, 232, 240, 0.8);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.5) 0%, transparent 100%);
+  border-radius: 0 0 24rpx 24rpx;
 }
+
 .footer-left {
   display: flex;
   gap: 16rpx;
@@ -375,63 +528,132 @@ export default {
   align-items: center;
   gap: 20rpx;
 }
+
+/* 操作按钮 - Liquid Glass */
 .action-btn {
   font-size: 24rpx;
-  padding: 8rpx 20rpx;
-  border-radius: 8rpx;
+  padding: 12rpx 24rpx;
+  border-radius: 20rpx;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 250ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  letter-spacing: 0.3rpx;
+
   &.edit {
     color: #0369A1;
-    background: #F0F9FF;
-    border: 1rpx solid #BAE6FD;
+    background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+    border: 1rpx solid rgba(186, 230, 253, 0.9);
+    box-shadow: 0 2rpx 8rpx rgba(3, 105, 161, 0.08);
+
+    &:active {
+      transform: scale(0.96);
+      box-shadow: 0 2rpx 12rpx rgba(3, 105, 161, 0.2);
+    }
   }
+
   &.delete {
     color: #DC2626;
-    background: #FEF2F2;
-    border: 1rpx solid #FECACA;
+    background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+    border: 1rpx solid rgba(254, 202, 202, 0.9);
+    box-shadow: 0 2rpx 8rpx rgba(220, 38, 38, 0.08);
+
+    &:active {
+      transform: scale(0.96);
+      box-shadow: 0 2rpx 12rpx rgba(220, 38, 38, 0.2);
+    }
   }
 }
+
 .site-count {
   display: flex;
   align-items: center;
-  gap: 6rpx;
+  gap: 8rpx;
   font-size: 22rpx;
-  color: #94A3B8;
+  color: #64748B;
+  font-weight: 500;
 }
+
+/* AI搜索按钮 - 金色渐变 */
 .ai-search-btn {
   display: flex;
   align-items: center;
-  gap: 6rpx;
-  font-size: 22rpx;
-  color: #F59E0B;
-  font-weight: 600;
-  padding: 8rpx 16rpx;
-  background: #FFFBEB;
-  border-radius: 8rpx;
-  border: 1rpx solid #FDE68A;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #D97706;
+  font-weight: 700;
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(245, 158, 11, 0.35);
+  box-shadow: 0 2rpx 12rpx rgba(245, 158, 11, 0.2);
+  cursor: pointer;
+  transition: all 250ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  letter-spacing: 0.3rpx;
+
+  &:active {
+    transform: scale(0.96);
+    box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.3);
+  }
 }
+
+/* 空状态 */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 120rpx 40rpx;
+  padding: 160rpx 40rpx 80rpx;
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
 }
-.empty-icon { font-size: 80rpx; margin-bottom: 24rpx; }
-.empty-title { font-size: 32rpx; color: #0F172A; font-weight: 600; margin-bottom: 12rpx; }
-.empty-desc { font-size: 26rpx; color: #64748B; margin-bottom: 32rpx; }
+
+.empty-icon {
+  font-size: 100rpx;
+  margin-bottom: 28rpx;
+  filter: drop-shadow(0 4rpx 12rpx rgba(15, 23, 42, 0.1));
+}
+
+.empty-title {
+  font-size: 32rpx;
+  color: #0F172A;
+  font-weight: 700;
+  margin-bottom: 12rpx;
+  letter-spacing: 0.3rpx;
+}
+
+.empty-desc {
+  font-size: 26rpx;
+  color: #64748B;
+  margin-bottom: 40rpx;
+  text-align: center;
+}
+
 .btn-publish {
-  background: #0369A1;
-  color: #fff;
-  padding: 16rpx 48rpx;
-  border-radius: 40rpx;
+  background: linear-gradient(135deg, #0369A1 0%, #0284C7 100%);
+  color: #ffffff;
+  padding: 20rpx 56rpx;
+  border-radius: 48rpx;
   font-size: 28rpx;
+  font-weight: 700;
+  letter-spacing: 0.5rpx;
+  box-shadow: 0 6rpx 24rpx rgba(3, 105, 161, 0.35);
+  cursor: pointer;
+  transition: all 250ms cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  &:active {
+    transform: scale(0.96);
+    box-shadow: 0 3rpx 12rpx rgba(3, 105, 161, 0.3);
+  }
 }
+
 .loading-more, .no-more {
   text-align: center;
-  padding: 24rpx;
+  padding: 32rpx 24rpx 80rpx;
   font-size: 24rpx;
   color: #94A3B8;
+  font-weight: 500;
+  letter-spacing: 0.3rpx;
 }
+
 .tabbar-placeholder {
-  height: 120rpx;
+  height: 140rpx;
 }
 </style>

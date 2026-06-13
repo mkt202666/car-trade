@@ -131,7 +131,7 @@
 </template>
 
 <script>
-import { register } from '@/api/user'
+import { register, sendSms } from '@/api/user'
 import { isValidPhone } from '@/utils/validate'
 
 export default {
@@ -145,19 +145,24 @@ export default {
     }
   },
   methods: {
-    sendCode() {
+    async sendCode() {
       if (this.codeSending) return
       if (!isValidPhone(this.form.phone)) { uni.$u.toast('请输入正确手机号'); return }
-      this.codeSending = true
-      this.remain = 60
-      const timer = setInterval(() => {
-        this.remain--
-        if (this.remain <= 0) {
-          clearInterval(timer)
-          this.codeSending = false
-        }
-      }, 1000)
-      uni.$u.toast('验证码已发送')
+      try {
+        await sendSms({ phone: this.form.phone })
+        this.codeSending = true
+        this.remain = 60
+        const timer = setInterval(() => {
+          this.remain--
+          if (this.remain <= 0) {
+            clearInterval(timer)
+            this.codeSending = false
+          }
+        }, 1000)
+        uni.$u.toast('验证码已发送')
+      } catch (e) {
+        uni.$u.toast('验证码发送失败，请重试')
+      }
     },
     async handleRegister() {
       if (!isValidPhone(this.form.phone)) { uni.$u.toast('请输入正确手机号'); return }

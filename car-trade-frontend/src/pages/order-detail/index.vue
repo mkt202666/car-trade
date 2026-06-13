@@ -352,7 +352,7 @@
 </template>
 
 <script>
-import { getOrderDetail, confirmOrder, cancelOrder, completeOrder, createDispute, submitContract, updateContract, confirmContract, terminateOrder, getTerminateCount } from '@/api/order'
+import { getOrderDetail, confirmOrder, cancelOrder, completeOrder, payDeposit, createDispute, submitContract, updateContract, confirmContract, terminateOrder, getTerminateCount } from '@/api/order'
 import { formatPrice } from '@/utils/format'
 import { requireAuth } from '@/utils/auth'
 

@@ -42,7 +42,7 @@
     <view class="page-content" ref="pageContent">
       <view class="msg-list" id="msgList">
         <view class="loading-tip" v-if="loading">
-          <u-loading mode="circle"></u-loading>
+          <view class="custom-spinner"></view>
           <text>加载中...</text>
         </view>
         <view class="msg-item" v-for="(msg, index) in messages" :key="index" :class="msg.role">
@@ -76,6 +76,8 @@
 import { getChatMessages, createConversation, getConversations, sendChatMessage, markConversationRead } from '@/api/chat'
 import { formatTime } from '@/utils/format'
 import { requireAuth } from '@/utils/auth'
+import { readToken } from '@/constants/storage'
+import { createStompClient, disconnectStompClient } from '@/utils/stomp-client'
 
 export default {
   data() {
@@ -89,7 +91,8 @@ export default {
       loading: false,
       sending: false,
       wsConnected: false,
-      webSocket: null,
+      stompClient: null,
+      stompSubscription: null,
       reconnectAttempts: 0,
       maxReconnectAttempts: 5,
       pollingTimer: null,
@@ -293,90 +296,78 @@ export default {
         this.sending = false
       }
     },
-    // WebSocket 连接
+    // WebSocket 连接（STOMP / SockJS）
     connectWebSocket() {
-      const token = uni.getStorageSync('token')
-      if (!token) return
-      
-      // WebSocket 地址根据后端配置
-      const wsUrl = `ws://localhost:8080/ws/chat?token=${token}&conversationId=${this.conversationId}`
-      
+      // 统一读取 token — 委托 constants/storage.js
+      const token = readToken()
+      if (!token || token === 'null' || token === 'undefined') return
+
+      // ★ 安全：使用 STOMP / SockJS 客户端
+      //   - token 通过 STOMP CONNECT 帧的 Authorization 头传递
+      //   - URL 中绝不出现 token，避免 Nginx/网关/Referer 泄露
+      //   - 后端 WebSocketAuthInterceptor 会从 CONNECT 帧读取 Authorization 头
+      //   - 失败时降级为轮询（startPolling）
+      const stompUrl = 'http://localhost:8080/ws'
       try {
-        this.webSocket = uni.connectSocket({
-          url: wsUrl,
-          success: () => {
-            console.log('WebSocket 连接中...')
+        this.stompClient = createStompClient({
+          url: stompUrl,
+          onConnect: (client) => {
+            console.log('STOMP WebSocket 已连接')
+            this.wsConnected = true
+            this.reconnectAttempts = 0
+            // 订阅当前会话的私聊消息
+            this.stompSubscription = client.subscribe('/user/queue/messages', (frame) => {
+              try {
+                const data = JSON.parse(frame.body)
+                if (data && data.conversationId && String(data.conversationId) === String(this.conversationId)) {
+                  const newMsg = {
+                    id: data.id || Date.now(),
+                    role: data.role || (data.senderType === 'USER' ? 'user' : 'ai'),
+                    content: data.content || data.message || '',
+                    createTime: data.createTime || new Date(),
+                    avatar: data.avatar || ''
+                  }
+                  if (!this.messages.find(m => m.id === newMsg.id)) {
+                    this.messages.push(newMsg)
+                    this.scrollToBottom()
+                  }
+                }
+              } catch (e) {
+                console.log('解析 STOMP 消息失败')
+              }
+            })
           },
-          fail: (err) => {
-            console.log('WebSocket 连接失败:', err)
-            // 连接失败时使用轮询
+          onError: (err) => {
+            console.log('STOMP WebSocket 连接失败:', err && err.message)
+            this.wsConnected = false
+            // 失败时使用轮询
             this.startPolling()
+          },
+          onClose: () => {
+            console.log('STOMP WebSocket 已关闭')
+            this.wsConnected = false
+            // 自动重连（stompjs 内部已有 reconnectDelay 3000ms）
           }
         })
-        
-        // 监听 WebSocket 打开
-        this.webSocket.onOpen(() => {
-          console.log('WebSocket 已连接')
-          this.wsConnected = true
-          this.reconnectAttempts = 0
-        })
-        
-        // 监听 WebSocket 消息
-        this.webSocket.onMessage((res) => {
-          try {
-            const data = JSON.parse(res.data)
-            if (data.conversationId == this.conversationId) {
-              // 收到新消息
-              const newMsg = {
-                id: data.id || Date.now(),
-                role: data.role || (data.senderType === 'USER' ? 'user' : 'ai'),
-                content: data.content || data.message || '',
-                createTime: data.createTime || new Date(),
-                avatar: data.avatar || ''
-              }
-              // 避免重复添加
-              if (!this.messages.find(m => m.id === newMsg.id)) {
-                this.messages.push(newMsg)
-                this.scrollToBottom()
-              }
-            }
-          } catch (e) {
-            console.log('解析 WebSocket 消息失败')
-          }
-        })
-        
-        // 监听 WebSocket 关闭
-        this.webSocket.onClose(() => {
-          console.log('WebSocket 已关闭')
-          this.wsConnected = false
-          this.webSocket = null
-          // 自动重连
-          if (this.reconnectAttempts < this.maxReconnectAttempts) {
-            this.reconnectAttempts++
-            setTimeout(() => {
-              this.connectWebSocket()
-            }, 3000 * this.reconnectAttempts)
-          }
-        })
-        
-        // 监听 WebSocket 错误
-        this.webSocket.onError((err) => {
-          console.log('WebSocket 错误:', err)
-          this.wsConnected = false
-          // WebSocket 失败时启用轮询
+
+        if (!this.stompClient) {
+          // createStompClient 内部已调用 onError；这里补一次轮询降级
           this.startPolling()
-        })
+        }
       } catch (e) {
-        console.log('WebSocket 连接异常:', e)
+        console.log('STOMP WebSocket 连接异常:', e)
         this.startPolling()
       }
     },
     // 关闭 WebSocket
     closeWebSocket() {
-      if (this.webSocket) {
-        this.webSocket.close()
-        this.webSocket = null
-        this.wsConnected = false
+      if (this.stompSubscription && typeof this.stompSubscription.unsubscribe === 'function') {
+        try { this.stompSubscription.unsubscribe() } catch (_) { /* ignore */ }
+        this.stompSubscription = null
+      }
+      if (this.stompClient) {
+        disconnectStompClient(this.stompClient)
+        this.stompClient = null
       }
     },
     // 启动轮询获取新消息
@@ -554,9 +545,18 @@ $transition: all 0.2s ease;
   padding: 30rpx;
   color: $text-secondary;
   font-size: 24rpx;
+  gap: 16rpx;
 }
-.loading-tip u-loading {
-  margin-right: 12rpx;
+.custom-spinner {
+  width: 48rpx;
+  height: 48rpx;
+  border: 4rpx solid #e5e7eb;
+  border-top-color: #0369A1;
+  border-radius: 50%;
+  animation: cs-spin 0.8s linear infinite;
+}
+@keyframes cs-spin {
+  to { transform: rotate(360deg); }
 }
 .empty-tip {
   text-align: center;

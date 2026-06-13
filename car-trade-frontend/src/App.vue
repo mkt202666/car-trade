@@ -1,11 +1,29 @@
 <script>
+/**
+ * App 入口 - Vue 3 + uview-plus
+ * 集中常量：所有 storage key 来自 constants/storage.js，禁止硬编码。
+ */
+import { readToken, STORAGE_KEYS } from '@/constants/storage'
+
 export default {
   onLaunch() {
-    const token = uni.getStorageSync('token')
+    console.log('[App] onLaunch - checking login status')
+    const token = readToken()
+    console.log('[App] token from storage:', token ? 'found(' + token.length + ')' : 'not found')
     if (token) {
       this.$store.commit('setToken', token)
-      this.$store.dispatch('getUser').catch(() => {})
+      this.$store.dispatch('getUser').then(() => {
+        console.log('[App] User info fetched successfully')
+      }).catch((e) => {
+        console.log('[App] Failed to fetch user info:', e.message)
+      })
     }
+  },
+  onShow() {
+    console.log('[App] onShow - app resumed')
+  },
+  onHide() {
+    console.log('[App] onHide - app paused')
   }
 }
 </script>
@@ -112,5 +130,15 @@ uni-link:hover,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ============ 隐藏原生 TabBar（H5 模式） ============ */
+uni-tabbar,
+.uni-tabbar,
+.uni-tabbar-bottom {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  opacity: 0 !important;
 }
 </style>

@@ -1,20 +1,22 @@
 // AI 相关 API - 统一 60 秒超时（大模型响应较慢）
+import { readToken } from '@/constants/storage'
+
 const AI_TIMEOUT = 60 * 1000
 
-const post = (url, data) => uni.$u.http.post(url, data, { timeout: AI_TIMEOUT })
+const post = (url, data) => uni.http.post(url, data, { timeout: AI_TIMEOUT })
 
 export const marketAnalysis = (data) => post('/ai/market-analysis', data)
 export const aiSearch = (data) => post('/ai/search', data)
-export const generateCopywriting = (data) => post('/ai/customer-generation', data)
+export const generateCopywriting = (data) => post('/ai/copywriting', data)
 export const autoOutreach = (data) => post('/ai/auto-outreach', data)
 export const distributeCar = (data) => post('/ai/distribute', data)
 export const aiChat = (data) => post('/ai/chat', data)
 export const carAnalysis = (data) => post('/ai/car-analysis', data)
 export const priceEstimate = (data) => post('/ai/price-estimate', data)
-export const getMyCars = (params) => uni.$u.http.get('/cars', { params })
+export const getMyCars = (params) => uni.http.get('/cars', { params })
 export const getMarketAnalysis = (data) => post('/ai/market-analysis', data)
-export const getCompetitors = (params) => uni.$u.http.get('/ai/competitors', { params })
-export const getSuggestions = (params) => uni.$u.http.get('/ai/suggestions', { params })
+export const getCompetitors = (params) => uni.http.get('/ai/competitors', { params })
+export const getSuggestions = (params) => uni.http.get('/ai/suggestions', { params })
 export const searchAllCars = (data) => post('/ai/search', data)
 
 /**
@@ -34,7 +36,8 @@ export const searchAllCars = (data) => post('/ai/search', data)
  * @returns {{ cancel: () => void }} 取消控制器
  */
 export function aiChatStream(data, callbacks) {
-  const token = uni.getStorageSync('token') || ''
+  // 统一 token 读取 — 委托 constants/storage.js
+  const token = readToken() || ''
 
   const headers = {
     'Content-Type': 'application/json',
@@ -45,8 +48,8 @@ export function aiChatStream(data, callbacks) {
     headers['Authorization'] = 'Bearer ' + token
   }
 
-  // baseURL - 与 request.js 保持一致
-  const baseURL = 'http://localhost:8080/api/v1'
+  // baseURL - 与 vite 代理保持一致
+  const baseURL = '/api/v1'
 
   // ---------- 状态 ----------
   let fullContent = ''
@@ -61,8 +64,8 @@ export function aiChatStream(data, callbacks) {
 
   const { onMessage, onDone, onError } = callbacks
 
-  // ---------- 超时控制（60 秒） ----------
-  const STREAM_TIMEOUT_MS = 60 * 1000
+  // ---------- 超时控制（后端已合并 chunk，给足 180s，覆盖长回复场景） ----------
+  const STREAM_TIMEOUT_MS = 180 * 1000
   function clearTimeoutTimer() {
     if (timeoutTimer != null) {
       clearTimeout(timeoutTimer)
@@ -83,9 +86,10 @@ export function aiChatStream(data, callbacks) {
     }, STREAM_TIMEOUT_MS)
   }
 
-  // ---------- 节流: 每 40ms 最多触发一次 onMessage, 避免高频刷新导致掉帧 ----------
+  // ---------- 刷新节流: 每 ~150ms 最多一次 onMessage，降低 Vue re-render/滚动开销 ----------
   let pendingPiece = ''
   let throttleTimer = null
+  const FLUSH_INTERVAL_MS = 150
   function flushMessage() {
     if (cancelled) return
     if (pendingPiece.length === 0) return
@@ -101,7 +105,7 @@ export function aiChatStream(data, callbacks) {
       throttleTimer = setTimeout(() => {
         throttleTimer = null
         flushMessage()
-      }, 40)
+      }, FLUSH_INTERVAL_MS)
     }
   }
 
@@ -125,7 +129,7 @@ export function aiChatStream(data, callbacks) {
         throw new Error('HTTP ' + response.status + (detail ? ': ' + detail.slice(0, 200) : ''))
       }
 
-      // H5: 走 ReadableStream
+      // H5: ReadableStream 逐块解析 SSE
       if (response.body && typeof response.body.getReader === 'function') {
         const reader = response.body.getReader()
         const decoder = new TextDecoder('utf-8')
@@ -152,7 +156,7 @@ export function aiChatStream(data, callbacks) {
           }))
         }
 
-        // 读取结束，确保把 buffer 中残留的也处理掉
+        // 读取结束: 把残留 buffer 也处理 + flush 一次
         if (!cancelled && buffer.trim().length > 0) {
           dispatchEvents(buffer + '\n\n', (eventName, payloadStr) => handleEvent(eventName, payloadStr, enqueueMessage, (text) => {
             clearTimeoutTimer()
@@ -162,10 +166,8 @@ export function aiChatStream(data, callbacks) {
             if (onError && typeof onError === 'function') onError(new Error(msg))
           }))
         }
-
-        // 读取结束时立即 flush 一次残余内容
         flushMessage()
-        // 如果后端没有显式发送 done 事件，且已有内容，则补一次 onDone
+        // 后端未显式 done 时补一次 onDone
         if (!cancelled && fullContent.length > 0) {
           clearTimeoutTimer()
           if (onDone && typeof onDone === 'function') onDone(fullContent)
@@ -215,29 +217,24 @@ export function aiChatStream(data, callbacks) {
    * 从 buffer 中按 SSE 规则切分事件，返回未处理的尾部 buffer
    */
   function dispatchEvents(buffer, onEvent) {
-    // 标准化换行: \r\n -> \n
     buffer = buffer.replace(/\r\n/g, '\n')
-    // 查找空行分隔
     let idx
     while ((idx = buffer.indexOf('\n\n')) >= 0) {
       const chunk = buffer.substring(0, idx)
       buffer = buffer.substring(idx + 2)
       if (!chunk.trim()) continue
 
-      // 解析一个事件块: 多行 field: value
       let eventName = 'message'
       let dataStr = ''
       const lines = chunk.split('\n')
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]
         if (!line) continue
-        // 注释行以 ':' 开头
         if (line.charCodeAt(0) === 58) continue
         const colonIdx = line.indexOf(':')
         if (colonIdx < 0) continue
         const field = line.substring(0, colonIdx).trim()
         let value = line.substring(colonIdx + 1)
-        // 值前面的单个空格应被去除 (SSE 规范)
         if (value.charCodeAt(0) === 32) value = value.substring(1)
         if (field === 'event') eventName = value.trim() || 'message'
         else if (field === 'data') dataStr += (dataStr ? '\n' : '') + value
@@ -271,7 +268,6 @@ export function aiChatStream(data, callbacks) {
         _onError(String(msg))
       }
     } catch (_e) {
-      // JSON 解析失败，把整段作为纯文本增量下发
       fullContent += payloadStr
       _enqueueMessage(payloadStr)
     }

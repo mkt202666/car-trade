@@ -120,4 +120,9 @@ public class PurchaseDemandServiceImpl implements PurchaseDemandService {
         }
         return vo;
     }
+
+    @Override
+    public void delete(Long id) {
+        demandMapper.deleteById(id);
+    }
 }

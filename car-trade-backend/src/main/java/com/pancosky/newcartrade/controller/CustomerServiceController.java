@@ -1,4 +1,6 @@
 package com.pancosky.newcartrade.controller;
+import com.pancosky.newcartrade.common.RequiresAuth;
+import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.dto.TicketCreateDTO;
@@ -19,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/cs")
 @RequiredArgsConstructor
+@RequiresAuth(AuthLevel.PROTECTED)
 public class CustomerServiceController {
 
     private final CustomerService customerService;

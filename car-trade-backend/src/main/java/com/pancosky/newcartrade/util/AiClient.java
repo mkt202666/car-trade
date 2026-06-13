@@ -38,9 +38,9 @@ public class AiClient {
     @Value("${ai.enabled:false}")
     private boolean enabled;
 
-    private int timeoutSeconds = 30;
+    private int timeoutSeconds = 120;
 
-    @Value("${ai.timeout-seconds:30}")
+    @Value("${ai.timeout-seconds:120}")
     public void setTimeoutSeconds(int timeoutSeconds) {
         this.timeoutSeconds = timeoutSeconds;
         // 同步更新 RestTemplate 的超时
@@ -121,9 +121,9 @@ public class AiClient {
     // ========== 流式请求（SSE 输出） ==========
 
     /**
-     * 流式调用 LLM - 每收到一个 chunk 调用 onNext 回调
+     * 流式调用 LLM - 合并多个小 token 为较大 chunk 后回调 onNext，减少 SSE 事件数
      * @param messages 对话历史
-     * @param onNext 增量内容回调（每次收到新内容会被调用，参数是这一批新增的文本）
+     * @param onNext 增量内容回调（参数是一批新增的文本，一般 >= 4 字或在延迟到期时触发）
      * @param onComplete 完成回调（参数是最终拼接的完整文本）
      * @param onError 错误回调
      */
@@ -150,16 +150,21 @@ public class AiClient {
                     .build();
 
             log.info("[AI] 流式请求 POST {}", url);
-            StringBuilder fullText = new StringBuilder();
+            final StringBuilder fullText = new StringBuilder();
+
+            // ---- 缓冲合并逻辑：按 字符数 / 最大延迟 双阈值触发 flush ----
+            // 目标：把每秒几十个 token 的流式输出打包为每秒几次事件，降低 SSE 开销
+            final int MIN_CHUNK_CHARS = 4;              // 累计到 4 字以上触发
+            final long MAX_FLUSH_MS = 120;               // 即使没凑齐，120ms 内也至少 flush 一次
+            final StringBuilder pending = new StringBuilder();
+            final long[] lastFlushMs = { System.currentTimeMillis() };
+            final Object lock = new Object();
 
             httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
                     .thenApply(HttpResponse::body)
                     .thenAccept(lines -> {
                         try {
                             lines.forEach(line -> {
-                                // SSE 格式: "data: {...json...}"
-                                // 每一行可能是一条消息，以 "data:" 开头
-                                // "[DONE]" 表示结束
                                 if (line == null) return;
                                 String trimmed = line.trim();
                                 if (trimmed.isEmpty()) return;
@@ -178,8 +183,19 @@ public class AiClient {
                                             if (content != null && !content.isNull()) {
                                                 String piece = content.asText();
                                                 if (piece != null && !piece.isEmpty()) {
-                                                    fullText.append(piece);
-                                                    onNext.accept(piece);
+                                                    synchronized (lock) {
+                                                        pending.append(piece);
+                                                        long now = System.currentTimeMillis();
+                                                        // 满足字符阈值，或超过最大延迟 → 立即 flush
+                                                        if (pending.length() >= MIN_CHUNK_CHARS
+                                                                || (now - lastFlushMs[0]) >= MAX_FLUSH_MS) {
+                                                            String combined = pending.toString();
+                                                            pending.setLength(0);
+                                                            lastFlushMs[0] = now;
+                                                            fullText.append(combined);
+                                                            onNext.accept(combined);
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -189,6 +205,15 @@ public class AiClient {
                                     log.debug("[AI] 解析 chunk 失败: {}", data);
                                 }
                             });
+                            // 读完流后：把残留未 flush 的内容推一次
+                            synchronized (lock) {
+                                if (pending.length() > 0) {
+                                    String combined = pending.toString();
+                                    pending.setLength(0);
+                                    fullText.append(combined);
+                                    onNext.accept(combined);
+                                }
+                            }
                             onComplete.accept(fullText.toString());
                         } catch (Exception e) {
                             onError.accept(e);

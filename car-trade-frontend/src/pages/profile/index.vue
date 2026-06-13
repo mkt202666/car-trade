@@ -153,19 +153,27 @@
         <button class="btn-logout" @click="handleLogout">退出登录</button>
       </view>
     </view>
+
+    <!-- 自定义底部导航栏 -->
+    <custom-tab-bar />
   </view>
 </template>
 
 <script>
 import { getUserInfo, getUserStats } from '@/api/user'
+import { readToken } from '@/constants/storage'
+import CustomTabBar from '@/custom-tab-bar/index.vue'
 
 export default {
+  components: {
+    CustomTabBar
+  },
   data() {
     return {
       user: null,
       loading: false,
       certifiedMenus: [
-        { label: '我的车源', icon: 'car', bg: 'linear-gradient(135deg, #0369A1, #0284C7)', page: 'publish', params: { tab: 'mine' } },
+        { label: '我的车源', icon: 'car', bg: 'linear-gradient(135deg, #0369A1, #0284C7)', page: 'my-car-source', params: {} },
         { label: 'AI分发车源', icon: 'share', bg: 'linear-gradient(135deg, #7C3AED, #6D28D9)', page: 'ai', params: { mode: 'distribute' } },
         { label: 'AI行情简报', icon: 'file-text', bg: 'linear-gradient(135deg, #F59E0B, #D97706)', page: 'ai-market-report', params: {} }
       ],
@@ -193,9 +201,9 @@ export default {
   },
   methods: {
     async fetchUserData() {
-      const token = uni.getStorageSync('token')
-      if (!token) {
-        // Load demo data when not logged in
+      // 统一读取 token — 委托 constants/storage.js（兼容旧 key）
+      const token = readToken()
+      if (!token || token === 'null' || token === 'undefined') {
         this.loadDemoData()
         return
       }
@@ -231,7 +239,8 @@ export default {
       } catch (e) {
         this.user = null
         try {
-          uni.removeStorageSync('token')
+          uni.removeStorageSync(STORAGE_KEYS.TOKEN)
+          localStorage.removeItem(STORAGE_KEYS.TOKEN)
         } catch (_) {}
       } finally {
         this.loading = false
@@ -314,16 +323,19 @@ export default {
 
 <style lang="scss" scoped>
 /* =========================================================
-   5D好车个人中心 - 高级设计系统样式
-   设计语言: Motion-Driven | Marketplace
-   颜色系统: 深蓝主色 + 深色层次 + 琥珀金/绿色点缀
+   5D好车个人中心 - Liquid Glass Premium Design
+   设计语言: Glassmorphism | Dimensional Layering | Motion
+   颜色系统: 深蓝主色 #0F172A | 琥珀金 #F59E0B | CTA蓝 #0369A1
    ========================================================= */
 
 .page {
   min-height: 100vh;
-  background: #F8FAFC;
-  padding-bottom: 200rpx;
-  animation: fadeIn 400ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  background:
+    radial-gradient(ellipse at top left, rgba(3, 105, 161, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(245, 158, 11, 0.04) 0%, transparent 50%),
+    linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%);
+  padding-bottom: 220rpx;
+  animation: fadeIn 400ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
 }
 
 .page-content {
@@ -336,35 +348,39 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 160rpx 60rpx 80rpx;
-  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  padding: 180rpx 40rpx 80rpx;
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
 }
 
 .empty-icon {
-  width: 200rpx;
-  height: 200rpx;
-  border-radius: 100rpx;
+  width: 220rpx;
+  height: 220rpx;
+  border-radius: 68rpx;
   background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 4rpx 12rpx rgba(15, 23, 42, 0.06);
-  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    inset 0 2rpx 8rpx rgba(15, 23, 42, 0.06),
+    0 8rpx 32rpx rgba(15, 23, 42, 0.08);
+  transition: all 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: 
-      0 8rpx 24rpx rgba(15, 23, 42, 0.08),
-      inset 0 4rpx 12rpx rgba(15, 23, 42, 0.06);
+  &:active {
+    transform: scale(0.96);
+    box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.1);
   }
 }
 
 .empty-title {
-  font-size: 34rpx;
-  font-weight: 700;
+  font-size: 38rpx;
+  font-weight: 800;
   color: #0F172A;
   margin-top: 40rpx;
   letter-spacing: 1rpx;
+  background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .empty-desc {
@@ -373,60 +389,51 @@ export default {
   margin-top: 16rpx;
   text-align: center;
   line-height: 1.7;
-  max-width: 500rpx;
+  max-width: 520rpx;
 }
 
 .empty-actions {
   display: flex;
-  gap: 24rpx;
+  gap: 20rpx;
   margin-top: 48rpx;
 }
 
 .btn-primary {
-  padding: 26rpx 52rpx;
+  padding: 28rpx 56rpx;
   background: linear-gradient(135deg, #0369A1 0%, #0284C7 100%);
   color: #ffffff;
   border: none;
-  border-radius: 52rpx;
+  border-radius: 28rpx;
   font-size: 28rpx;
   font-weight: 700;
   letter-spacing: 1rpx;
   cursor: pointer;
-  transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 8rpx 24rpx rgba(3, 105, 161, 0.35);
-
-  &:hover {
-    transform: translateY(-4rpx);
-    box-shadow: 0 12rpx 36rpx rgba(3, 105, 161, 0.45);
-  }
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  box-shadow: 0 8rpx 24rpx rgba(3, 105, 161, 0.35), inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
 
   &:active {
     transform: translateY(0) scale(0.97);
-    box-shadow: 0 4rpx 12rpx rgba(3, 105, 161, 0.3);
+    box-shadow: 0 4rpx 12rpx rgba(3, 105, 161, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.2);
   }
 }
 
 .btn-secondary {
-  padding: 26rpx 52rpx;
-  background: #ffffff;
-  color: #0369A1;
-  border: 2rpx solid #0369A1;
-  border-radius: 52rpx;
+  padding: 28rpx 48rpx;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10rpx);
+  color: #0F172A;
+  border: 1rpx solid rgba(226, 232, 240, 0.8);
+  border-radius: 28rpx;
   font-size: 28rpx;
   font-weight: 600;
-  letter-spacing: 1rpx;
+  letter-spacing: 0.5rpx;
   cursor: pointer;
-  transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  &:hover {
-    background: #F0F9FF;
-    transform: translateY(-4rpx);
-    box-shadow: 0 8rpx 20rpx rgba(3, 105, 161, 0.2);
-  }
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.06);
 
   &:active {
     transform: translateY(0) scale(0.97);
-    box-shadow: 0 4rpx 12rpx rgba(3, 105, 161, 0.15);
+    background: #F8FAFC;
   }
 }
 
@@ -436,17 +443,17 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 120rpx 0;
+  padding: 160rpx 0;
 }
 
 .loading-spinner {
-  width: 64rpx;
-  height: 64rpx;
+  width: 72rpx;
+  height: 72rpx;
   border: 4rpx solid #E2E8F0;
   border-top-color: #0369A1;
   border-radius: 50%;
   animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  box-shadow: 0 0 20rpx rgba(3, 105, 161, 0.2);
+  box-shadow: 0 0 24rpx rgba(3, 105, 161, 0.2);
 }
 
 @keyframes spin {
@@ -454,25 +461,54 @@ export default {
 }
 
 .loading-text {
-  margin-top: 24rpx;
+  margin-top: 28rpx;
   font-size: 26rpx;
   color: #64748B;
+  font-weight: 500;
   letter-spacing: 1rpx;
 }
 
-/* ============ 用户卡片 Hero ============ */
+/* ============ 用户卡片 Hero - Premium Dark ============ */
 .user-card {
-  background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%);
-  padding: 40rpx 32rpx;
-  color: #fff;
   position: relative;
+  margin: 0;
+  padding: 48rpx 32rpx 40rpx;
+  background:
+    radial-gradient(ellipse at top right, rgba(245, 158, 11, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom left, rgba(3, 105, 161, 0.15) 0%, transparent 50%),
+    linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%);
+  color: #fff;
   overflow: hidden;
-  box-shadow: 0 8rpx 32rpx rgba(15, 23, 42, 0.2);
+  box-shadow: 0 8rpx 32rpx rgba(15, 23, 42, 0.25);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -100rpx;
+    right: -100rpx;
+    width: 300rpx;
+    height: 300rpx;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -80rpx;
+    left: -80rpx;
+    width: 260rpx;
+    height: 260rpx;
+    background: radial-gradient(circle, rgba(3, 105, 161, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
 }
 
 .user-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   position: relative;
   z-index: 1;
 }
@@ -480,14 +516,18 @@ export default {
 .avatar-container {
   position: relative;
   margin-right: 24rpx;
+  flex-shrink: 0;
 }
 
 .user-avatar {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 60rpx;
-  border: 4rpx solid rgba(245, 158, 11, 0.6);
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 44rpx;
+  border: 4rpx solid rgba(245, 158, 11, 0.5);
+  background: linear-gradient(135deg, #334155 0%, #475569 100%);
+  box-shadow:
+    0 12rpx 32rpx rgba(0, 0, 0, 0.3),
+    inset 0 2rpx 8rpx rgba(255, 255, 255, 0.1);
 }
 
 .user-info {
@@ -499,24 +539,27 @@ export default {
   display: flex;
   align-items: center;
   gap: 12rpx;
+  margin-bottom: 8rpx;
 }
 
 .user-name {
-  font-size: 36rpx;
-  font-weight: 700;
+  font-size: 40rpx;
+  font-weight: 800;
   color: #fff;
+  letter-spacing: 0.5rpx;
 }
 
 .user-phone {
-  font-size: 24rpx;
-  opacity: 0.8;
+  font-size: 26rpx;
+  opacity: 0.7;
   display: block;
-  margin-top: 6rpx;
+  margin-bottom: 8rpx;
+  font-weight: 400;
 }
 
 .user-actions {
   display: flex;
-  gap: 16rpx;
+  gap: 12rpx;
   margin-top: 16rpx;
 }
 
@@ -524,31 +567,39 @@ export default {
   display: flex;
   align-items: center;
   gap: 8rpx;
-  padding: 10rpx 20rpx;
-  border-radius: 24rpx;
+  padding: 12rpx 20rpx;
+  border-radius: 20rpx;
   font-size: 22rpx;
-  font-weight: 500;
-  
+  font-weight: 600;
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+
   &.edit {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.12);
     color: #fff;
     border: 1rpx solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10rpx);
   }
-  
+
   &.home {
-    background: rgba(245, 158, 11, 0.2);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0.15) 100%);
     color: #FCD34D;
     border: 1rpx solid rgba(245, 158, 11, 0.3);
+  }
+
+  &:active {
+    transform: scale(0.96);
   }
 }
 
 .user-meta {
   display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-  margin-top: 20rpx;
-  padding-top: 20rpx;
-  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
+  flex-wrap: wrap;
+  gap: 12rpx 24rpx;
+  margin-top: 28rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.12);
+  position: relative;
+  z-index: 1;
 }
 
 .meta-item {
@@ -559,34 +610,41 @@ export default {
 
 .meta-label {
   font-size: 24rpx;
-  opacity: 0.7;
+  opacity: 0.65;
+  font-weight: 400;
 }
 
 .meta-value {
-  font-size: 24rpx;
-  font-weight: 600;
+  font-size: 26rpx;
+  font-weight: 700;
   color: #FCD34D;
+  letter-spacing: 0.3rpx;
 }
 
 .credit-badge {
   display: inline-flex;
   align-items: center;
   font-size: 22rpx;
-  padding: 6rpx 16rpx;
-  border-radius: 16rpx;
-  background: rgba(245, 158, 11, 0.2);
-  color: #FCD34D;
-  font-weight: 600;
-  margin-left: 12rpx;
+  padding: 8rpx 18rpx;
+  border-radius: 14rpx;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.15) 100%);
+  color: #6EE7B7;
+  font-weight: 700;
+  border: 1rpx solid rgba(16, 185, 129, 0.3);
 }
 
 .deposit-inline {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 24rpx;
-  padding-top: 20rpx;
-  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
+  margin-top: 28rpx;
+  padding: 24rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%);
+  border: 1rpx solid rgba(245, 158, 11, 0.25);
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.1);
 }
 
 .deposit-left {
@@ -595,193 +653,175 @@ export default {
 }
 
 .deposit-label {
-  font-size: 22rpx;
-  opacity: 0.7;
-}
-
-.deposit-amount-row {
-  display: flex;
-  align-items: baseline;
-  gap: 8rpx;
-  margin-top: 8rpx;
-}
-
-.deposit-amount {
-  font-size: 44rpx;
-  font-weight: 800;
-  color: #FCD34D;
-}
-
-.deposit-total {
   font-size: 24rpx;
-  opacity: 0.7;
-}
-
-.deposit-arrow {
-  opacity: 0.5;
-}
-
-/* ============ 保证金卡片 ============ */
-.deposit-card {
-  background: #ffffff;
-  margin: 28rpx 32rpx;
-  border-radius: 24rpx;
-  padding: 32rpx;
-  box-shadow: 
-    0 8rpx 24rpx rgba(15, 23, 42, 0.06),
-    0 2rpx 8rpx rgba(15, 23, 42, 0.04);
-  border: 1rpx solid #F1F5F9;
-  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 200ms both;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.deposit-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.deposit-label {
-  font-size: 24rpx;
-  color: #64748B;
+  opacity: 0.75;
   font-weight: 500;
-  letter-spacing: 1rpx;
+  letter-spacing: 0.5rpx;
 }
 
 .deposit-amount-row {
   display: flex;
   align-items: baseline;
-  gap: 12rpx;
-  margin-top: 12rpx;
+  gap: 10rpx;
+  margin-top: 8rpx;
 }
 
 .deposit-amount {
   font-size: 52rpx;
   font-weight: 800;
-  color: #0F172A;
+  color: #FCD34D;
   letter-spacing: 1rpx;
-  background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+  background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .deposit-total {
-  font-size: 24rpx;
-  color: #94A3B8;
+  font-size: 26rpx;
+  opacity: 0.7;
+  color: #FDE68A;
 }
 
-.deposit-badge {
-  background: #F0F9FF;
-  padding: 12rpx 24rpx;
-  border-radius: 12rpx;
-  border: 1rpx solid rgba(3, 105, 161, 0.15);
+.deposit-arrow {
+  opacity: 0.7;
+  color: #FCD34D;
 }
 
-.deposit-badge-text {
-  font-size: 24rpx;
-  color: #0369A1;
-  font-weight: 600;
-}
-
-/* ============ 数据统计卡片 ============ */
+/* ============ 数据统计卡片 - Premium ============ */
 .stats-card {
-  background: #ffffff;
-  margin: 0 32rpx 24rpx;
-  border-radius: 24rpx;
-  padding: 32rpx 36rpx;
-  box-shadow: 
-    0 8rpx 24rpx rgba(15, 23, 42, 0.06),
-    0 2rpx 8rpx rgba(15, 23, 42, 0.04);
-  border: 1rpx solid #F1F5F9;
-  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 400ms both;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16rpx);
+  margin: 24rpx 24rpx;
+  border-radius: 28rpx;
+  padding: 32rpx 24rpx;
+  box-shadow:
+    0 4rpx 24rpx rgba(15, 23, 42, 0.08),
+    0 1rpx 4rpx rgba(15, 23, 42, 0.04);
+  border: 1rpx solid rgba(226, 232, 240, 0.7);
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) 200ms both;
 }
 
 .stats-row {
   display: flex;
+  gap: 8rpx;
 }
 
 .stat-item {
   flex: 1;
   text-align: center;
-  padding: 16rpx 8rpx;
-  border-right: 1rpx solid #F1F5F9;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 12rpx 8rpx;
+  border-right: 1rpx solid rgba(226, 232, 240, 0.7);
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
   &:last-child {
     border-right: none;
   }
 
-  &:hover {
-    transform: translateY(-4rpx);
+  &.main {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.04) 0%, transparent 100%);
+    border-radius: 16rpx;
+    margin: -4rpx 0;
+    padding: 16rpx 8rpx;
+  }
+
+  &:active {
+    transform: scale(0.97);
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.7) 100%);
+    border-radius: 16rpx;
   }
 }
 
 .stat-num {
-  font-size: 44rpx;
+  font-size: 48rpx;
   font-weight: 800;
-  color: #0F172A;
   display: block;
   letter-spacing: 1rpx;
   background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+
+  &.big {
+    font-size: 56rpx;
+    background: linear-gradient(135deg, #0369A1 0%, #0EA5E9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
 
 .stat-label {
   font-size: 22rpx;
   color: #64748B;
   display: block;
-  margin-top: 8rpx;
+  margin-top: 10rpx;
   font-weight: 500;
+  letter-spacing: 0.3rpx;
 }
 
 .stat-today {
   font-size: 20rpx;
-  color: #10B981;
+  color: #059669;
   display: block;
-  margin-top: 6rpx;
+  margin-top: 8rpx;
   font-weight: 600;
+  padding: 2rpx 12rpx;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.06) 100%);
+  border-radius: 12rpx;
+  display: inline-block;
 }
 
-/* ============ 已认证标识 ============ */
-.certified-banner {
+/* ============ 认证车商功能区 ============ */
+.section-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16rpx);
+  margin: 0 24rpx 24rpx;
+  border-radius: 28rpx;
+  padding: 28rpx 28rpx 24rpx;
+  box-shadow:
+    0 4rpx 24rpx rgba(15, 23, 42, 0.08),
+    0 1rpx 4rpx rgba(15, 23, 42, 0.04);
+  border: 1rpx solid rgba(226, 232, 240, 0.7);
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) 300ms both;
+}
+
+.section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
-  margin: 0 32rpx 24rpx;
-  border-radius: 20rpx;
-  padding: 24rpx 28rpx;
-  border: 1rpx solid #A7F3D0;
-  box-shadow: 0 4rpx 16rpx rgba(16, 185, 129, 0.1);
-  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 450ms both;
+  margin-bottom: 24rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid rgba(226, 232, 240, 0.5);
 }
 
-.certified-left {
+.section-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #0F172A;
+  letter-spacing: 0.5rpx;
+}
+
+.certified-badge {
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  gap: 8rpx;
+  padding: 8rpx 16rpx;
+  background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+  border-radius: 14rpx;
+  border: 1rpx solid #A7F3D0;
+
+  & text,
+  & view {
+    font-size: 22rpx;
+    color: #059669;
+    font-weight: 600;
+  }
 }
 
-.certified-label {
-  font-size: 28rpx;
-  color: #059669;
-  font-weight: 600;
-}
-
-.certified-status {
-  font-size: 24rpx;
-  color: #059669;
-  font-weight: 500;
-}
-
-/* ============ 认证车商功能网格 ============ */
 .certified-grid {
   display: flex;
-  gap: 24rpx;
+  gap: 16rpx;
 }
 
 .certified-item {
@@ -790,37 +830,45 @@ export default {
   flex-direction: column;
   align-items: center;
   padding: 24rpx 16rpx;
-  background: #F8FAFC;
-  border-radius: 16rpx;
-  border: 1rpx solid #E2E8F0;
+  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(226, 232, 240, 0.7);
+  cursor: pointer;
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.04);
+
+  &:active {
+    transform: scale(0.96);
+    background: linear-gradient(135deg, #EEF2F7 0%, #E2E8F0 100%);
+  }
 }
 
 .certified-icon {
-  width: 80rpx;
-  height: 80rpx;
+  width: 88rpx;
+  height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
-  border-radius: 50%;
+  background: linear-gradient(135deg, #ffffff 0%, #F8FAFC 100%);
+  border-radius: 28rpx;
   margin-bottom: 12rpx;
-  border: 1rpx solid #E2E8F0;
+  border: 1rpx solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4rpx 12rpx rgba(15, 23, 42, 0.06), inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
 }
 
 .certified-label {
   font-size: 24rpx;
-  color: #334155;
-  font-weight: 500;
+  color: #0F172A;
+  font-weight: 600;
+  letter-spacing: 0.3rpx;
+  margin-top: 4rpx;
 }
 
-/* ============ 功能网格 ============ */
+/* ============ 功能网格 - Premium ============ */
 .func-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 28rpx 16rpx;
-  padding: 0 32rpx;
-  margin-bottom: 32rpx;
-  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 500ms both;
+  gap: 24rpx 12rpx;
 }
 
 .func-item {
@@ -828,84 +876,65 @@ export default {
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  transition: all 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  padding: 8rpx 0;
-
-  &:hover {
-    transform: translateY(-6rpx);
-
-    .func-icon {
-      box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.15);
-    }
-
-    .func-label {
-      color: #0F172A;
-    }
-  }
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  padding: 12rpx 8rpx;
+  border-radius: 20rpx;
 
   &:active {
-    transform: translateY(-2rpx) scale(0.97);
-
-    .func-icon {
-      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
-    }
+    transform: scale(0.94);
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.7) 100%);
   }
 }
 
 .func-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 28rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #F8FAFC;
-  border: 1rpx solid #E2E8F0;
+  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+  border: 1rpx solid rgba(226, 232, 240, 0.8);
   margin-bottom: 12rpx;
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.04), inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 .func-label {
   font-size: 24rpx;
   color: #334155;
-  margin-top: 14rpx;
+  margin-top: 4rpx;
   text-align: center;
   font-weight: 500;
-  transition: color 200ms ease;
-  letter-spacing: 0.5rpx;
+  letter-spacing: 0.3rpx;
+  transition: color 300ms ease;
 }
 
 /* ============ 退出登录 ============ */
 .logout-section {
-  padding: 0 32rpx;
-  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 600ms both;
+  padding: 16rpx 24rpx;
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) 500ms both;
 }
 
 .btn-logout {
   width: 100%;
   padding: 32rpx;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16rpx);
   color: #DC2626;
-  border: 2rpx solid #FECACA;
-  border-radius: 20rpx;
+  border: 1rpx solid rgba(254, 202, 202, 0.8);
+  border-radius: 24rpx;
   font-size: 30rpx;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  letter-spacing: 2rpx;
-  box-shadow: 0 4rpx 12rpx rgba(220, 38, 38, 0.08);
-
-  &:hover {
-    background: #FEF2F2;
-    border-color: #FCA5A5;
-    transform: translateY(-2rpx);
-    box-shadow: 0 8rpx 20rpx rgba(220, 38, 38, 0.15);
-  }
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  letter-spacing: 1rpx;
+  box-shadow: 0 4rpx 16rpx rgba(220, 38, 38, 0.08);
 
   &:active {
-    background: #FEE2E2;
-    border-color: #F87171;
-    transform: translateY(0) scale(0.98);
-    box-shadow: 0 2rpx 8rpx rgba(220, 38, 38, 0.1);
+    transform: scale(0.98);
+    background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+    border-color: #FCA5A5;
   }
 }
 
@@ -918,7 +947,7 @@ export default {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(30rpx);
+    transform: translateY(20rpx);
   }
   to {
     opacity: 1;
@@ -926,63 +955,25 @@ export default {
   }
 }
 
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.4);
-  }
-  50% {
-    box-shadow: 
-      0 4rpx 12rpx rgba(16, 185, 129, 0.6),
-      0 0 20rpx rgba(16, 185, 129, 0.3);
-  }
-}
-
 /* ============ 响应式适配 ============ */
 @media (min-width: 376px) {
-  .user-name {
-    font-size: 42rpx;
-  }
-  .func-icon {
-    width: 108rpx;
-    height: 108rpx;
-  }
-  .user-avatar {
-    width: 144rpx;
-    height: 144rpx;
-    border-radius: 72rpx;
-  }
-  .deposit-amount {
-    font-size: 56rpx;
-  }
+  .user-name { font-size: 44rpx; }
+  .func-icon { width: 100rpx; height: 100rpx; border-radius: 32rpx; }
+  .user-avatar { width: 160rpx; height: 160rpx; border-radius: 52rpx; }
+  .deposit-amount { font-size: 58rpx; }
+  .stat-num { font-size: 52rpx; }
+  .stat-num.big { font-size: 60rpx; }
 }
 
 @media (max-width: 320px) {
-  .user-name {
-    font-size: 32rpx;
-  }
-  .func-icon {
-    width: 84rpx;
-    height: 84rpx;
-    border-radius: 20rpx;
-  }
-  .user-avatar {
-    width: 100rpx;
-    height: 100rpx;
-    border-radius: 50rpx;
-  }
-  .deposit-amount {
-    font-size: 36rpx;
-  }
-  .func-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20rpx 12rpx;
-  }
-  .stat-num {
-    font-size: 32rpx;
-  }
-  .func-label {
-    font-size: 22rpx;
-  }
+  .user-name { font-size: 32rpx; }
+  .func-icon { width: 76rpx; height: 76rpx; border-radius: 24rpx; }
+  .user-avatar { width: 112rpx; height: 112rpx; border-radius: 36rpx; }
+  .deposit-amount { font-size: 40rpx; }
+  .stat-num { font-size: 34rpx; }
+  .stat-num.big { font-size: 40rpx; }
+  .func-label { font-size: 22rpx; }
+  .action-btn { font-size: 20rpx; padding: 10rpx 16rpx; }
 }
 
 /* ============ 减少动画偏好 ============ */

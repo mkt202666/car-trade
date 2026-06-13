@@ -7,7 +7,7 @@
     </u-navbar>
     <view class="page-content">
       <view v-if="loading" class="loading-wrap">
-        <u-loading mode="flower" size="50"></u-loading>
+        <view class="custom-spinner"></view>
       </view>
       <block v-else>
         <view class="contract-header">
@@ -306,6 +306,17 @@ $transition: all 0.2s ease;
   display: flex;
   justify-content: center;
   padding: 100rpx 0;
+}
+.custom-spinner {
+  width: 64rpx;
+  height: 64rpx;
+  border: 6rpx solid #e5e7eb;
+  border-top-color: #0369A1;
+  border-radius: 50%;
+  animation: cd-spin 0.8s linear infinite;
+}
+@keyframes cd-spin {
+  to { transform: rotate(360deg); }
 }
 .contract-header {
   background: #fff;

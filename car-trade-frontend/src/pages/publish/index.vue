@@ -714,7 +714,7 @@ export default {
         sourceType: ['camera'],
         success: (res) => {
           // 调用OCR识别接口
-          this.$u.api.post('/ai/ocr', {
+          uni.http.post('/ai/ocr', {
             type: type,
             imageUrl: res.tempFilePaths[0]
           }).then(response => {
@@ -739,7 +739,7 @@ export default {
         extension: ['.pdf'],
         success: (res) => {
           // 上传文件
-          this.$u.api.post('/upload/file', {
+          uni.http.post('/upload/file', {
             file: res.tempFilePaths[0]
           }).then(response => {
             if (response.data && response.data.url) {
@@ -761,7 +761,7 @@ export default {
         sourceType: ['album', 'camera'],
         success: (res) => {
           // 上传图片
-          this.$u.api.post('/upload/image', {
+          uni.http.post('/upload/image', {
             file: res.tempFilePaths[0]
           }).then(response => {
             if (response.data && response.data.url) {
@@ -802,7 +802,7 @@ export default {
         sourceType: ['camera'],
         success: (res) => {
           // 调用AI识别接口
-          this.$u.api.post('/ai/recognize', {
+          uni.http.post('/ai/recognize', {
             imageUrl: res.tempFilePaths[0]
           }).then(response => {
             if (response.data) {
@@ -841,7 +841,7 @@ export default {
         sourceType: ['album'],
         success: (res) => {
           // 调用AI识别接口
-          this.$u.api.post('/ai/recognize', {
+          uni.http.post('/ai/recognize', {
             imageUrl: res.tempFilePaths[0]
           }).then(response => {
             if (response.data) {

@@ -1,4 +1,6 @@
 package com.pancosky.newcartrade.controller;
+import com.pancosky.newcartrade.common.RequiresAuth;
+import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.service.UserFollowService;
@@ -17,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/follows")
 @RequiredArgsConstructor
+@RequiresAuth(AuthLevel.PROTECTED)
 public class FollowController {
 
     private final UserFollowService userFollowService;

@@ -146,15 +146,22 @@
         </view>
       </view>
     </view>
+
+    <!-- 自定义底部导航栏 -->
+    <custom-tab-bar />
   </view>
 </template>
 
 <script>
 import { aiChat, aiChatStream, marketAnalysis, aiSearch, generateCopywriting, autoOutreach, carAnalysis, priceEstimate } from '@/api/ai'
 import { requireAuth } from '@/utils/auth'
+import CustomTabBar from '@/custom-tab-bar/index.vue'
 
 export default {
   name: 'AiAssistant',
+  components: {
+    CustomTabBar
+  },
   data() {
     return {
       aiFunctions: [
@@ -177,14 +184,23 @@ export default {
       messages: [],
       inputText: '',
       scrollTop: 0,
-      isSending: false
+      isSending: false,
+      mode: ''
     }
-  },
-  mounted() {
-    if (!requireAuth()) return
-    this.loadHistoryList()
-  },
-  methods: {
+      },
+      onLoad(options) {
+        // 支持mode参数，用于从profile页面导航
+        if (options && options.mode) {
+          this.mode = options.mode
+        }
+        this.loadModeData()
+      },
+      onShow() {
+        // tabbar 页面：每次显示时检查登录态，确保登录后能正确加载数据
+        if (!requireAuth()) return
+        this.loadHistoryList()
+      },
+      methods: {
     getFunctionName(id) {
       const fn = this.aiFunctions.find(f => f.id === id)
       return fn ? fn.name : 'AI 助手'
@@ -201,6 +217,26 @@ export default {
       try {
         uni.setStorageSync('ai_chat_history', this.historyList)
       } catch (e) {}
+    },
+    loadModeData() {
+      // 根据mode参数加载不同的数据和UI
+      if (this.mode === 'distribute') {
+        // AI分发车源模式
+        this.aiFunctions = this.aiFunctions.filter(f => ['search', 'outreach'].includes(f.id))
+        this.aiFunctions.forEach(f => {
+          if (f.id === 'search') {
+            f.name = 'AI分发车源'
+            f.desc = '智能分发您的车源到多个平台'
+            f.emoji = '🚀'
+            f.bgGrad = 'linear-gradient(135deg, #059669 0%, #10B981 100%)'
+          }
+        })
+        this.quickQuestions = [
+          '帮我为这辆车源生成推广文案',
+          '自动推广我的车源到瓜子人人车',
+          '如何增加车源曝光率'
+        ]
+      }
     },
     openFunction(item) {
       if (!requireAuth()) return
@@ -386,14 +422,15 @@ export default {
 
       const controller = aiChatStream({ message: text, history: history }, {
         onMessage: (piece, fullText) => {
+          // 流式期间只写文本 — 利用 Vue 响应式自然更新；不 nextTick / 不 scrollToBottom
           aiMsg.content = fullText
-          this.$nextTick(() => this.scrollToBottom())
         },
         onDone: (fullText) => {
           aiMsg.content = fullText
           aiMsg.streaming = false
           this.isSending = false
           this.saveCurrentChat()
+          // done 时才滚到底，避免流式过程中高频 re-render 与滚动抖动
           this.$nextTick(() => this.scrollToBottom())
         },
         onError: (err) => {
@@ -408,7 +445,6 @@ export default {
         }
       })
 
-      // 保存取消句柄（页面关闭时可调用）
       this._streamController = controller
     },
     saveCurrentChat() {

@@ -1,9 +1,12 @@
 package com.pancosky.newcartrade.controller;
+import com.pancosky.newcartrade.common.RequiresAuth;
+import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.dto.OrderCreateDTO;
 import com.pancosky.newcartrade.service.OrderService;
 import com.pancosky.newcartrade.vo.OrderDetailVO;
+import com.pancosky.newcartrade.vo.OrderStatsVO;
 import com.pancosky.newcartrade.vo.OrderVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +24,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
+@RequiresAuth(AuthLevel.PROTECTED)
 public class OrderController {
 
     private final OrderService orderService;
@@ -83,8 +87,8 @@ public class OrderController {
      * 认证要求：必须登录；不同状态下对可取消角色有不同限制。
      */
     @PutMapping("/{id}/cancel")
-    public ApiResponse<Void> cancel(@PathVariable String id) {
-        orderService.cancel(id);
+    public ApiResponse<Void> cancel(@PathVariable String id, @RequestBody Map<String, String> body) {
+        orderService.cancel(id, body.get("reason"));
         return ApiResponse.success();
     }
 
@@ -225,5 +229,16 @@ public class OrderController {
     @GetMapping("/{id}/logs")
     public ApiResponse<List<Object>> logs(@PathVariable String id) {
         return ApiResponse.success(orderService.logs(id));
+    }
+
+    /**
+     * 订单统计
+     * HTTP: GET /api/v1/orders/stats
+     * 响应：ApiResponse&lt;OrderStatsVO&gt; —— 各状态订单数量、总成交金额等。
+     * 认证要求：必须登录。
+     */
+    @GetMapping("/stats")
+    public ApiResponse<OrderStatsVO> getStats() {
+        return ApiResponse.success(orderService.getStats());
     }
 }

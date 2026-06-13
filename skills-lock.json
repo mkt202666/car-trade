@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "code-simplify": {
+      "source": "paulrberg/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/code-simplify/SKILL.md",
+      "computedHash": "c6496dede04880603203c43f3bc994e011484936d09643cb987e2ac0fa3ecadc"
+    }
+  }
+}

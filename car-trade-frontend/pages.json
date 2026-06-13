@@ -205,9 +205,15 @@
       }
     },
     {
-      "path": "pages/tutorial/index",
+      "path": "pages/purchase-demand-list/index",
       "style": {
-        "navigationBarTitleText": "新手教程"
+        "navigationBarTitleText": "求购列表"
+      }
+    },
+    {
+      "path": "pages/my-car-source/index",
+      "style": {
+        "navigationBarTitleText": "我的车源"
       }
     }
   ],

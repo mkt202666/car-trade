@@ -1,54 +1,79 @@
 <template>
   <view class="custom-tabbar">
     <view class="tabbar-inner">
-      <!-- 左侧：找车 -->
+      <!-- 找车 -->
       <view class="tab-item" @click="switchTab(0)">
-        <view class="tab-icon-wrapper" :class="{ active: activeIndex === 0 }">
-          <text class="tab-icon-text" v-if="activeIndex === 0">🔍</text>
-          <text class="tab-icon-text" v-else>🔎</text>
+        <view class="tab-icon-box">
+          <view class="tab-icon icon-search" :class="{ active: activeIndex === 0 }">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="11" cy="11" r="7" stroke-width="2.2"/>
+              <line x1="16.5" y1="16.5" x2="21" y2="21" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </view>
+          <view class="tab-dot" v-if="activeIndex === 0"></view>
         </view>
         <text class="tab-text" :class="{ active: activeIndex === 0 }">找车</text>
       </view>
 
       <!-- 求购 -->
       <view class="tab-item" @click="switchTab(1)">
-        <view class="tab-icon-wrapper" :class="{ active: activeIndex === 1 }">
-          <text class="tab-icon-text">📋</text>
+        <view class="tab-icon-box">
+          <view class="tab-icon icon-list" :class="{ active: activeIndex === 1 }">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="4" width="16" height="16" rx="3" stroke-width="2"/>
+              <line x1="8" y1="9" x2="16" y2="9" stroke-width="2" stroke-linecap="round"/>
+              <line x1="8" y1="12.5" x2="16" y2="12.5" stroke-width="2" stroke-linecap="round"/>
+              <line x1="8" y1="16" x2="13" y2="16" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </view>
+          <view class="tab-dot" v-if="activeIndex === 1"></view>
         </view>
         <text class="tab-text" :class="{ active: activeIndex === 1 }">求购</text>
       </view>
 
-      <!-- 中间位置：占位，实际凸起按钮在下方绝对定位 -->
-      <view class="tab-center-placeholder"></view>
+      <!-- 中间凸起按钮：AI 助理 -->
+      <view class="tab-center" @click="gotoAI">
+        <view class="center-ring">
+          <view class="center-btn">
+            <view class="center-icon">
+              <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M24 6 L27 18 L39 18 L29 26 L32 40 L24 32 L16 40 L19 26 L9 18 L21 18 Z" stroke-linejoin="round" stroke-width="2.4"/>
+              </svg>
+            </view>
+          </view>
+        </view>
+        <text class="center-text" :class="{ active: activeIndex === 2 }">AI助理</text>
+        <view class="tab-dot center" v-if="activeIndex === 2"></view>
+      </view>
 
       <!-- 消息 -->
       <view class="tab-item" @click="switchTab(3)">
-        <view class="tab-icon-wrapper" :class="{ active: activeIndex === 3 }">
-          <text class="tab-icon-text">💬</text>
+        <view class="tab-icon-box">
+          <view class="tab-icon icon-chat" :class="{ active: activeIndex === 3 }">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 6 Q4 4 6 4 L18 4 Q20 4 20 6 L20 16 Q20 18 18 18 L10 18 L5 22 L5 18 L5 6 Z" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </view>
+          <view class="tab-dot" v-if="activeIndex === 3"></view>
         </view>
         <text class="tab-text" :class="{ active: activeIndex === 3 }">消息</text>
       </view>
 
       <!-- 我的 -->
       <view class="tab-item" @click="switchTab(4)">
-        <view class="tab-icon-wrapper" :class="{ active: activeIndex === 4 }">
-          <text class="tab-icon-text">👤</text>
+        <view class="tab-icon-box">
+          <view class="tab-icon icon-user" :class="{ active: activeIndex === 4 }">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="8.5" r="4" stroke-width="2"/>
+              <path d="M4.5 21 Q4.5 14.5 12 14.5 Q19.5 14.5 19.5 21" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </view>
+          <view class="tab-dot" v-if="activeIndex === 4"></view>
         </view>
         <text class="tab-text" :class="{ active: activeIndex === 4 }">我的</text>
       </view>
     </view>
 
-    <!-- 中间凸起圆形按钮：AI助理（突出显示） -->
-    <view class="tab-center" @click="gotoAI">
-      <view class="center-circle">
-        <view class="center-btn-inner">
-          <text class="center-btn-icon">✦</text>
-        </view>
-      </view>
-      <text class="center-text" :class="{ active: activeIndex === 2 }">AI助理</text>
-    </view>
-
-    <!-- 底部安全区 -->
     <view class="safe-area"></view>
   </view>
 </template>
@@ -62,14 +87,13 @@ export default {
       tabList: [
         { pagePath: '/pages/home/index', text: '找车' },
         { pagePath: '/pages/purchase-demand-list/index', text: '求购' },
-        { pagePath: '/pages/purchase-demand-list/index', text: 'AI助理' },
+        { pagePath: '/pages/ai/index', text: 'AI助理' },
         { pagePath: '/pages/message/index', text: '消息' },
         { pagePath: '/pages/profile/index', text: '我的' }
       ]
     }
   },
   mounted() {
-    // 根据当前页面设置选中状态
     const pages = getCurrentPages()
     const current = pages[pages.length - 1]
     if (current && current.route) {
@@ -85,7 +109,7 @@ export default {
     },
     gotoAI() {
       this.activeIndex = 2
-      uni.switchTab({ url: '/pages/purchase-demand-list/index' })
+      uni.switchTab({ url: '/pages/ai/index' })
     }
   }
 }
@@ -93,12 +117,10 @@ export default {
 
 <style lang="scss" scoped>
 /* =========================================================
-   5D好车自定义TabBar - 原型风格样式
-   设计语言: Clean | Modern | Marketplace
-   颜色系统: 深蓝灰 #0F172A (active) | 琥珀金 #F59E0B (AI按钮)
+   5D好车 Custom TabBar - 简洁线描风格（参考图2）
+   白色背景 + 黑色线描图标 + 黄色中间按钮 + 选中点
    ========================================================= */
 
-/* ============ 主容器 ============ */
 .custom-tabbar {
   position: fixed;
   left: 0;
@@ -106,149 +128,176 @@ export default {
   bottom: 0;
   z-index: 999;
   background: #ffffff;
-  box-shadow: 0 -2rpx 12rpx rgba(15, 23, 42, 0.06);
-  border-top: 1rpx solid #F1F5F9;
+  border-top: 1rpx solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 -4rpx 24rpx rgba(15, 23, 42, 0.06);
 }
 
-/* ============ 内部布局 ============ */
 .tabbar-inner {
   position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-around;
-  height: 120rpx;
-  padding-bottom: 8rpx;
-  overflow: visible;
+  height: 128rpx;
+  padding: 0 16rpx 8rpx;
 }
 
-/* ============ 普通Tab项 ============ */
+/* ============ 普通 Tab ============ */
 .tab-item {
-  flex: 1;
+  flex: 0 0 calc(25% - 20rpx);
+  max-width: 140rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding-top: 16rpx;
-  height: 120rpx;
+  justify-content: flex-start;
+  padding-top: 20rpx;
   cursor: pointer;
-  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 250ms cubic-bezier(0.25, 0.1, 0.25, 1);
   position: relative;
 
   &:active {
-    transform: scale(0.95);
+    opacity: 0.85;
   }
 }
 
-.tab-icon-wrapper {
+.tab-icon-box {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 12rpx;
-  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  height: 56rpx;
+}
+
+.tab-icon {
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 250ms cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  svg {
+    width: 100%;
+    height: 100%;
+    stroke: #64748B;
+    transition: all 250ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
 
   &.active {
-    background: #F8FAFC;
+    svg {
+      stroke: #1E293B;
+      stroke-width: 2.4;
+    }
   }
 }
 
-.tab-icon-text {
-  font-size: 40rpx;
-  line-height: 1;
-  opacity: 0.6;
-  transition: all 150ms ease;
+/* 选中态的黄色小圆点 */
+.tab-dot {
+  position: absolute;
+  bottom: -6rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: #F59E0B;
+  box-shadow: 0 2rpx 6rpx rgba(245, 158, 11, 0.5);
 
-  .active & {
-    opacity: 1;
+  &.center {
+    bottom: -10rpx;
+    position: static;
+    transform: none;
+    margin-top: 6rpx;
   }
 }
 
 .tab-text {
-  font-size: 22rpx;
-  color: #94A3B8;
-  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #64748B;
+  margin-top: 12rpx;
   font-weight: 500;
-  transition: all 150ms ease;
+  letter-spacing: 0.5rpx;
+  transition: color 250ms ease;
+  line-height: 1.2;
 
   &.active {
-    color: #0F172A;
+    color: #1E293B;
     font-weight: 700;
   }
 }
 
-/* ============ 中间位置占位 ============ */
-.tab-center-placeholder {
-  flex: 1;
-  height: 120rpx;
-}
-
-/* ============ 中间凸起圆形按钮（AI助理） ============ */
+/* ============ 中间 AI 按钮 - 浅黄色圆形 ============ */
 .tab-center {
   position: absolute;
   left: 50%;
-  top: -40rpx;
+  top: -32rpx;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
   z-index: 1000;
-  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 250ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  padding: 0 20rpx;
 
   &:active {
     transform: translateX(-50%) scale(0.94);
   }
 }
 
-/* 外圈 - 白色圆形背景 */
-.center-circle {
-  width: 132rpx;
-  height: 132rpx;
-  border-radius: 66rpx;
+/* 外浅黄光晕 */
+.center-ring {
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 52rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #ffffff;
-  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.12);
+  box-shadow:
+    0 -4rpx 12rpx rgba(15, 23, 42, 0.08),
+    0 4rpx 20rpx rgba(15, 23, 42, 0.1);
+  border: 2rpx solid rgba(226, 232, 240, 0.8);
+}
+
+/* 内层浅黄色圆按钮 */
+.center-btn {
+  width: 86rpx;
+  height: 86rpx;
+  border-radius: 43rpx;
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 50%, #FDE68A 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 4rpx solid #F59E0B;
+  box-shadow:
+    inset 0 2rpx 6rpx rgba(255, 255, 255, 0.9),
+    inset 0 -2rpx 4rpx rgba(245, 158, 11, 0.15);
 }
 
-/* 内圈 - 琥珀金渐变按钮主体 */
-.center-btn-inner {
-  width: 108rpx;
-  height: 108rpx;
-  border-radius: 54rpx;
-  background: linear-gradient(180deg, #FCD34D 0%, #F59E0B 100%);
+/* 黑色星星图标 */
+.center-icon {
+  width: 42rpx;
+  height: 42rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 2rpx 4rpx rgba(255, 255, 255, 0.4);
-}
 
-/* 图标 */
-.center-btn-icon {
-  font-size: 48rpx;
-  color: #ffffff;
-  font-weight: 800;
-  line-height: 1;
-}
-
-/* 文字 */
-.center-text {
-  font-size: 22rpx;
-  color: #F59E0B;
-  margin-top: 8rpx;
-  font-weight: 700;
-  letter-spacing: 1rpx;
-  transition: all 150ms ease;
-
-  &.active {
-    color: #D97706;
+  svg {
+    width: 100%;
+    height: 100%;
+    stroke: #1E293B;
+    fill: #1E293B;
   }
 }
 
-/* ============ 安全区 ============ */
+.center-text {
+  font-size: 22rpx;
+  color: #1E293B;
+  margin-top: 8rpx;
+  font-weight: 700;
+  letter-spacing: 0.5rpx;
+  line-height: 1.2;
+}
+
 .safe-area {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);

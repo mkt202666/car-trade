@@ -4,7 +4,7 @@
     <view class="page-content">
       <u-tabs :list="statusTabs" :current="currentTab" @change="switchTab" active-color="#3c9cff" :bold="false"></u-tabs>
       <view v-if="loading" class="loading-wrap">
-        <u-loading mode="flower" size="50"></u-loading>
+        <view class="custom-spinner"></view>
       </view>
       <block v-else>
         <view class="order-list">
@@ -120,6 +120,17 @@ export default {
 <style lang="scss" scoped>
 .page-content { min-height: 100vh; background: #f5f5f5; }
 .loading-wrap { display: flex; justify-content: center; padding: 100rpx 0; }
+.custom-spinner {
+  width: 64rpx;
+  height: 64rpx;
+  border: 6rpx solid #e5e7eb;
+  border-top-color: #0369A1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 .order-list { padding: 20rpx 30rpx; }
 .order-card { background: #fff; border-radius: 16rpx; margin-bottom: 20rpx; overflow: hidden; box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06); }
 .order-header { display: flex; justify-content: space-between; align-items: center; padding: 20rpx; border-bottom: 1rpx solid #f5f5f5; }

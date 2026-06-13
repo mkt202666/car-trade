@@ -235,7 +235,7 @@ export default {
       if (!newPassword || newPassword.length < 6) { uni.$u.toast('新密码长度不能少于6位'); return }
       if (newPassword !== confirmPassword) { uni.$u.toast('两次密码不一致'); return }
       try {
-        await uni.$u.http.put('/users/me/password', { oldPassword, newPassword })
+        await uni.http.put('/users/me/password', { oldPassword, newPassword })
         uni.$u.toast('密码修改成功')
         this.showPasswordPopup = false
         this.passwordForm = { oldPassword: '', newPassword: '', confirmPassword: '' }
@@ -245,7 +245,7 @@ export default {
       const { newPhone } = this.phoneForm
       if (!newPhone || newPhone.length < 11) { uni.$u.toast('请输入正确手机号'); return }
       try {
-        await uni.$u.http.put('/users/me/phone', { phone: newPhone })
+        await uni.http.put('/users/me/phone', { phone: newPhone })
         uni.$u.toast('手机号更换成功')
         this.showPhonePopup = false
         this.phoneForm = { newPhone: '' }

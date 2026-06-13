@@ -1,118 +1,92 @@
 /**
  * ============================================
- *  接口权限配置中心
+ *  前端权限控制 — 真实实现
  * ============================================
- * 
- * 功能：
- *  - 定义接口权限级别（公开 / 需登录 / 需商家认证）
- *  - 提供 isPublicEndpoint / requiresAuth 等判断函数
- *  - 请求拦截器和响应拦截器从此处读取配置
- * 
- * 使用方式：
- *   import { isPublicEndpoint, AUTH_LEVEL, getEndpointAuthLevel } from '@/api/permissions'
- *   if (isPublicEndpoint(url, method)) { ... }
- * 
+ *
+ * 与后端 WebMvcConfig 白名单 + @RequiresAuth 注解语义保持一致。
+ *
+ * 重要：客户端权限仅用于"友好提示/守卫"，真正的权限判定必须由后端完成。
+ *
+ * 公开接口白名单（PUBLIC）允许未登录访问
+ * 商家接口白名单（CERTIFIED）要求用户已认证为商家
+ * 其余默认 PROTECTED（需要登录）
  * ============================================
  */
 
-/** 权限级别 */
+import { STORAGE_KEYS, TOKEN_MIN_LENGTH, readToken } from '../constants/storage.js'
+
 export const AUTH_LEVEL = {
-  PUBLIC: 'public',       // 🔓 公开，未登录也可访问
-  PROTECTED: 'protected', // 🔒 需要登录才能访问
-  CERTIFIED: 'certified'  // 🔐 需要商家认证身份
+  PUBLIC: 'public',
+  PROTECTED: 'protected',
+  CERTIFIED: 'certified'
 }
 
-/**
- * 📋 公开接口白名单
- * 匹配规则：path（正则） + method（大写，可选）
- * 匹配到任意一条即为公开接口
- */
-export const PUBLIC_ENDPOINTS = [
-  // -------- 认证相关 --------
+// 公开接口白名单：{ 路径正则, 允许的 HTTP 方法（null 表示任意方法） }
+const PUBLIC_ENDPOINTS = [
   { path: /^\/users\/login$/, method: 'POST' },
   { path: /^\/users\/register$/, method: 'POST' },
+  { path: /^\/users\/sms\/send$/, method: 'POST' },
+  { path: /^\/cars$/, method: 'GET' },
+  { path: /^\/cars\/[\w-]+$/, method: 'GET' },
+  { path: /^\/cars\/recommend$/, method: 'GET' },
+  { path: /^\/cars\/export$/, method: 'GET' },
+  { path: /^\/cars\/images\/proxy$/, method: 'GET' },
+  { path: /^\/cars\/[\w-]+\/images\/[\w-]+\/download$/, method: 'GET' },
+  { path: /^\/purchases$/, method: 'GET' },
+  { path: /^\/purchases\/[\w-]+$/, method: 'GET' },
+  { path: /^\/auctions$/, method: 'GET' },
+  { path: /^\/auctions\/[\w-]+$/, method: 'GET' },
+  { path: /^\/coupons$/, method: 'GET' },
+  { path: /^\/membership\/plans$/, method: 'GET' },
+  { path: /^\/cities/, method: 'GET' },
+  { path: /^\/brands/, method: 'GET' },
+  { path: /^\/follows\/[\w-]+\/check$/, method: 'GET' },
+  { path: /^\/ai\/chat$/, method: 'POST' },
+  { path: /^\/ai\/search$/, method: 'POST' },
+  { path: /^\/ai\/market-analysis$/, method: 'POST' },
+  // 用户公开信息（仅数字 ID，排除 /users/login、/users/register、/users/me 等）
+  { path: /^\/users\/\d+$/, method: 'GET' }
+]
 
-  // -------- 车源浏览 --------
-  { path: /^\/cars$/, method: 'GET' },                                 // GET /cars 车源列表
-  { path: /^\/cars\/[\w-]+$/, method: 'GET' },                         // GET /cars/:id 车源详情
-  { path: /^\/cars\/[\w-]+\/images\/[\w-]+\/download$/, method: 'GET' }, // 图片下载
-
-  // -------- 公开查询数据 --------
-  { path: /^\/coupons$/, method: 'GET' },                              // GET /coupons 可用优惠券
-  { path: /^\/membership\/plans$/, method: 'GET' },                    // GET /membership/plans 会员套餐
-
-  // -------- AI 开放接口（试用）--------
-  { path: /^\/ai\/market-analysis$/, method: 'POST' },                 // 行情简报
-  { path: /^\/ai\/search$/, method: 'POST' },                          // 智能搜索
-  { path: /^\/ai\/chat$/, method: 'POST' },                            // AI 对话
-
-  // -------- 关注状态查询 --------
-  { path: /^\/follows\/[\w-]+\/check$/, method: 'GET' },               // 查询是否已关注某用户
-
-  // -------- 拍卖浏览（公开）--------
-  { path: /^\/auctions$/, method: 'GET' },                              // GET /auctions 拍卖列表
-  { path: /^\/auctions\/[\w-]+$/, method: 'GET' },                      // GET /auctions/:id 拍卖详情
-  { path: /^\/auctions\/[\w-]+\/bids$/, method: 'GET' },                // GET /auctions/:id/bids 出价记录
-  { path: /^\/auctions\/[\w-]+\/current-price$/, method: 'GET' },       // GET /auctions/:id/current-price
-
-  // -------- 求购浏览（公开）--------
-  { path: /^\/purchases$/, method: 'GET' }                              // GET /purchases 求购列表
+// 商家认证接口白名单
+const CERTIFIED_ENDPOINTS = [
+  { path: /^\/cars$/, method: 'POST' },
+  { path: /^\/cars\/[\w-]+$/, method: 'PUT' },
+  { path: /^\/cars\/[\w-]+$/, method: 'DELETE' },
+  { path: /^\/shop\/members/, method: null },
+  { path: /^\/ai\/distribute$/, method: 'POST' },
+  { path: /^\/ai\/auto-outreach$/, method: 'POST' },
+  { path: /^\/ai\/customer-generation$/, method: 'POST' },
+  { path: /^\/ai\/generate-copywriting$/, method: 'POST' },
+  { path: /^\/purchases$/, method: 'POST' },
+  { path: /^\/auctions$/, method: 'POST' }
 ]
 
 /**
- * 🛡️ 需要商家认证的接口（除登录外还需认证通过）
+ * 剥离 URL 中的 baseURL（支持完整 URL 与相对路径）
+ * 防止路径穿越（../）
  */
-export const CERTIFIED_ENDPOINTS = [
-  { path: /^\/cars$/, method: 'POST' },                                // POST /cars 发布车源
-  { path: /^\/shop\/members/, method: null },                          // /shop/* 车行管理
-  { path: /^\/ai\/distribute$/, method: 'POST' },                      // AI 分发车源
-  { path: /^\/ai\/auto-outreach$/, method: 'POST' },                   // AI 自动触达
-  { path: /^\/ai\/customer-generation$/, method: 'POST' }              // AI 文案生成
-]
-
-/**
- * 判断某请求是否为公开接口
- * @param {string} url       请求 URL（可以是完整 URL 或相对路径）
- * @param {string} method    HTTP 方法（GET/POST/PUT/DELETE 等，不区分大小写）
- * @returns {boolean}
- */
-export function isPublicEndpoint(url, method) {
-  if (!url) return false
-  // 从 URL 中抽取 path（去除 query 和 baseURL）
-  let path = url
-  if (path.startsWith('http')) {
+function normalizePath(url) {
+  if (url == null || url === '') return ''
+  let path = String(url).trim()
+  if (path.startsWith('http://') || path.startsWith('https://')) {
     try {
-      const u = new URL(path)
-      path = u.pathname.replace(/^\/api\/v1/, '')
-    } catch (e) { /* ignore */ }
+      path = new URL(path).pathname
+    } catch (e) { /* fall through */ }
   }
-  path = path.replace(/^\/api\/v1/, '') // 去除 baseURL 前缀
-  const m = (method || 'GET').toUpperCase()
-
-  for (const rule of PUBLIC_ENDPOINTS) {
-    if (!rule.path.test(path)) continue
-    if (rule.method && rule.method.toUpperCase() !== m) continue
-    return true
-  }
-  return false
-}
-
-/**
- * 判断某接口是否需要商家认证
- */
-export function requiresCertification(url, method) {
-  if (!url) return false
-  let path = url
-  if (path.startsWith('http')) {
-    try {
-      const u = new URL(path)
-      path = u.pathname.replace(/^\/api\/v1/, '')
-    } catch (e) { /* ignore */ }
-  }
+  // 去掉 /api/v1 前缀
   path = path.replace(/^\/api\/v1/, '')
-  const m = (method || 'GET').toUpperCase()
+  // 防止路径穿越：去掉所有 ..
+  path = path.replace(/\.\.+/g, '')
+  return path
+}
 
-  for (const rule of CERTIFIED_ENDPOINTS) {
+function matchRule(url, method, rules) {
+  if (!url) return false
+  const path = normalizePath(url)
+  if (!path) return false
+  const m = (method || 'GET').toUpperCase()
+  for (const rule of rules) {
     if (!rule.path.test(path)) continue
     if (rule.method && rule.method.toUpperCase() !== m) continue
     return true
@@ -120,25 +94,20 @@ export function requiresCertification(url, method) {
   return false
 }
 
-/**
- * 获取某接口的权限级别
- * @returns {string} AUTH_LEVEL.PUBLIC / PROTECTED / CERTIFIED
- */
+export function isPublicEndpoint(url, method) {
+  return matchRule(url, method, PUBLIC_ENDPOINTS)
+}
+
+export function requiresCertification(url, method) {
+  return matchRule(url, method, CERTIFIED_ENDPOINTS)
+}
+
 export function getEndpointAuthLevel(url, method) {
   if (isPublicEndpoint(url, method)) return AUTH_LEVEL.PUBLIC
   if (requiresCertification(url, method)) return AUTH_LEVEL.CERTIFIED
   return AUTH_LEVEL.PROTECTED
 }
 
-/**
- * 当前是否已登录（基于 Storage + Store）
- * 优先读 Storage，避免依赖 Store 初始化时机
- */
 export function isAuthed() {
-  try {
-    const token = uni.getStorageSync('token')
-    return !!token
-  } catch (e) {
-    return false
-  }
+  return !!readToken()
 }

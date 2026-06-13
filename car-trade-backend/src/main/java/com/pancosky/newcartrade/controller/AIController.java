@@ -1,4 +1,6 @@
 package com.pancosky.newcartrade.controller;
+import com.pancosky.newcartrade.common.RequiresAuth;
+import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pancosky.newcartrade.common.ApiResponse;
@@ -26,15 +28,16 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/api/v1/ai")
 @RequiredArgsConstructor
 @Slf4j
+@RequiresAuth(AuthLevel.PROTECTED)
 public class AIController {
 
     private final AIService aiService;
 
-    // 使用 ObjectMapper 构造合法的 JSON（避免手工拼接 JSON 出现转义错误）
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
     // 活跃的 SSE 连接（用于可追踪和优雅关闭）
     private final Map<String, SseEmitter> activeEmitters = new ConcurrentHashMap<>();
+
+    // SSE 超时：5 分钟，覆盖长回复 / 慢网络场景
+    private static final long SSE_TIMEOUT_MS = 5L * 60 * 1000;
 
     /**
      * AI 对话（一次性返回）
@@ -50,20 +53,14 @@ public class AIController {
      * HTTP: POST /api/v1/ai/chat/stream
      * Content-Type: text/event-stream
      * 事件格式：
-     *   event: message
-     *   data: {"content": "字"}
-     *
-     *   event: done
-     *   data: {"content": "完整内容"}
-     *
-     *   event: error
-     *   data: {"message": "错误信息"}
+     *   event: message  data: {"content":"多字文本chunk"}
+     *   event: done     data: {"content":"完整内容"}
+     *   event: error    data: {"message":"错误信息"}
      */
     @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chatStream(@RequestBody Map<String, Object> params) {
-        // 创建 SSE 连接，超时 2 分钟
-        SseEmitter emitter = new SseEmitter(TimeUnit.MINUTES.toMillis(2));
-        String emitterId = "emitter-" + System.currentTimeMillis() + "-" + Thread.currentThread().getId();
+        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
+        final String emitterId = "emitter-" + System.currentTimeMillis() + "-" + Thread.currentThread().getId();
 
         emitter.onCompletion(() -> {
             activeEmitters.remove(emitterId);
@@ -88,7 +85,8 @@ public class AIController {
                     safeComplete(emitter, emitterId);
                 },
                 error -> {
-                    sendMessage(emitter, emitterId, "error", Map.of("message", error.getMessage() != null ? error.getMessage() : "AI 服务异常"));
+                    String msg = (error != null && error.getMessage() != null) ? error.getMessage() : "AI 服务异常";
+                    sendMessage(emitter, emitterId, "error", Map.of("message", msg));
                     safeComplete(emitter, emitterId);
                 });
 
@@ -96,16 +94,15 @@ public class AIController {
     }
 
     /**
-     * 发送一条 SSE 事件，使用 Jackson 构造合法 JSON，避免特殊字符转义错误
+     * 发送一条 SSE 事件。
+     * 关键优化：直接把 Map 作为 data 传给 Spring，让其用内部 Jackson 做一次性序列化写出，
+     * 避免我们手动 writeValueAsString 再包一层字符串所带来的额外编码开销。
      */
     private void sendMessage(SseEmitter emitter, String emitterId, String eventName, Map<String, Object> payload) {
         try {
-            String json = objectMapper.writeValueAsString(payload);
-            emitter.send(SseEmitter.event().name(eventName).data(json));
-        } catch (IOException e) {
-            log.warn("[AI-SSE] {} 发送 {} 事件失败: {}", emitterId, eventName, e.getMessage());
+            emitter.send(SseEmitter.event().name(eventName).data(payload, MediaType.APPLICATION_JSON));
         } catch (Exception e) {
-            log.warn("[AI-SSE] {} 发送 {} 事件异常: {}", emitterId, eventName, e.getMessage());
+            log.debug("[AI-SSE] {} 发送 {} 事件失败/连接已关闭: {}", emitterId, eventName, e.getMessage());
         }
     }
 
@@ -148,6 +145,15 @@ public class AIController {
     }
 
     /**
+     * 车源文案生成（兼容前端调用）
+     * HTTP: POST /api/v1/ai/copywriting
+     */
+    @PostMapping("/copywriting")
+    public ApiResponse<Map<String, Object>> copywriting(@RequestBody Map<String, Object> params) {
+        return ApiResponse.success(aiService.generateCopywriting(params));
+    }
+
+    /**
      * 自动外联
      * HTTP: POST /api/v1/ai/auto-outreach
      */
@@ -181,5 +187,23 @@ public class AIController {
     @PostMapping("/price-estimate")
     public ApiResponse<Map<String, Object>> priceEstimate(@RequestBody Map<String, Object> params) {
         return ApiResponse.success(aiService.priceEstimate(params));
+    }
+
+    /**
+     * 竞品分析
+     * HTTP: GET /api/v1/ai/competitors
+     */
+    @GetMapping("/competitors")
+    public ApiResponse<Map<String, Object>> getCompetitors(@RequestParam Map<String, String> params) {
+        return ApiResponse.success(aiService.chat(Map.of("action", "competitor_analysis", "params", params)));
+    }
+
+    /**
+     * 经营建议
+     * HTTP: GET /api/v1/ai/suggestions
+     */
+    @GetMapping("/suggestions")
+    public ApiResponse<Map<String, Object>> getSuggestions(@RequestParam Map<String, String> params) {
+        return ApiResponse.success(aiService.chat(Map.of("action", "business_suggestions", "params", params)));
     }
 }

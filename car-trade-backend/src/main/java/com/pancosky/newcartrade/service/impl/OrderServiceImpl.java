@@ -8,12 +8,14 @@ import com.pancosky.newcartrade.entity.Order;
 import com.pancosky.newcartrade.entity.OrderLog;
 import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.mapper.DepositAccountMapper;
+import com.pancosky.newcartrade.security.OwnerAssert;
 import com.pancosky.newcartrade.mapper.OrderLogMapper;
 import com.pancosky.newcartrade.mapper.OrderMapper;
 import com.pancosky.newcartrade.service.ContractService;
 import com.pancosky.newcartrade.service.OrderService;
 import com.pancosky.newcartrade.util.SecurityUtils;
 import com.pancosky.newcartrade.vo.OrderDetailVO;
+import com.pancosky.newcartrade.vo.OrderStatsVO;
 import com.pancosky.newcartrade.vo.OrderVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.math.BigDecimal;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -84,8 +87,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void confirm(String id) {
-        Order order = orderMapper.selectById(id);
-        if (order == null) throw new BusinessException("Order not found");
+        Order order = loadAndAssert(id);
         order.setStatus("TRADING");
         orderMapper.updateById(order);
         contractService.create(id);
@@ -94,20 +96,21 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public void cancel(String id) {
-        Order order = orderMapper.selectById(id);
-        if (order == null) throw new BusinessException("Order not found");
+    public void cancel(String id, String reason) {
+        Order order = loadAndAssert(id);
         order.setStatus("CANCELLED");
         order.setCancelledAt(LocalDateTime.now());
+        if (reason != null) {
+            order.setCancelReason(reason);
+        }
         orderMapper.updateById(order);
-        addLog(id, "cancel", "Order cancelled");
+        addLog(id, "cancel", reason != null ? "Order cancelled: " + reason : "Order cancelled");
     }
 
     @Override
     @Transactional
     public void payDeposit(String id) {
-        Order order = orderMapper.selectById(id);
-        if (order == null) throw new BusinessException("Order not found");
+        Order order = loadAndAssert(id);
         order.setBuyerDepositPaid(true);
         order.setBuyerDepositPaidAt(LocalDateTime.now());
         orderMapper.updateById(order);
@@ -117,8 +120,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void complete(String id) {
-        Order order = orderMapper.selectById(id);
-        if (order == null) throw new BusinessException("Order not found");
+        Order order = loadAndAssert(id);
         order.setStatus("COMPLETED");
         order.setCompletedAt(LocalDateTime.now());
         orderMapper.updateById(order);
@@ -128,8 +130,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void dispute(String id) {
-        Order order = orderMapper.selectById(id);
-        if (order == null) throw new BusinessException("Order not found");
+        Order order = loadAndAssert(id);
         order.setStatus("DISPUTE");
         orderMapper.updateById(order);
         addLog(id, "dispute", "Dispute raised");
@@ -157,8 +158,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void submitContract(String id, String content) {
-        Order order = orderMapper.selectById(id);
-        if (order == null) throw new BusinessException("Order not found");
+        Order order = loadAndAssert(id);
         if (!"DEPOSIT_PAID".equals(order.getStatus())) {
             throw new BusinessException("Cannot submit contract in current status");
         }
@@ -173,8 +173,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void updateContract(String id, String content) {
-        Order order = orderMapper.selectById(id);
-        if (order == null) throw new BusinessException("Order not found");
+        Order order = loadAndAssert(id);
         if (!"CONTRACT_SUBMITTED".equals(order.getStatus())) {
             throw new BusinessException("Cannot update contract in current status");
         }
@@ -186,8 +185,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void confirmContract(String id) {
-        Order order = orderMapper.selectById(id);
-        if (order == null) throw new BusinessException("Order not found");
+        Order order = loadAndAssert(id);
         if (!"CONTRACT_SUBMITTED".equals(order.getStatus())) {
             throw new BusinessException("Cannot confirm contract in current status");
         }
@@ -200,8 +198,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Map<String, Object> getContract(String id) {
-        Order order = orderMapper.selectById(id);
-        if (order == null) throw new BusinessException("Order not found");
+        Order order = loadAndAssert(id);
         Map<String, Object> contract = new java.util.HashMap<>();
         contract.put("content", order.getContractContent());
         contract.put("submitted", order.getContractSubmitted());
@@ -214,8 +211,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void terminate(String id, String reason) {
-        Order order = orderMapper.selectById(id);
-        if (order == null) throw new BusinessException("Order not found");
+        Order order = loadAndAssert(id);
 
         // 检查终止次数限制
         if (order.getTerminateCount() != null && order.getTerminateCount() >= 3) {
@@ -238,8 +234,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Map<String, Integer> getTerminateCount(String id) {
-        Order order = orderMapper.selectById(id);
-        if (order == null) throw new BusinessException("Order not found");
+        Order order = loadAndAssert(id);
 
         int used = order.getTerminateCount() == null ? 0 : order.getTerminateCount();
         int remaining = 3 - used;
@@ -255,5 +250,60 @@ public class OrderServiceImpl implements OrderService {
         result.put("remaining", Math.max(0, remaining));
         result.put("limit", 3);
         return result;
+    }
+
+    /**
+     * 加载订单并做"买家或卖家"权限校验；找不到订单或当前用户不是双方时抛异常
+     */
+    private Order loadAndAssert(String id) {
+        if (id == null || id.isBlank()) {
+            throw new BusinessException("Order id missing");
+        }
+        Order order = orderMapper.selectById(id);
+        if (order == null) throw new BusinessException("Order not found");
+        Long current = SecurityUtils.getCurrentUserId();
+        OwnerAssert.assertBuyerOrSeller(current, order.getBuyerId(), order.getSellerId());
+        return order;
+    }
+
+    @Override
+    public OrderStatsVO getStats() {
+        OrderStatsVO stats = new OrderStatsVO();
+
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+        Long userId = SecurityUtils.getCurrentUserId();
+
+        // 作为买家或卖家的所有订单
+        wrapper.and(w -> w.eq(Order::getBuyerId, userId).or().eq(Order::getSellerId, userId));
+
+        List<Order> allOrders = orderMapper.selectList(wrapper);
+        stats.setTotalCount(allOrders.size());
+
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (Order order : allOrders) {
+            String status = order.getStatus();
+            if ("PENDING_CONFIRM".equals(status)) {
+                stats.setPendingConfirmCount(stats.getPendingConfirmCount() + 1);
+            } else if ("TRADING".equals(status)) {
+                stats.setTradingCount(stats.getTradingCount() + 1);
+            } else if ("DISPUTE".equals(status)) {
+                stats.setDisputeCount(stats.getDisputeCount() + 1);
+            } else if ("COMPLETED".equals(status)) {
+                stats.setCompletedCount(stats.getCompletedCount() + 1);
+                if (order.getTotalPrice() != null) {
+                    totalAmount = totalAmount.add(order.getTotalPrice());
+                }
+            } else if ("CANCELLED".equals(status) || "TERMINATED".equals(status)) {
+                stats.setCancelledCount(stats.getCancelledCount() + 1);
+            }
+            // 待支付保证金: 有 deposit 但未支付
+            if (order.getDepositAmount() != null
+                    && order.getDepositAmount().compareTo(BigDecimal.ZERO) > 0
+                    && !Boolean.TRUE.equals(order.getBuyerDepositPaid())) {
+                stats.setPendingDepositCount(stats.getPendingDepositCount() + 1);
+            }
+        }
+        stats.setTotalAmount(totalAmount);
+        return stats;
     }
 }

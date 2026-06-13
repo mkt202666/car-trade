@@ -1,4 +1,6 @@
 package com.pancosky.newcartrade.controller;
+import com.pancosky.newcartrade.common.RequiresAuth;
+import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.common.PageResult;
@@ -26,6 +28,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/auctions")
 @RequiredArgsConstructor
+@RequiresAuth(AuthLevel.PROTECTED)
 public class AuctionController {
 
     private final AuctionService auctionService;
@@ -39,6 +42,7 @@ public class AuctionController {
      * 认证要求：公开。
      */
     @GetMapping
+    @RequiresAuth(AuthLevel.PUBLIC)
     public ApiResponse<PageResult<AuctionVO>> list(AuctionQueryDTO query) {
         return ApiResponse.success(auctionService.list(query));
     }
@@ -51,6 +55,7 @@ public class AuctionController {
      * 认证要求：公开。
      */
     @GetMapping("/{id}")
+    @RequiresAuth(AuthLevel.PUBLIC)
     public ApiResponse<AuctionDetailVO> detail(@PathVariable Long id) {
         return ApiResponse.success(auctionService.detail(id));
     }
@@ -143,6 +148,7 @@ public class AuctionController {
      * 认证要求：公开。
      */
     @GetMapping("/{id}/current-price")
+    @RequiresAuth(AuthLevel.PUBLIC)
     public ApiResponse<BigDecimal> currentPrice(@PathVariable Long id) {
         return ApiResponse.success(auctionService.getCurrentPrice(id));
     }

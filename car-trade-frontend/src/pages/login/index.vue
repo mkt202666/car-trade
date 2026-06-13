@@ -92,6 +92,7 @@
 
 <script>
 import { isValidPhone } from '@/utils/validate'
+import { readToken } from '@/constants/storage'
 
 export default {
   name: 'LoginPage',
@@ -100,7 +101,17 @@ export default {
       form: { phone: '', password: '' },
       remember: false,
       loading: false,
-      errorTip: ''
+      errorTip: '',
+      redirectUrl: '' // 登录后返回的页面路径
+    }
+  },
+  onLoad(options) {
+    if (options && options.redirect) {
+      try {
+        this.redirectUrl = decodeURIComponent(options.redirect)
+      } catch (e) {
+        this.redirectUrl = ''
+      }
     }
   },
   methods: {
@@ -118,26 +129,53 @@ export default {
       }
       this.loading = true
       try {
-        await this.$store.dispatch('login', this.form)
+        console.log('[Login] Starting login with:', this.form)
+        const result = await this.$store.dispatch('login', this.form)
+        console.log('[Login] Login successful, result:', result)
+        console.log('[Login] Token in store:', this.$store.state.token)
+        console.log('[Login] Token in storage:', uni.getStorageSync('5d_user_token'))
         uni.$u.toast('登录成功，欢迎回来')
         setTimeout(() => {
-          uni.switchTab({ url: '/pages/home/index' })
+          // 如果有 redirect 则跳回原页面，否则去首页
+          if (this.redirectUrl) {
+            const isTab = this.isTabBarPage(this.redirectUrl)
+            if (isTab) {
+              uni.switchTab({ url: this.redirectUrl })
+            } else {
+              uni.redirectTo({ url: this.redirectUrl })
+            }
+          } else {
+            uni.switchTab({ url: '/pages/home/index' })
+          }
         }, 500)
       } catch (e) {
-        // 兼容多种错误结构：前端拦截 error / 后端返回 ApiResponse 的 message
+        console.error('[Login] Login failed:', e)
+        // ⚠ 注意：request.js 的 handleError 已经调用了 uni.$u.toast，这里只需要设置 errorTip 即可
         let msg = '登录失败，请稍后重试'
-        if (e && typeof e === 'string') msg = e
-        else if (e && e.data && e.data.message) msg = e.data.message
-        else if (e && e.message) msg = e.message
-        else if (e && e.errMsg) msg = e.errMsg
+        if (e && e.message) msg = e.message        // new Error("xxx") — 业务消息（例：账号密码错误）
+        else if (e && e.errMsg) msg = e.errMsg      // uni.request 原生错误
+        else if (typeof e === 'string') msg = e     // 裸字符串
+        else if (e && e.data && e.data.message) msg = e.data.message  // 老格式兼容
         this.errorTip = msg
-        uni.$u.toast(msg)
       } finally {
         this.loading = false
       }
     },
     toRegister() {
       uni.navigateTo({ url: '/pages/register/index' })
+    },
+    isTabBarPage(url) {
+      // 与 pages.json 中 tabBar.list 的 pagePath 保持一致
+      const tabs = [
+        '/pages/home/index',
+        '/pages/purchase-demand-list/index',
+        '/pages/ai/index',
+        '/pages/message/index',
+        '/pages/profile/index'
+      ]
+      if (!url) return false
+      const cleanUrl = url.split('?')[0]
+      return tabs.indexOf(cleanUrl) !== -1
     }
   }
 }

@@ -9,6 +9,8 @@
  *   - requireAuth()        登录守卫：未登录则跳转到登录页
  *   - requireAuthAsync()   异步版登录守卫（返回 Promise）
  *   - requireRole()        角色守卫（如商家认证）
+ *   - saveToken()          保存token
+ *   - clearToken()         清除token
  * 
  * 注意：所有跳转函数均返回 boolean，表示"是否已通过校验"
  * ============================================
@@ -20,14 +22,60 @@ import {
   requiresCertification,
   AUTH_LEVEL
 } from '@/api/permissions'
+import { STORAGE_KEYS, TOKEN_MIN_LENGTH, readToken } from '@/constants/storage'
 
-/** 是否已登录（基于 Storage + Store 双保险） */
+// 旧 user info key：保留只读兼容，新代码应统一使用 STORAGE_KEYS.USER_INFO
+const LEGACY_USER_KEY = '5d_user_info'
+
+export function saveToken(token, refreshToken, refreshExpiresIn) {
+  try {
+    uni.setStorageSync(STORAGE_KEYS.TOKEN, token)
+    try { localStorage.setItem(STORAGE_KEYS.TOKEN, token) } catch (_) {}
+    if (refreshToken) {
+      uni.setStorageSync(STORAGE_KEYS.REFRESH_TOKEN, refreshToken)
+      try { localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken) } catch (_) {}
+    }
+    if (refreshExpiresIn && Number(refreshExpiresIn) > 0) {
+      // expiresIn 是秒，换算成毫秒时间戳
+      const expiresAt = Date.now() + Number(refreshExpiresIn) * 1000
+      uni.setStorageSync(STORAGE_KEYS.REFRESH_EXPIRES_AT, String(expiresAt))
+    }
+    console.log('[Auth] Token saved successfully, length=' + (token ? token.length : 0))
+  } catch (e) {
+    console.log('[Auth] saveToken error:', e)
+    try { localStorage.setItem(STORAGE_KEYS.TOKEN, token) } catch (_) {}
+  }
+}
+
+/** 统一读取 token — 先读 uni storage，失败再尝试原生 localStorage */
+export function getToken() {
+  return readToken()
+}
+
+export function clearToken() {
+  try {
+    uni.removeStorageSync(STORAGE_KEYS.TOKEN)
+    uni.removeStorageSync(STORAGE_KEYS.REFRESH_TOKEN)
+    uni.removeStorageSync(STORAGE_KEYS.REFRESH_EXPIRES_AT)
+    try { localStorage.removeItem(STORAGE_KEYS.TOKEN) } catch (_) {}
+    try { uni.removeStorageSync(STORAGE_KEYS.USER_INFO) } catch (_) {}
+    try { localStorage.removeItem(STORAGE_KEYS.USER_INFO) } catch (_) {}
+    // 兼容旧 key 清理
+    try { uni.removeStorageSync(LEGACY_USER_KEY) } catch (_) {}
+    try { localStorage.removeItem(LEGACY_USER_KEY) } catch (_) {}
+    console.log('[Auth] Token cleared')
+  } catch (e) {
+    console.log('[Auth] clearToken error:', e)
+  }
+}
+
+/** 是否已登录（基于 localStorage，确保刷新后能正确保持） */
 export function isAuthed() {
   try {
-    const fromStorage = !!uni.getStorageSync('token')
-    const fromStore = store.getters.isLoggedIn
-    return fromStorage || fromStore
+    const token = getToken()
+    return !!token && token !== 'null' && token !== 'undefined' && token.length > TOKEN_MIN_LENGTH
   } catch (e) {
+    console.log('[Auth] isAuthed error:', e)
     return false
   }
 }
@@ -53,14 +101,24 @@ export function getAuthLevel(url, method) {
  * 登录守卫：未登录则跳转到登录页
  * @param {object} options 跳转配置
  * @param {string} options.redirect   登录后返回的页面（可选，默认返回当前页）
+ * @param {string} options.tip        自定义提示文案（默认 '请先登录'）
  * @returns {boolean} true=已登录通过，false=未登录并已跳转
  */
 export function requireAuth(options = {}) {
-  if (isAuthed()) return true
+  const token = getToken()
+  console.log('[Auth] requireAuth called, token=' + (token ? 'found(' + token.length + ')' : 'not found'))
+  if (token && token.length > 10) {
+    return true
+  }
+  // 未登录 — 友好提示并跳转
+  const tip = options.tip || '请先登录'
+  uni.$u.toast(tip)
   const redirect = options.redirect
     ? encodeURIComponent(options.redirect)
     : encodeURIComponent(getCurrentPagePath())
-  uni.navigateTo({ url: '/pages/login/index?redirect=' + redirect })
+  setTimeout(() => {
+    uni.navigateTo({ url: '/pages/login/index?redirect=' + redirect })
+  }, 300)
   return false
 }
 

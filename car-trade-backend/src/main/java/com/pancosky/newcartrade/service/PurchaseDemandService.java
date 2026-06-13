@@ -9,4 +9,5 @@ public interface PurchaseDemandService {
     PageResult<PurchaseDemandVO> list(Integer page, Integer size);
     PageResult<PurchaseDemandVO> myDemands(Integer page, Integer size);
     void cancel(Long id);
+    void delete(Long id);
 }

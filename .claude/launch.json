@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "mvn",
+      "runtimeArgs": ["spring-boot:run", "-f", "car-trade-backend/pom.xml", "-Dspring-boot.run.arguments=--server.port=8081"],
+      "port": 8081
+    },
+    {
+      "name": "frontend-h5",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:h5"],
+      "cwd": "car-trade-frontend",
+      "autoPort": true
+    }
+  ]
+}

@@ -2,6 +2,7 @@ package com.pancosky.newcartrade.service;
 
 import com.pancosky.newcartrade.dto.OrderCreateDTO;
 import com.pancosky.newcartrade.vo.OrderDetailVO;
+import com.pancosky.newcartrade.vo.OrderStatsVO;
 import com.pancosky.newcartrade.vo.OrderVO;
 
 import java.util.List;
@@ -19,6 +20,12 @@ public interface OrderService {
      * @return 订单列表
      */
     List<OrderVO> list(String type, String status);
+
+    /**
+     * 获取订单统计
+     * @return 订单统计信息
+     */
+    OrderStatsVO getStats();
 
     /**
      * 获取订单详情
@@ -43,8 +50,9 @@ public interface OrderService {
     /**
      * 取消订单
      * @param id 订单ID
+     * @param reason 取消原因
      */
-    void cancel(String id);
+    void cancel(String id, String reason);
 
     /**
      * 支付保证金

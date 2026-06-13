@@ -304,13 +304,21 @@
       </view>
       </view>
     </u-popup>
+
+    <!-- 自定义底部导航栏 -->
+    <custom-tab-bar />
   </view>
 </template>
 
 <script>
 import { getCarList } from '@/api/car'
+import { getHotCities } from '@/api/city'
+import CustomTabBar from '@/custom-tab-bar/index.vue'
 
 export default {
+  components: {
+    CustomTabBar
+  },
   data() {
     return {
       statusBarHeight: 20,
@@ -391,6 +399,7 @@ export default {
         { code: 'SA', name: '南美' }
       ],
       currentCity: '全国',
+      cityList: [],  // 从后端获取的城市列表
       currentRegion: 'ME',
       exportCountries: [
         { code: 'RU', name: '俄罗斯', flag: '🇷🇺', count: 128 },
@@ -444,6 +453,7 @@ export default {
   onLoad() {
     const sysInfo = uni.getSystemInfoSync()
     this.statusBarHeight = sysInfo.statusBarHeight || 20
+    this.fetchCityList()  // 加载城市列表
     this.fetchCarList()
   },
   onPullDownRefresh() {
@@ -473,6 +483,8 @@ export default {
         if (this.currentTab === 1) params.energyType = '纯电'
         if (this.currentTab === 2) params.deposit = true
         if (this.currentTab === 3 && this.currentRegion) params.region = this.currentRegion
+        // 添加城市筛选
+        if (this.currentCity && this.currentCity !== '全国') params.region = this.currentCity
         // 添加筛选参数
         if (this.filterData.brandId) params.brandId = this.filterData.brandId
         if (this.filterData.minPrice !== null) params.minPrice = this.filterData.minPrice
@@ -484,7 +496,7 @@ export default {
         if (this.filterData.transmission) params.transmission = this.filterData.transmission
         if (this.filterData.energyType) params.energyType = this.filterData.energyType
         const res = await getCarList(params)
-        const data = res.data
+        const data = res && res.data ? res.data : {}
         if (reset || this.page === 1) {
           this.carList = data.list || []
         } else {
@@ -521,16 +533,57 @@ export default {
       this.fetchCarList(true)
     },
     selectCity() {
-      const cities = ['全国', '北京', '上海', '广州', '深圳', '杭州', '成都', '武汉', '西安', '重庆']
+      if (this.cityList.length === 0) {
+        uni.showToast({ title: '城市数据加载中', icon: 'loading' })
+        return
+      }
+      const cities = this.cityList.map(c => c.name)
       uni.showActionSheet({
         itemList: cities,
         success: (res) => {
-          this.currentCity = cities[res.tapIndex]
+          const selectedCity = this.cityList[res.tapIndex]
+          this.currentCity = selectedCity.name
           this.page = 1
           this.hasMore = true
           this.fetchCarList(true)
         }
       })
+    },
+    async fetchCityList() {
+      try {
+        const res = await getHotCities()
+        this.cityList = res.data || []
+        if (this.cityList.length === 0) {
+          // 降级使用本地静态数据
+          this.cityList = [
+            { code: 'ALL', name: '全国', hot: true },
+            { code: 'BEIJING', name: '北京', hot: true },
+            { code: 'SHANGHAI', name: '上海', hot: true },
+            { code: 'GUANGZHOU', name: '广州', hot: true },
+            { code: 'SHENZHEN', name: '深圳', hot: true },
+            { code: 'HANGZHOU', name: '杭州', hot: true },
+            { code: 'CHENGDU', name: '成都', hot: true },
+            { code: 'WUHAN', name: '武汉', hot: true },
+            { code: 'XIAN', name: '西安', hot: true },
+            { code: 'CHONGQING', name: '重庆', hot: true }
+          ]
+        }
+      } catch (e) {
+        console.error('load cities fail', e)
+        // 降级使用本地静态数据
+        this.cityList = [
+          { code: 'ALL', name: '全国', hot: true },
+          { code: 'BEIJING', name: '北京', hot: true },
+          { code: 'SHANGHAI', name: '上海', hot: true },
+          { code: 'GUANGZHOU', name: '广州', hot: true },
+          { code: 'SHENZHEN', name: '深圳', hot: true },
+          { code: 'HANGZHOU', name: '杭州', hot: true },
+          { code: 'CHENGDU', name: '成都', hot: true },
+          { code: 'WUHAN', name: '武汉', hot: true },
+          { code: 'XIAN', name: '西安', hot: true },
+          { code: 'CHONGQING', name: '重庆', hot: true }
+        ]
+      }
     },
     filterByCountry(code) {
       this.page = 1
@@ -703,37 +756,48 @@ export default {
 
 <style lang="scss" scoped>
 /* =========================================================
-   5D好车首页 - 高级设计系统样式
-   设计语言: Motion-Driven | Marketplace
-   颜色系统: 深蓝主色 + 深色层次 + 琥珀金强调 + 红色CTA
+   5D好车首页 - Liquid Glass | Marketplace Premium
+   设计语言: Dimensional Layering | Smooth Motion | Navy Gold
+   颜色系统: 深海军蓝 #0F172A + 琥珀金 #F59E0B + 专业蓝 #0369A1 + 软背景 #F8FAFC
    ========================================================= */
 
 /* ============ 全局容器 ============ */
 .page {
   min-height: 100vh;
-  background: #F8FAFC;
-  animation: fadeIn 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+  animation: fadeIn 400ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
 }
 
-/* ============ 顶部滚动广告位 Hero ============ */
+/* ============ 顶部 Hero 区域 ============ */
 .ad-section {
   position: relative;
   overflow: hidden;
-  background: #0F172A;
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+}
+
+.ad-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 400rpx;
+  height: 400rpx;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .ad-swiper {
   width: 100%;
-  height: 320rpx;
+  height: 340rpx;
 }
 
 .ad-slide {
   width: 100%;
-  height: 320rpx;
+  height: 340rpx;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 60rpx 32rpx 0;
+  padding: 64rpx 32rpx 0;
   position: relative;
   box-sizing: border-box;
 }
@@ -741,35 +805,37 @@ export default {
 .ad-text {
   display: flex;
   flex-direction: column;
+  max-width: 75%;
 }
 
 .ad-title {
-  font-size: 40rpx;
+  font-size: 42rpx;
   font-weight: 800;
   color: #FCD34D;
-  letter-spacing: 2rpx;
-  line-height: 1.2;
+  letter-spacing: 0.5rpx;
+  line-height: 1.15;
 }
 
 .ad-sub {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.85);
-  margin-top: 10rpx;
-  letter-spacing: 1rpx;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 12rpx;
+  letter-spacing: 0.5rpx;
 }
 
 .ad-tag {
   position: absolute;
-  top: 60rpx;
+  top: 64rpx;
   right: 32rpx;
   font-size: 22rpx;
   color: #FCD34D;
-  background: rgba(245, 158, 11, 0.15);
-  padding: 8rpx 22rpx;
-  border-radius: 24rpx;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 10rpx 24rpx;
+  border-radius: 20rpx;
   font-weight: 700;
-  letter-spacing: 1rpx;
-  border: 1rpx solid rgba(245, 158, 11, 0.3);
+  letter-spacing: 0.5rpx;
+  border: 1rpx solid rgba(245, 158, 11, 0.25);
+  backdrop-filter: blur(10rpx);
 }
 
 .status-bar {
@@ -800,34 +866,35 @@ export default {
 }
 
 .ad-logo {
-  font-size: 32rpx;
-  font-weight: 700;
+  font-size: 34rpx;
+  font-weight: 800;
   color: #ffffff;
-  letter-spacing: 2rpx;
-  line-height: 1.2;
+  letter-spacing: 1rpx;
+  line-height: 1.15;
 }
 
 .ad-subtitle {
   font-size: 20rpx;
-  color: rgba(255, 255, 255, 0.7);
-  margin-top: 6rpx;
-  letter-spacing: 1rpx;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 8rpx;
+  letter-spacing: 0.5rpx;
 }
 
 .ad-lang {
   display: flex;
   align-items: center;
-  gap: 4rpx;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 10rpx 20rpx;
-  border-radius: 20rpx;
+  gap: 6rpx;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 12rpx 22rpx;
+  border-radius: 24rpx;
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1rpx solid rgba(255, 255, 255, 0.15);
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  border: 1rpx solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12rpx);
 
   &:active {
     transform: scale(0.96);
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.18);
   }
 }
 
@@ -842,166 +909,175 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 80rpx;
+  height: 100rpx;
   background: linear-gradient(180deg, rgba(248, 250, 252, 0) 0%, rgba(248, 250, 252, 1) 100%);
   z-index: 2;
   pointer-events: none;
 }
 
-/* ============ 搜索栏 Search Bar ============ */
+/* ============ 搜索栏 Search Bar - Liquid Glass ============ */
 .search-wrap {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  padding: 16rpx 32rpx 20rpx;
-  margin-top: -40rpx;
+  gap: 14rpx;
+  padding: 20rpx 32rpx 24rpx;
+  margin-top: -44rpx;
   position: relative;
   z-index: 10;
-  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 100ms both;
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) 100ms both;
 }
 
-/* 城市选择器（原型：白底 + 下拉箭头） */
+/* 城市选择器 - Liquid Glass 效果 */
 .city-picker {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 6rpx;
+  gap: 8rpx;
   background: #FFFFFF;
-  padding: 18rpx 20rpx;
-  border-radius: 16rpx;
-  border: 2rpx solid #E2E8F0;
-  box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.06);
+  padding: 20rpx 24rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.06), 0 1rpx 2rpx rgba(15, 23, 42, 0.04);
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
   &:active {
     transform: scale(0.96);
     border-color: #F59E0B;
+    box-shadow: 0 4rpx 20rpx rgba(245, 158, 11, 0.15);
   }
 }
 
 .city-text {
   font-size: 26rpx;
   color: #0F172A;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .city-arrow {
-  font-size: 20rpx;
+  font-size: 18rpx;
   color: #64748B;
+  margin-top: 2rpx;
 }
 
+/* 搜索框 - Liquid Glass */
 .search-field {
   flex: 1;
   display: flex;
   align-items: center;
-  background: #F8FAFC;
-  padding: 14rpx 20rpx;
-  border-radius: 16rpx;
-  border: 2rpx solid #E2E8F0;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  background: #FFFFFF;
+  padding: 16rpx 24rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4rpx 20rpx rgba(15, 23, 42, 0.06), inset 0 1rpx 2rpx rgba(255, 255, 255, 0.9);
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
   &:focus-within {
     border-color: #0369A1;
     background: #ffffff;
-    box-shadow: 0 0 0 4rpx rgba(3, 105, 161, 0.08);
+    box-shadow: 0 0 0 6rpx rgba(3, 105, 161, 0.1), 0 4rpx 20rpx rgba(3, 105, 161, 0.08);
   }
 }
 
 .search-input {
   flex: 1;
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #0F172A;
-  margin-left: 10rpx;
+  margin-left: 12rpx;
+  font-weight: 500;
 }
 
+/* 搜索按钮 - 琥珀金渐变 */
 .search-btn {
   flex-shrink: 0;
   background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
-  padding: 16rpx 28rpx;
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.35);
+  padding: 20rpx 32rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 6rpx 20rpx rgba(245, 158, 11, 0.35);
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
   text {
-    color: #ffffff;
-    font-size: 26rpx;
-    font-weight: 700;
-    letter-spacing: 1rpx;
+    color: #0F172A;
+    font-size: 28rpx;
+    font-weight: 800;
+    letter-spacing: 0.5rpx;
   }
 
   &:active {
     transform: scale(0.96);
-    box-shadow: 0 2rpx 12rpx rgba(245, 158, 11, 0.3);
+    box-shadow: 0 2rpx 8rpx rgba(245, 158, 11, 0.35);
   }
 }
 
+/* 筛选图标按钮 */
 .filter-icon {
   flex-shrink: 0;
-  width: 64rpx;
-  height: 64rpx;
-  background: #F9FAFB;
+  width: 72rpx;
+  height: 72rpx;
+  background: #FFFFFF;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2rpx solid #F3F4F6;
+  border: 1rpx solid rgba(226, 232, 240, 0.9);
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
   position: relative;
-  color: #4B5563;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  color: #334155;
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.05);
 
   &:active {
     transform: scale(0.92);
     border-color: #0369A1;
+    box-shadow: 0 4rpx 16rpx rgba(3, 105, 161, 0.2);
   }
 }
 
 .filter-dot {
   position: absolute;
-  top: 10rpx;
-  right: 10rpx;
-  width: 16rpx;
-  height: 16rpx;
+  top: 12rpx;
+  right: 12rpx;
+  width: 18rpx;
+  height: 18rpx;
   background: #DC2626;
   border-radius: 50%;
   border: 3rpx solid #FFFFFF;
-  box-shadow: 0 2rpx 8rpx rgba(220, 38, 38, 0.3);
+  box-shadow: 0 2rpx 8rpx rgba(220, 38, 38, 0.35);
 }
 
-/* ============ 筛选 Tab ============ */
+/* ============ 筛选 Tab - 胶囊样式升级 ============ */
 .tabs-wrap {
   background: #ffffff;
-  padding: 20rpx 32rpx;
+  padding: 24rpx 32rpx 20rpx;
   margin-top: 4rpx;
-  border-bottom: 1rpx solid #F1F5F9;
-  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) 200ms both;
+  border-bottom: 1rpx solid rgba(241, 245, 249, 0.8);
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) 200ms both;
 }
 
 .tabs-inner {
   display: flex;
-  gap: 12rpx;
+  gap: 14rpx;
   align-items: center;
 }
 
 .tab-pill {
   flex-shrink: 0;
-  padding: 12rpx 28rpx;
-  background: transparent;
-  border: 2rpx solid #E2E8F0;
-  border-radius: 32rpx;
+  padding: 14rpx 32rpx;
+  background: #F8FAFC;
+  border: 1rpx solid #E2E8F0;
+  border-radius: 40rpx;
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
   &.active {
-    background: #0F172A;
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
     border-color: #0F172A;
+    box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.25);
 
     .tab-label {
       color: #ffffff;
-      font-weight: 600;
+      font-weight: 700;
     }
   }
 
@@ -1014,39 +1090,40 @@ export default {
 .tab-label {
   font-size: 26rpx;
   color: #475569;
-  font-weight: 500;
+  font-weight: 600;
 }
 
-/* ============ 出口二级区域筛选 ============ */
+/* ============ 出口二级区域筛选 - 优化 ============ */
 .region-wrap {
   background: #ffffff;
-  padding: 8rpx 32rpx 24rpx;
-  border-bottom: 1rpx solid #F1F5F9;
+  padding: 8rpx 32rpx 28rpx;
+  border-bottom: 1rpx solid rgba(241, 245, 249, 0.8);
 }
 
 .region-inner {
   display: flex;
-  gap: 10rpx;
+  gap: 12rpx;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .region-pill {
   flex-shrink: 0;
-  padding: 10rpx 20rpx;
+  padding: 12rpx 24rpx;
   background: #F8FAFC;
-  border: 2rpx solid #E2E8F0;
-  border-radius: 24rpx;
+  border: 1rpx solid #E2E8F0;
+  border-radius: 32rpx;
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
   &.active {
-    background: #0369A1;
+    background: linear-gradient(135deg, #0369A1 0%, #0284C7 100%);
     border-color: #0369A1;
+    box-shadow: 0 4rpx 16rpx rgba(3, 105, 161, 0.25);
 
     .region-label {
       color: #ffffff;
-      font-weight: 600;
+      font-weight: 700;
     }
   }
 
@@ -1059,45 +1136,49 @@ export default {
 .region-label {
   font-size: 24rpx;
   color: #475569;
-  font-weight: 500;
+  font-weight: 600;
 }
 
-/* ============ 车源卡片列表 ============ */
+/* ============ 车源卡片列表 - Liquid Glass Cards ============ */
 .car-list {
-  padding: 20rpx 32rpx 0;
+  padding: 24rpx 32rpx 0;
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 24rpx;
 }
 
+/* 卡片主容器 - Dimensional Layering */
 .car-card {
   display: flex;
   flex-direction: row;
   background: #ffffff;
-  border-radius: 20rpx;
+  border-radius: 28rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 16rpx rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.08), 0 1rpx 4rpx rgba(15, 23, 42, 0.04);
   padding: 20rpx;
   gap: 20rpx;
-  border: 1rpx solid #F1F5F9;
+  border: 1rpx solid rgba(226, 232, 240, 0.7);
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  transition: all 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
 
   &:active {
-    transform: scale(0.98);
-    background: #F8FAFC;
+    transform: translateY(-2rpx) scale(0.985);
+    box-shadow: 0 8rpx 32rpx rgba(15, 23, 42, 0.12);
+    border-color: rgba(148, 163, 184, 0.5);
   }
 }
 
+/* 图片容器 */
 .card-image-wrap {
   position: relative;
-  width: 220rpx;
-  height: 220rpx;
+  width: 240rpx;
+  height: 240rpx;
   flex-shrink: 0;
-  border-radius: 12rpx;
+  border-radius: 20rpx;
   overflow: hidden;
   background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+  box-shadow: inset 0 2rpx 8rpx rgba(15, 23, 42, 0.08);
 }
 
 .car-image {
@@ -1107,28 +1188,30 @@ export default {
 
 .image-tags {
   position: absolute;
-  top: 10rpx;
-  left: 10rpx;
+  top: 12rpx;
+  left: 12rpx;
   display: flex;
   flex-direction: column;
-  gap: 6rpx;
+  gap: 8rpx;
 }
 
 .tag-energy {
-  font-size: 18rpx;
-  padding: 4rpx 10rpx;
-  border-radius: 6rpx;
-  font-weight: 600;
+  font-size: 20rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 10rpx;
+  font-weight: 700;
   color: #ffffff;
+  letter-spacing: 0.3rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
 
   &.pure {
-    background: #10B981;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   }
   &.hybrid {
-    background: #F59E0B;
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
   }
   &.fuel {
-    background: #64748B;
+    background: linear-gradient(135deg, #475569 0%, #334155 100%);
   }
 }
 
@@ -1141,8 +1224,8 @@ export default {
 }
 
 .car-title {
-  font-size: 28rpx;
-  font-weight: 700;
+  font-size: 30rpx;
+  font-weight: 800;
   color: #0F172A;
   line-height: 1.3;
   overflow: hidden;
@@ -1150,18 +1233,20 @@ export default {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  letter-spacing: -0.3rpx;
 }
 
 .car-sub-row {
   display: flex;
   align-items: center;
-  gap: 10rpx;
-  margin-top: 8rpx;
+  gap: 12rpx;
+  margin-top: 10rpx;
 }
 
 .car-sub {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #64748B;
+  font-weight: 500;
 }
 
 .dot {
@@ -1169,12 +1254,12 @@ export default {
   font-size: 16rpx;
 }
 
-/* 标签行（保证金 + 出口国家） */
+/* 标签行 - 升级徽章 */
 .meta-row {
   display: flex;
   align-items: center;
-  gap: 10rpx;
-  margin-top: 10rpx;
+  gap: 12rpx;
+  margin-top: 12rpx;
   flex-wrap: wrap;
 }
 
@@ -1182,65 +1267,65 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 4rpx;
-  background: #F0F9FF;
+  background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
   color: #0369A1;
-  font-size: 18rpx;
-  font-weight: 600;
-  padding: 4rpx 10rpx;
-  border-radius: 6rpx;
-  border: 1rpx solid rgba(3, 105, 161, 0.15);
+  font-size: 20rpx;
+  font-weight: 700;
+  padding: 6rpx 14rpx;
+  border-radius: 10rpx;
+  border: 1rpx solid rgba(3, 105, 161, 0.2);
 }
 
 .export-country-badge {
   display: inline-flex;
   align-items: center;
   gap: 4rpx;
-  background: #FEF3C7;
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
   color: #92400E;
-  font-size: 18rpx;
-  font-weight: 600;
-  padding: 4rpx 10rpx;
-  border-radius: 6rpx;
-  border: 1rpx solid rgba(245, 158, 11, 0.2);
+  font-size: 20rpx;
+  font-weight: 700;
+  padding: 6rpx 14rpx;
+  border-radius: 10rpx;
+  border: 1rpx solid rgba(245, 158, 11, 0.25);
 }
 
 /* 位置/时间行 */
 .location-row {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  margin-top: 10rpx;
+  gap: 10rpx;
+  margin-top: 14rpx;
   flex-wrap: wrap;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #94A3B8;
 }
 
-/* 价格行 */
+/* 价格行 - 突出显示 */
 .price-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-top: 12rpx;
+  margin-top: 16rpx;
 }
 
 .price-value {
-  font-size: 36rpx;
-  font-weight: 800;
+  font-size: 40rpx;
+  font-weight: 900;
   color: #DC2626;
-  letter-spacing: 0.5rpx;
+  letter-spacing: -0.5rpx;
   line-height: 1.1;
 }
 
 .price-unit {
-  font-size: 22rpx;
-  font-weight: 600;
+  font-size: 24rpx;
+  font-weight: 700;
   color: #DC2626;
-  margin-left: 2rpx;
+  margin-left: 4rpx;
 }
 
 .export-flags {
   display: flex;
-  gap: 8rpx;
+  gap: 10rpx;
 }
 
 .mini-flag {
@@ -1251,28 +1336,29 @@ export default {
 /* ============ 加载更多 & 空状态 ============ */
 .load-more {
   text-align: center;
-  padding: 40rpx;
+  padding: 48rpx;
   font-size: 24rpx;
   color: #64748B;
-  letter-spacing: 1rpx;
+  letter-spacing: 0.5rpx;
+  font-weight: 500;
 }
 
 .empty {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 160rpx 0;
-  animation: fadeInUp 500ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  padding: 180rpx 0;
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
 }
 
 .empty-text {
-  margin-top: 24rpx;
+  margin-top: 28rpx;
   font-size: 28rpx;
   color: #64748B;
-  font-weight: 500;
+  font-weight: 600;
 }
 
-/* ============ 右侧悬浮"+ 开始"按钮 FAB ============ */
+/* ============ 右侧悬浮 FAB 按钮 - Liquid Gold ============ */
 .fab-single {
   position: fixed;
   right: 32rpx;
@@ -1280,137 +1366,129 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8rpx;
+  gap: 10rpx;
   z-index: 100;
   cursor: pointer;
-  animation: float 3s ease-in-out infinite;
-
-  &:hover .fab-single-circle {
-    transform: translateY(-4rpx) scale(1.05);
-    box-shadow: 0 12rpx 40rpx rgba(245, 158, 11, 0.55);
-  }
+  animation: float 3.5s ease-in-out infinite;
 
   &:active .fab-single-circle {
     transform: translateY(0) scale(0.92);
-    box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.4);
+    box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.5);
   }
 }
 
 .fab-single-circle {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 60rpx;
-  background: linear-gradient(180deg, #FDE68A 0%, #FCD34D 30%, #F59E0B 100%);
+  width: 130rpx;
+  height: 130rpx;
+  border-radius: 65rpx;
+  background: linear-gradient(135deg, #FDE68A 0%, #FBBF24 50%, #F59E0B 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 32rpx rgba(245, 158, 11, 0.45);
-  border: 4rpx solid rgba(255, 255, 255, 0.6);
-  transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 10rpx 40rpx rgba(245, 158, 11, 0.5), 0 4rpx 12rpx rgba(245, 158, 11, 0.3);
+  border: 4rpx solid rgba(255, 255, 255, 0.8);
+  transition: all 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 .fab-single-plus {
-  font-size: 52rpx;
+  font-size: 56rpx;
   color: #0F172A;
-  font-weight: 700;
+  font-weight: 900;
   line-height: 1;
+  letter-spacing: -1rpx;
 }
 
 .fab-single-label {
   font-size: 24rpx;
   color: #0F172A;
-  font-weight: 700;
-  letter-spacing: 2rpx;
-  text-shadow: 0 2rpx 8rpx rgba(245, 158, 11, 0.2);
+  font-weight: 800;
+  letter-spacing: 1rpx;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.1);
 }
 
-/* ============ 菜单弹窗 ============ */
+/* ============ 菜单弹窗 - Glass Effect ============ */
 .menu-popup-mask {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(8px);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(12px);
   z-index: 200;
-  animation: fadeIn 200ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: fadeIn 300ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
 }
 
 .menu-popup {
   position: fixed;
   right: 32rpx;
-  bottom: 360rpx;
-  width: 360rpx;
-  background: #FFFFFF;
-  border-radius: 28rpx;
-  box-shadow: 0 20rpx 60rpx rgba(15, 23, 42, 0.25);
+  bottom: 380rpx;
+  width: 380rpx;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 32rpx;
+  box-shadow: 0 24rpx 64rpx rgba(15, 23, 42, 0.25), 0 4rpx 16rpx rgba(15, 23, 42, 0.08);
   z-index: 201;
-  padding: 12rpx 0;
-  animation: scaleIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  border: 1rpx solid #F1F5F9;
+  padding: 16rpx 0;
+  animation: scaleIn 400ms cubic-bezier(0.34, 1.2, 0.64, 1) both;
+  border: 1rpx solid rgba(226, 232, 240, 0.8);
+  backdrop-filter: blur(20px);
 }
 
 .menu-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32rpx 32rpx;
-  border-bottom: 1rpx solid #F1F5F9;
+  padding: 36rpx 32rpx;
+  border-bottom: 1rpx solid rgba(241, 245, 249, 0.9);
   cursor: pointer;
-  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
   &:last-of-type {
     border-bottom: none;
   }
 
-  &:hover {
-    background: #F8FAFC;
-  }
-
   &:active {
-    background: #F1F5F9;
-    transform: scale(0.98);
+    background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+    transform: scale(0.985);
   }
 }
 
 .menu-icon {
   font-size: 32rpx;
   color: #F59E0B;
-  margin-right: 10rpx;
+  margin-right: 12rpx;
 }
 
 .menu-text {
   font-size: 30rpx;
-  color: #1F2937;
-  font-weight: 600;
+  color: #1E293B;
+  font-weight: 700;
 
   &.highlight {
     color: #F59E0B;
-    font-weight: 700;
+    font-weight: 800;
   }
 }
 
 .menu-close-btn {
   position: absolute;
-  bottom: -130rpx;
+  bottom: -140rpx;
   left: 50%;
   transform: translateX(-50%);
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 40rpx;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 44rpx;
   background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 32rpx rgba(15, 23, 42, 0.4);
+  box-shadow: 0 10rpx 32rpx rgba(15, 23, 42, 0.45);
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    transform: translateX(-50%) translateY(-4rpx);
-    box-shadow: 0 12rpx 40rpx rgba(15, 23, 42, 0.5);
-  }
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  border: 2rpx solid rgba(255, 255, 255, 0.1);
 
   &:active {
     transform: translateX(-50%) scale(0.92);
@@ -1473,7 +1551,7 @@ export default {
   }
 }
 
-/* ============ 筛选弹窗样式 ============ */
+/* ============ 筛选弹窗样式 - Premium Filter ============ */
 .filter-popup-wrapper {
 }
 
@@ -1484,17 +1562,18 @@ export default {
 .filter-popup {
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 250rpx);
+  max-height: calc(100vh - 200rpx);
   background: #ffffff;
-  border-radius: 32rpx 32rpx 0 0;
-  animation: fadeInUp 400ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  border-radius: 40rpx 40rpx 0 0;
+  animation: fadeInUp 500ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
   overflow: hidden;
+  box-shadow: 0 -8rpx 48rpx rgba(15, 23, 42, 0.15);
 }
 
 .filter-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 0 32rpx 20rpx;
+  padding: 0 32rpx 24rpx;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
 }
@@ -1503,20 +1582,33 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 36rpx 32rpx;
-  border-bottom: 1rpx solid #F1F5F9;
+  padding: 40rpx 32rpx 32rpx;
+  border-bottom: 1rpx solid rgba(226, 232, 240, 0.8);
   flex-shrink: 0;
+  position: relative;
+}
+
+.filter-header::after {
+  content: '';
+  position: absolute;
+  top: 12rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60rpx;
+  height: 6rpx;
+  background: #E2E8F0;
+  border-radius: 6rpx;
 }
 
 .filter-title {
-  font-size: 34rpx;
-  font-weight: 700;
+  font-size: 36rpx;
+  font-weight: 800;
   color: #0F172A;
-  letter-spacing: 1rpx;
+  letter-spacing: 0.5rpx;
 }
 
 .filter-section {
-  margin-bottom: 44rpx;
+  margin-bottom: 48rpx;
 }
 
 .section-title {
@@ -1524,94 +1616,94 @@ export default {
   justify-content: space-between;
   align-items: center;
   font-size: 28rpx;
-  font-weight: 600;
+  font-weight: 700;
   color: #0F172A;
-  margin-bottom: 28rpx;
+  margin-bottom: 24rpx;
+  letter-spacing: 0.3rpx;
 }
 
 .range-value {
   font-size: 24rpx;
   color: #0369A1;
-  font-weight: 600;
+  font-weight: 700;
 }
 
+/* 选择框 - Liquid Glass */
 .select-box {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 28rpx;
+  padding: 32rpx;
   background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
-  border: 2rpx solid #E2E8F0;
-  border-radius: 20rpx;
+  border: 1rpx solid rgba(226, 232, 240, 0.9);
+  border-radius: 24rpx;
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    border-color: #CBD5E1;
-    box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.08);
-  }
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.03);
 
   &:active {
-    background: #F1F5F9;
+    background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
     transform: scale(0.99);
+    box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.08);
+    border-color: #CBD5E1;
   }
 }
 
 .select-value {
   font-size: 28rpx;
   color: #0F172A;
+  font-weight: 600;
 }
 
 .select-value.placeholder {
   color: #94A3B8;
+  font-weight: 500;
 }
 
+/* 快捷选项 - 胶囊网格 */
 .quick-price,
 .quick-age,
 .quick-mileage {
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
-  margin-top: 28rpx;
-  position: relative;
-  z-index: 2;
+  margin-top: 24rpx;
 }
 
 .quick-price-item,
 .quick-age-item,
 .quick-mileage-item {
-  flex: 0 0 calc((100% - 80rpx) / 3);
-  padding: 20rpx;
+  flex: 0 0 calc((100% - 48rpx) / 3);
+  padding: 24rpx 16rpx;
   background: #F8FAFC;
-  border: 2rpx solid #E2E8F0;
-  border-radius: 16rpx;
+  border: 1rpx solid #E2E8F0;
+  border-radius: 20rpx;
   text-align: center;
   font-size: 26rpx;
-  color: #64748B;
+  color: #475569;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    border-color: #CBD5E1;
-    transform: translateY(-2rpx);
-  }
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.03);
 
   &:active {
     background: #F1F5F9;
-    transform: translateY(0) scale(0.98);
+    transform: scale(0.97);
   }
 }
 
+/* 激活状态 - 深海军蓝 */
 .quick-price-item.active,
 .quick-age-item.active,
 .quick-mileage-item.active {
-  background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
-  border-color: #0369A1;
-  color: #0369A1;
-  font-weight: 600;
-  box-shadow: 0 4rpx 16rpx rgba(3, 105, 161, 0.15);
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  border-color: #0F172A;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 6rpx 20rpx rgba(15, 23, 42, 0.25);
 }
 
+/* 变速箱/能源类型选项 */
 .transmission-list {
   display: flex;
   gap: 16rpx;
@@ -1619,88 +1711,78 @@ export default {
 
 .transmission-item {
   flex: 1;
-  padding: 24rpx;
+  padding: 28rpx 16rpx;
   background: #F8FAFC;
-  border: 2rpx solid #E2E8F0;
-  border-radius: 16rpx;
+  border: 1rpx solid #E2E8F0;
+  border-radius: 20rpx;
   text-align: center;
   font-size: 28rpx;
-  color: #64748B;
+  color: #475569;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    border-color: #CBD5E1;
-    transform: translateY(-2rpx);
-  }
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.03);
 
   &:active {
-    background: #F1F5F9;
-    transform: translateY(0) scale(0.98);
+    transform: scale(0.97);
   }
 }
 
+/* 激活状态 - 专业蓝色 */
 .transmission-item.active {
-  background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+  background: linear-gradient(135deg, #0369A1 0%, #0284C7 100%);
   border-color: #0369A1;
-  color: #0369A1;
-  font-weight: 600;
-  box-shadow: 0 4rpx 16rpx rgba(3, 105, 161, 0.15);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 6rpx 20rpx rgba(3, 105, 161, 0.25);
 }
 
+/* 底部操作栏 */
 .filter-footer {
   display: flex;
   gap: 24rpx;
-  padding: 24rpx 32rpx;
-  border-top: 1rpx solid #F1F5F9;
+  padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid rgba(226, 232, 240, 0.8);
   flex-shrink: 0;
   background: #ffffff;
 }
 
 .btn-reset {
   flex: 1;
-  padding: 28rpx;
+  padding: 32rpx 20rpx;
   background: #F8FAFC;
-  border: 2rpx solid #E2E8F0;
+  border: 1rpx solid #E2E8F0;
   border-radius: 48rpx;
   text-align: center;
   font-size: 28rpx;
-  color: #64748B;
-  font-weight: 600;
+  color: #475569;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  &:hover {
-    border-color: #CBD5E1;
-    background: #F1F5F9;
-  }
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
 
   &:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
+    background: #F1F5F9;
   }
 }
 
+/* 确认按钮 - 琥珀金渐变 */
 .btn-confirm {
   flex: 2;
-  padding: 28rpx;
-  background: linear-gradient(135deg, #0369A1 0%, #0284C7 100%);
+  padding: 32rpx 20rpx;
+  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
   border-radius: 48rpx;
   text-align: center;
   font-size: 28rpx;
-  color: #ffffff;
-  font-weight: 700;
+  color: #0F172A;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 8rpx 24rpx rgba(3, 105, 161, 0.35);
-
-  &:hover {
-    transform: translateY(-2rpx);
-    box-shadow: 0 12rpx 36rpx rgba(3, 105, 161, 0.45);
-  }
+  transition: all 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  box-shadow: 0 8rpx 28rpx rgba(245, 158, 11, 0.4);
 
   &:active {
-    transform: translateY(0) scale(0.98);
-    box-shadow: 0 4rpx 16rpx rgba(3, 105, 161, 0.3);
+    transform: scale(0.97);
+    box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.35);
   }
 }
 
@@ -1724,7 +1806,7 @@ export default {
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.92);
   }
   to {
     opacity: 1;
@@ -1737,7 +1819,7 @@ export default {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-8rpx);
+    transform: translateY(-10rpx);
   }
 }
 

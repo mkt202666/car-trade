@@ -56,10 +56,10 @@ public class ShopMemberServiceImpl implements ShopMemberService {
 
     @Override
     @Transactional
-    public void approve(Long id) {
+    public void approve(Long id, boolean approve) {
         ShopMember member = shopMemberMapper.selectById(id);
         if (member == null) throw new BusinessException("Shop member not found");
-        member.setStatus("APPROVED");
+        member.setStatus(approve ? "APPROVED" : "REJECTED");
         member.setApprovedAt(LocalDateTime.now());
         shopMemberMapper.updateById(member);
     }

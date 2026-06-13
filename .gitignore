@@ -1,79 +1,33 @@
-# ========== 全局忽略：所有子项目通用 ==========
+# ============================================================
+# 5D 好车 · 全仓库 .gitignore
+# ============================================================
 
-# ========== IDE - IntelliJ IDEA ==========
-.idea/
-*.iml
-*.iws
-*.ipr
-out/
-production/
-build/
-*.ipr
-*.iws
-
-# ========== IDE - VSCode ==========
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-*.code-workspace
-
-# ========== IDE - Eclipse ==========
-.settings/
-.project
-.classpath
-.factorypath
-
-# ========== 系统文件 ==========
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-
-# ========== 日志文件 ==========
-*.log
-logs/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# ========== 临时文件 ==========
-*.tmp
-*.bak
-*.swp
-*.swo
-*~
-*.pid
-*.seed
-
-# ========== 环境配置（本地） ==========
+# ---- 本地环境变量（密钥）----
 .env
 .env.local
 .env.*.local
-.env.development.local
-.env.test.local
-.env.production.local
 
-# ========== 依赖管理 ==========
-node_modules/
-jspm_packages/
-bower_components/
+# ---- 后端 logs / target / IDE 文件 ----
+car-trade-backend/logs/
+car-trade-backend/target/
+car-trade-backend/*.log
+car-trade-backend/backend.log
+car-trade-backend/.idea/
+car-trade-backend/*.iml
+car-trade-backend/.vscode/
 
-# ========== 测试覆盖率 ==========
-coverage/
-*.lcov
-.nyc_output/
-.coverage
+# ---- 前端 build / node_modules / 临时 ----
+car-trade-frontend/node_modules/
+car-trade-frontend/dist/
+car-trade-frontend/unpackage/
+car-trade-frontend/build.log
+car-trade-frontend/.hbuilderx/
+car-trade-frontend/.idea/
+car-trade-frontend/.vscode/
 
-# ========== 其他 ==========
-*.lock
-# 保留 package-lock.json（如需严格锁定依赖）
-# !package-lock.json
-.gstack/
+# ---- 系统 / 编辑器 ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.bak

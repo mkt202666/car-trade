@@ -1,4 +1,6 @@
 package com.pancosky.newcartrade.controller;
+import com.pancosky.newcartrade.common.RequiresAuth;
+import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.service.CouponService;
@@ -19,6 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/coupons")
 @RequiredArgsConstructor
+@RequiresAuth(AuthLevel.PROTECTED)
 public class CouponController {
 
     private final CouponService couponService;
@@ -30,6 +33,7 @@ public class CouponController {
      * 认证要求：公开。
      */
     @GetMapping
+    @RequiresAuth(AuthLevel.PUBLIC)
     public ApiResponse<List<CouponVO>> available() {
         return ApiResponse.success(couponService.listAvailable());
     }

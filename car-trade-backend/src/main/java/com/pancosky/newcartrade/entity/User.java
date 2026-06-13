@@ -90,7 +90,14 @@ public class User {
     /** 账号状态（ACTIVE-正常 / FROZEN-冻结 / DELETED-已注销） */
     private String status;
 
+    /** 连续登录失败次数（达到上限后锁定账户，默认 5 次） */
+    private Integer loginFailCount;
+
+    /** 账户锁定到期时间（NULL=未锁定；已锁定则在此时间前禁止登录） */
+    private LocalDateTime lockedUntil;
+
     /** 通知订阅设置（JSON格式：{"system":true,"auto_promotion":true,"order":true,"contract":true,"deposit":true,"shop":true}） */
+    @TableField(typeHandler = com.pancosky.newcartrade.handler.JsonbStringTypeHandler.class)
     private String notificationSettings;
 
     /** 非持久化字段：用户简介/简介（用于详情页展示，不入库） */

@@ -36,11 +36,11 @@ export default {
 	methods: {
 		formatPrice, formatMileage,
 		async fetchList(reset) {
-			if (this.loading) return
-			if (reset) { this.page = 1; this.hasMore = true }
-			this.loading = true; this.loadStatus = 'loading'
-			try {
-				const res = await uni.$u.http.get('/users/me/favorites', { params: { page: this.page, size: this.pageSize } })
+        if (this.loading) return
+        if (reset) { this.page = 1; this.hasMore = true }
+        this.loading = true; this.loadStatus = 'loading'
+        try {
+            const res = await uni.http.get('/cars/favorites', { params: { page: this.page, size: this.pageSize } })
 				const list = res.data.list || res.data.records || res.data || []
 				this.carList = reset || this.page === 1 ? list : this.carList.concat(list)
 				this.hasMore = list.length >= this.pageSize

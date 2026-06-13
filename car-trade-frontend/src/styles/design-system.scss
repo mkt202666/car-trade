@@ -1,65 +1,94 @@
 /* =========================================================
-   5D好车 - 高级设计系统 (Advanced Design System)
-   设计语言: Motion-Driven | Marketplace
-   颜色系统: 深蓝主色 + 深色层次 + 红色CTA
+   5D好车 - 高级设计系统 (Advanced Design System) v2.0
+   设计语言: Liquid Glass | Marketplace | Motion-Driven
+   颜色系统: 深海军蓝 + 专业蓝CTA + 琥珀金强调
    ========================================================= */
 
 /* ============ 1. COLOR SYSTEM 颜色系统 ============ */
 
-/* 品牌色 Brand Colors */
-$primary: #0369A1;           /* 主色 - 专业深蓝 */
-$primary-light: #0284C7;     /* 主色浅 */
-$primary-dark: #075985;      /* 主色深 */
-$primary-50: #F0F9FF;        /* 主色-50 背景 */
-$primary-100: #E0F2FE;       /* 主色-100 */
-$primary-200: #BAE6FD;       /* 主色-200 */
+/* 品牌色 Brand Colors - Professional Navy System */
+$primary: #0F172A;           /* 主色 - 深海军蓝 */
+$primary-light: #1E293B;     /* 主色浅 */
+$primary-dark: #020617;      /* 主色深 - 极致深 */
+$primary-50: #F8FAFC;        /* 主色-50 背景 */
+$primary-100: #F1F5F9;       /* 主色-100 */
+$primary-200: #E2E8F0;       /* 主色-200 */
+$primary-300: #CBD5E1;       /* 主色-300 */
+$primary-400: #94A3B8;       /* 主色-400 */
+$primary-500: #64748B;       /* 主色-500 */
 
-/* 中性色 Neutral Colors */
-$text-primary: #0F172A;      /* 主文字 */
+/* CTA色 Action Colors */
+$cta-blue: #0369A1;          /* CTA蓝 - 主要行动色 */
+$cta-blue-light: #0284C7;    /* CTA蓝浅 */
+$cta-blue-dark: #075985;     /* CTA蓝深 */
+$cta-blue-50: #F0F9FF;       /* CTA蓝-50 */
+$cta-blue-100: #E0F2FE;      /* CTA蓝-100 */
+
+/* 中性色 Neutral Colors - Refined Contrast */
+$text-primary: #020617;      /* 主文字 - 极致深 */
 $text-secondary: #334155;    /* 次文字 */
 $text-muted: #64748B;        /* 辅助文字 */
 $text-light: #94A3B8;        /* 浅文字 */
+$text-placeholder: #CBD5E1;  /* 占位文字 */
 $text-white: #FFFFFF;        /* 白文字 */
 
-$bg-primary: #F8FAFC;        /* 主背景 */
-$bg-secondary: #FFFFFF;      /* 卡片背景 */
+$bg-primary: #F8FAFC;        /* 主背景 - 柔和浅灰蓝 */
+$bg-secondary: #FFFFFF;      /* 卡片背景 - 纯白 */
+$bg-tertiary: #F1F5F9;       /* 三级背景 - 悬浮背景 */
 $bg-dark: #0F172A;           /* 深色背景 */
 $bg-hover: #F1F5F9;          /* 悬停背景 */
+$bg-active: #E2E8F0;         /* 激活背景 */
 
-/* 功能色 Functional Colors */
-$cta: #DC2626;               /* CTA红色 */
-$cta-light: #FEE2E2;         /* CTA浅 */
+/* 功能色 Functional Colors - Semantic System */
+$cta: #DC2626;               /* CTA红色 - 价格/紧急 */
+$cta-light: #FEE2E2;         /* CTA浅红 */
 $success: #10B981;           /* 成功绿 */
 $success-light: #D1FAE5;     /* 成功浅 */
+$success-dark: #047857;      /* 成功深 */
 $warning: #F59E0B;           /* 警告橙 */
 $warning-light: #FEF3C7;     /* 警告浅 */
+$warning-dark: #D97706;      /* 警告深 */
 $info: #0EA5E9;              /* 信息蓝 */
 $info-light: #E0F2FE;        /* 信息浅 */
+$info-dark: #0284C7;         /* 信息深 */
+$danger: #DC2626;            /* 危险红 */
+$danger-light: #FEE2E2;      /* 危险浅 */
+$danger-dark: #B91C1C;       /* 危险深 */
 
-/* 边框色 Border Colors */
+/* 传统兼容变量 - 供老页面引用 */
+$bg-color: #F8FAFC;
+$text-color: #0F172A;
+$border-color: #E2E8F0;
+$border-radius: 16rpx;
+$shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.06);
+
+/* 边框色 Border Colors - Subtle Hierarchy */
 $border-light: #E2E8F0;      /* 浅边框 */
 $border-medium: #CBD5E1;     /* 中边框 */
 $border-dark: #94A3B8;       /* 深边框 */
+$border-subtle: rgba(226, 232, 240, 0.8); /* 柔和边框 */
 
-/* 金色强调色 Gold Accent (用于突出按钮) */
+/* 金色强调色 Gold Accent (用于突出按钮/徽章) */
 $gold: #F59E0B;              /* 琥珀金 */
 $gold-light: #FDE68A;        /* 浅金 */
 $gold-dark: #D97706;         /* 深金 */
-$gold-gradient: linear-gradient(180deg, #FDE68A 0%, #FCD34D 30%, #F59E0B 100%);
+$gold-gradient: linear-gradient(135deg, #FDE68A 0%, #FCD34D 30%, #F59E0B 100%);
+$gold-gradient-soft: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
 
 /* ============ 2. TYPOGRAPHY 排版系统 ============ */
+/* Plus Jakarta Sans Style - friendly, modern, saas, clean, professional */
 
-/* 字号层级 Font Size Hierarchy */
-$font-xs: 20rpx;             /* 极小 - 辅助文字 */
+/* 字号层级 Font Size Hierarchy - Refined Scale */
+$font-xs: 20rpx;             /* 极小 - 辅助文字/元数据 */
 $font-sm: 22rpx;             /* 小 - 标签/说明 */
 $font-base: 26rpx;           /* 基准 - 正文 */
 $font-md: 28rpx;             /* 中 - 重要正文 */
 $font-lg: 32rpx;             /* 大 - 小标题 */
 $font-xl: 36rpx;             /* 特大 - 标题 */
-$font-2xl: 40rpx;            /* 超特大 - 大标题 */
-$font-3xl: 48rpx;            /* 巨大 - Hero文字 */
+$font-2xl: 42rpx;            /* 超特大 - 大标题 */
+$font-3xl: 52rpx;            /* 巨大 - Hero文字 */
 
-/* 字重 Font Weight */
+/* 字重 Font Weight - Display Numbers */
 $weight-light: 300;
 $weight-regular: 400;
 $weight-medium: 500;
@@ -67,19 +96,19 @@ $weight-semibold: 600;
 $weight-bold: 700;
 $weight-extrabold: 800;
 
-/* 行高 Line Height */
-$line-tight: 1.2;
+/* 行高 Line Height - Professional */
+$line-tight: 1.15;
 $line-normal: 1.5;
-$line-relaxed: 1.75;
+$line-relaxed: 1.6;
 
 /* 字间距 Letter Spacing */
 $letter-tight: -0.5rpx;
 $letter-normal: 0;
-$letter-wide: 0.5rpx;
+$letter-wide: 0.3rpx;
 $letter-widest: 1rpx;
 
 /* ============ 3. SPACING 间距系统 ============ */
-/* 8的倍数 8-based system */
+/* 8的倍数 8-based system - Extended for Marketplace */
 $space-1: 4rpx;
 $space-2: 8rpx;
 $space-3: 12rpx;
@@ -94,26 +123,30 @@ $space-12: 48rpx;
 $space-14: 56rpx;
 $space-16: 64rpx;
 $space-20: 80rpx;
+$space-24: 96rpx;
 
-/* ============ 4. BORDER RADIUS 圆角系统 ============ */
-$radius-sm: 8rpx;            /* 小圆角 */
-$radius-md: 12rpx;           /* 中圆角 */
-$radius-lg: 16rpx;           /* 大圆角 */
-$radius-xl: 20rpx;           /* 特大圆角 */
-$radius-2xl: 24rpx;          /* 卡片圆角 */
-$radius-3xl: 32rpx;          /* 大卡片圆角 */
+/* ============ 3b. BORDER RADIUS 圆角系统 ============ */
+/* Professional Marketplace Radius Scale */
+$radius-sm: 8rpx;            /* 小圆角 - 徽章/标签 */
+$radius-md: 12rpx;           /* 中圆角 - 输入框 */
+$radius-lg: 16rpx;           /* 大圆角 - 按钮 */
+$radius-xl: 20rpx;           /* 特大圆角 - 小卡片 */
+$radius-2xl: 24rpx;          /* 卡片圆角 - 标准卡片 */
+$radius-3xl: 32rpx;          /* 大卡片圆角 - 大卡片/容器 */
 $radius-full: 9999rpx;       /* 圆形 */
 
-/* ============ 5. SHADOW 阴影系统 ============ */
-/* 4层阴影层次 4-level shadow hierarchy */
-$shadow-sm: 0 2rpx 8rpx rgba(15, 23, 42, 0.04);
+/* ============ 4. SHADOW 阴影系统 ============ */
+/* 5层阴影层次 - Multi-layer Elevation System */
+$shadow-xs: 0 1rpx 3rpx rgba(15, 23, 42, 0.04);
+$shadow-sm: 0 2rpx 8rpx rgba(15, 23, 42, 0.05);
 $shadow-md: 0 4rpx 16rpx rgba(15, 23, 42, 0.08);
 $shadow-lg: 0 8rpx 32rpx rgba(15, 23, 42, 0.12);
 $shadow-xl: 0 16rpx 48rpx rgba(15, 23, 42, 0.18);
+$shadow-2xl: 0 24rpx 64rpx rgba(15, 23, 42, 0.22);
 
-/* 特殊阴影 - 主色阴影 */
-$shadow-primary: 0 8rpx 24rpx rgba(3, 105, 161, 0.25);
-$shadow-primary-lg: 0 12rpx 36rpx rgba(3, 105, 161, 0.35);
+/* 特殊阴影 - CTA蓝色阴影 */
+$shadow-cta-blue: 0 8rpx 24rpx rgba(3, 105, 161, 0.28);
+$shadow-cta-blue-lg: 0 12rpx 36rpx rgba(3, 105, 161, 0.38);
 
 /* 特殊阴影 - 金色阴影 */
 $shadow-gold: 0 8rpx 24rpx rgba(245, 158, 11, 0.35);
@@ -125,27 +158,58 @@ $shadow-cta: 0 8rpx 24rpx rgba(220, 38, 38, 0.25);
 /* 内阴影 - 用于输入框凹入感 */
 $shadow-inset: inset 0 2rpx 4rpx rgba(15, 23, 42, 0.06);
 
-/* ============ 6. TRANSITIONS 过渡动画系统 ============ */
+/* 内层阴影 - 卡片悬浮效果 */
+$shadow-hover: 0 12rpx 40rpx rgba(15, 23, 42, 0.14);
+
+/* ============ 5. TRANSITIONS 过渡动画系统 ============ */
+/* Liquid Glass Motion - Smooth Fluid Curves */
 $duration-fast: 150ms;       /* 快速 - 点击反馈 */
-$duration-normal: 200ms;     /* 标准 - 悬停/状态切换 */
-$duration-slow: 300ms;       /* 慢速 - 重要过渡 */
+$duration-normal: 250ms;     /* 标准 - 悬停/状态切换 */
+$duration-slow: 350ms;       /* 慢速 - 重要过渡 */
 $duration-slower: 500ms;     /* 更慢 - 入场动画 */
 
 $timing-standard: cubic-bezier(0.4, 0, 0.2, 1);    /* 标准曲线 */
 $timing-ease-out: cubic-bezier(0.0, 0, 0.2, 1);     /* 减速 */
 $timing-ease-in: cubic-bezier(0.4, 0, 1, 1);        /* 加速 */
-$timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
+$timing-spring: cubic-bezier(0.34, 1.2, 0.64, 1);   /* 弹性 - 轻微 */
+$timing-liquid: cubic-bezier(0.25, 0.1, 0.25, 1);   /* 液态玻璃 */
 
-/* ============ 7. COMPONENT STYLES 组件样式 ============ */
+/* ============ 6. COMPONENT STYLES 组件样式 ============ */
+/* Liquid Glass Style Components */
 
-/* --- 按钮 Button --- */
+/* --- 按钮 Button System --- */
 .btn-primary {
+  background: $cta-blue;
+  color: $text-white;
+  font-weight: $weight-semibold;
+  padding: $space-4 $space-8;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-cta-blue;
+  transition: all $duration-normal $timing-standard;
+  cursor: pointer;
+  border: none;
+  font-size: $font-md;
+  letter-spacing: $letter-tight;
+
+  &:active {
+    transform: scale(0.97);
+    box-shadow: $shadow-sm;
+    background: $cta-blue-dark;
+  }
+
+  &:hover {
+    background: $cta-blue-light;
+    box-shadow: $shadow-cta-blue-lg;
+  }
+}
+
+.btn-primary-navy {
   background: $primary;
   color: $text-white;
   font-weight: $weight-semibold;
   padding: $space-4 $space-8;
   border-radius: $radius-lg;
-  box-shadow: $shadow-primary;
+  box-shadow: $shadow-md;
   transition: all $duration-normal $timing-standard;
   cursor: pointer;
   border: none;
@@ -154,18 +218,17 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
   &:active {
     transform: scale(0.97);
     box-shadow: $shadow-sm;
-    background: $primary-dark;
   }
 
   &:hover {
     background: $primary-light;
-    box-shadow: $shadow-primary-lg;
+    box-shadow: $shadow-lg;
   }
 }
 
 .btn-gold {
   background: $gold-gradient;
-  color: $text-white;
+  color: $primary-dark;
   font-weight: $weight-bold;
   padding: $space-4 $space-8;
   border-radius: $radius-lg;
@@ -173,6 +236,7 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
   transition: all $duration-normal $timing-standard;
   cursor: pointer;
   border: none;
+  letter-spacing: $letter-tight;
 
   &:active {
     transform: scale(0.97);
@@ -186,8 +250,8 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
 
 .btn-outline {
   background: transparent;
-  color: $primary;
-  border: 2rpx solid $primary;
+  color: $cta-blue;
+  border: 2rpx solid $cta-blue;
   font-weight: $weight-medium;
   padding: $space-4 $space-8;
   border-radius: $radius-lg;
@@ -195,12 +259,13 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
   cursor: pointer;
 
   &:active {
-    background: $primary-50;
+    background: $cta-blue-50;
   }
 
   &:hover {
-    background: $primary;
+    background: $cta-blue;
     color: $text-white;
+    box-shadow: $shadow-cta-blue;
   }
 }
 
@@ -216,20 +281,23 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
   &:active,
   &:hover {
     background: $bg-hover;
+    color: $text-primary;
   }
 }
 
-/* --- 卡片 Card --- */
+/* --- 卡片 Card System - Liquid Glass --- */
 .card {
   background: $bg-secondary;
   border-radius: $radius-2xl;
   box-shadow: $shadow-md;
-  transition: all $duration-normal $timing-standard;
+  border: 1rpx solid $border-light;
+  transition: all $duration-normal $timing-liquid;
   cursor: pointer;
 
   &:hover {
-    box-shadow: $shadow-lg;
+    box-shadow: $shadow-hover;
     transform: translateY(-4rpx);
+    border-color: $border-medium;
   }
 
   &:active {
@@ -238,17 +306,47 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
   }
 }
 
+.card-elevated {
+  background: $bg-secondary;
+  border-radius: $radius-3xl;
+  box-shadow: $shadow-lg;
+  border: 1rpx solid $border-light;
+  transition: all $duration-normal $timing-liquid;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: $shadow-xl;
+    transform: translateY(-6rpx);
+  }
+}
+
 .card-static {
   background: $bg-secondary;
   border-radius: $radius-2xl;
-  box-shadow: $shadow-md;
+  box-shadow: $shadow-sm;
+  border: 1rpx solid $border-light;
 }
 
-/* --- 输入框 Input --- */
+.card-glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20rpx);
+  border-radius: $radius-2xl;
+  box-shadow: $shadow-md;
+  border: 1rpx solid rgba(226, 232, 240, 0.5);
+}
+
+.card-dark {
+  background: linear-gradient(135deg, $primary 0%, $primary-light 100%);
+  color: $text-white;
+  border-radius: $radius-2xl;
+  box-shadow: $shadow-lg;
+}
+
+/* --- 输入框 Input System --- */
 .input-field {
   width: 100%;
   padding: $space-4 $space-5;
-  background: $bg-primary;
+  background: $bg-secondary;
   border: 2rpx solid $border-light;
   border-radius: $radius-lg;
   font-size: $font-md;
@@ -257,17 +355,29 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
 
   &:focus,
   &:active {
-    border-color: $primary;
+    border-color: $cta-blue;
     background: $text-white;
-    box-shadow: 0 0 0 6rpx $primary-50;
+    box-shadow: 0 0 0 6rpx $cta-blue-50;
   }
 
   &::placeholder {
-    color: $text-light;
+    color: $text-placeholder;
   }
 }
 
-/* --- 徽章 Badge --- */
+.input-search {
+  background: $bg-tertiary;
+  border: 2rpx solid transparent;
+  border-radius: $radius-xl;
+
+  &:focus {
+    background: $bg-secondary;
+    border-color: $border-medium;
+    box-shadow: $shadow-sm;
+  }
+}
+
+/* --- 徽章 Badge System --- */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -275,13 +385,18 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
   padding: $space-2 $space-4;
   font-size: $font-xs;
   font-weight: $weight-medium;
-  border-radius: $radius-md;
+  border-radius: $radius-full;
+  background: $cta-blue-100;
+  color: $cta-blue-dark;
+}
+
+.badge-navy {
   background: $primary-100;
   color: $primary;
 }
 
 .badge-gold {
-  background: $gold-light;
+  background: $gold-gradient-soft;
   color: $gold-dark;
 }
 
@@ -292,18 +407,46 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
 
 .badge-green {
   background: $success-light;
+  color: $success-dark;
+}
+
+.badge-green-dark {
   color: $success;
 }
 
-/* --- 标签 Tag --- */
+.badge-outline {
+  background: transparent;
+  border: 2rpx solid $border-medium;
+  color: $text-secondary;
+}
+
+/* --- 标签 Tag System --- */
 .tag {
   display: inline-flex;
   align-items: center;
   padding: $space-2 $space-4;
   font-size: $font-xs;
   color: $text-muted;
-  background: $bg-hover;
+  background: $bg-tertiary;
   border-radius: $radius-md;
+  border: 1rpx solid $border-light;
+  transition: all $duration-fast $timing-standard;
+}
+
+.tag-interactive {
+  cursor: pointer;
+
+  &:hover {
+    background: $bg-hover;
+    border-color: $border-medium;
+    color: $text-secondary;
+  }
+}
+
+.tag-active {
+  background: $primary;
+  color: $text-white;
+  border-color: $primary;
 }
 
 /* --- 分隔线 Divider --- */
@@ -311,6 +454,11 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
   height: 2rpx;
   background: $border-light;
   margin: $space-6 0;
+}
+
+.divider-soft {
+  height: 1rpx;
+  background: $border-subtle;
 }
 
 /* --- 图标容器 Icon Container --- */
@@ -321,54 +469,122 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
   display: flex;
   align-items: center;
   justify-content: center;
-  background: $primary-50;
-  color: $primary;
+  background: $cta-blue-50;
+  color: $cta-blue;
   transition: all $duration-normal $timing-standard;
 
   &:hover {
-    transform: scale(1.1);
-    box-shadow: $shadow-primary;
+    transform: scale(1.08);
+    box-shadow: $shadow-cta-blue;
   }
 }
 
-/* ============ 8. EFFECTS 特效 ============ */
+.icon-circle-navy {
+  background: $primary-100;
+  color: $primary;
+}
 
-/* 玻璃态 Glassmorphism */
+.icon-circle-gold {
+  background: $gold-gradient-soft;
+  color: $gold-dark;
+}
+
+.icon-circle-dark {
+  background: $primary;
+  color: $text-white;
+}
+
+/* ============ 7. EFFECTS 特效 - Liquid Glass ============ */
+
+/* 玻璃态 Glassmorphism System */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(20rpx);
-  border: 2rpx solid rgba(255, 255, 255, 0.3);
+  border: 1rpx solid rgba(226, 232, 240, 0.6);
+  box-shadow: $shadow-md;
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16rpx);
+  border: 1rpx solid rgba(226, 232, 240, 0.4);
 }
 
 .glass-dark {
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(20rpx);
-  border: 2rpx solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(24rpx);
+  border: 1rpx solid rgba(148, 163, 184, 0.2);
+  box-shadow: $shadow-xl;
 }
 
-/* 渐变背景 Gradient Backgrounds */
-.gradient-primary {
+/* 渐变背景 Gradient Backgrounds - Professional Marketplace */
+.gradient-navy {
   background: linear-gradient(135deg, $primary 0%, $primary-light 100%);
+}
+
+.gradient-navy-hero {
+  background: linear-gradient(180deg, $primary-dark 0%, $primary 60%, $primary-light 100%);
+}
+
+.gradient-soft {
+  background: linear-gradient(180deg, $bg-primary 0%, $bg-secondary 100%);
 }
 
 .gradient-gold {
   background: $gold-gradient;
 }
 
-.gradient-dark {
-  background: linear-gradient(135deg, $bg-dark 0%, $primary 100%);
+.gradient-cta-blue {
+  background: linear-gradient(135deg, $cta-blue 0%, $cta-blue-light 100%);
+}
+
+.gradient-hero-marketplace {
+  background: linear-gradient(135deg, $primary-dark 0%, $primary 50%, $cta-blue-dark 100%);
 }
 
 /* 光晕效果 Glow Effect */
-.glow-primary {
-  box-shadow: 0 0 40rpx rgba(3, 105, 161, 0.3);
+.glow-navy {
+  box-shadow: 0 0 40rpx rgba(15, 23, 42, 0.25);
+}
+
+.glow-cta-blue {
+  box-shadow: 0 0 40rpx rgba(3, 105, 161, 0.35);
 }
 
 .glow-gold {
-  box-shadow: 0 0 40rpx rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 40rpx rgba(245, 158, 11, 0.45);
 }
 
-/* ============ 9. ANIMATIONS 动画 ============ */
+/* 价格高亮 - 红色CTA */
+.price-highlight {
+  color: $cta;
+  font-weight: $weight-bold;
+  letter-spacing: $letter-tight;
+}
+
+/* 骨架屏 Skeleton Loading */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    $bg-tertiary 25%,
+    $bg-hover 50%,
+    $bg-tertiary 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: $radius-md;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ============ 8. ANIMATIONS 动画 ============ */
 
 /* 淡入 Fade In */
 @keyframes fadeIn {
@@ -396,7 +612,7 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
@@ -404,13 +620,13 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
   }
 }
 
-/* 脉冲 Pulse */
+/* 脉冲 Pulse - 用于加载提示 */
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
   }
   50% {
-    opacity: 0.6;
+    opacity: 0.5;
   }
 }
 
@@ -420,21 +636,11 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-10rpx);
+    transform: translateY(-8rpx);
   }
 }
 
-/* 微震动 Shimmer */
-@keyframes shimmer {
-  0% {
-    background-position: -468rpx 0;
-  }
-  100% {
-    background-position: 468rpx 0;
-  }
-}
-
-/* 动画类 Animation Classes */
+/* 入场动画类 */
 .animate-fade-in {
   animation: fadeIn $duration-slow $timing-ease-out both;
 }
@@ -447,13 +653,12 @@ $timing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹性 */
   animation: scaleIn $duration-slow $timing-spring both;
 }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-pulse {
-  animation: pulse 2s ease-in-out infinite;
-}
+/* 入场延迟变体 */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
 
 /* ============ 10. LAYOUT HELPERS 布局辅助 ============ */
 

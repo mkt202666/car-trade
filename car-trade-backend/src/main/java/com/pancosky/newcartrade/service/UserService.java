@@ -20,4 +20,5 @@ public interface UserService {
     UserPublicVO getUserPublicInfo(Long id);
     void changePassword(ChangePasswordDTO dto);
     void updatePhone(String newPhone, String smsCode);
+    LoginVO refresh(String refreshToken);
 }

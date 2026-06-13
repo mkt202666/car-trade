@@ -23,33 +23,23 @@
     },
     {
       "path": "pages/trade-sold/index",
-      "style": {
-        "navigationBarTitleText": "卖出的车"
-      }
+      "style": { "navigationBarTitleText": "卖出的车" }
     },
     {
       "path": "pages/trade-bought/index",
-      "style": {
-        "navigationBarTitleText": "买到的车"
-      }
+      "style": { "navigationBarTitleText": "买到的车" }
     },
     {
       "path": "pages/trade-all/index",
-      "style": {
-        "navigationBarTitleText": "全部订单"
-      }
+      "style": { "navigationBarTitleText": "全部订单" }
     },
     {
       "path": "pages/order-detail/index",
-      "style": {
-        "navigationBarTitleText": "订单详情"
-      }
+      "style": { "navigationBarTitleText": "订单详情" }
     },
     {
       "path": "pages/publish/index",
-      "style": {
-        "navigationBarTitleText": "车源发布"
-      }
+      "style": { "navigationBarTitleText": "车源发布" }
     },
     {
       "path": "pages/ai/index",
@@ -60,21 +50,15 @@
     },
     {
       "path": "pages/ai-market-report/index",
-      "style": {
-        "navigationBarTitleText": "AI行情简报"
-      }
+      "style": { "navigationBarTitleText": "AI行情简报" }
     },
     {
       "path": "pages/ai-search-car/index",
-      "style": {
-        "navigationBarTitleText": "全网找车"
-      }
+      "style": { "navigationBarTitleText": "全网找车" }
     },
     {
       "path": "pages/ai-copywriting/index",
-      "style": {
-        "navigationBarTitleText": "获客文案生成"
-      }
+      "style": { "navigationBarTitleText": "获客文案生成" }
     },
     {
       "path": "pages/message/index",
@@ -92,33 +76,23 @@
     },
     {
       "path": "pages/login/index",
-      "style": {
-        "navigationBarTitleText": "登录"
-      }
+      "style": { "navigationBarTitleText": "登录" }
     },
     {
       "path": "pages/register/index",
-      "style": {
-        "navigationBarTitleText": "注册"
-      }
+      "style": { "navigationBarTitleText": "注册" }
     },
     {
       "path": "pages/seller-home/index",
-      "style": {
-        "navigationBarTitleText": "卖家主页"
-      }
+      "style": { "navigationBarTitleText": "卖家主页" }
     },
     {
       "path": "pages/customer-service/index",
-      "style": {
-        "navigationBarTitleText": "在线客服"
-      }
+      "style": { "navigationBarTitleText": "在线客服" }
     },
     {
       "path": "pages/contract-detail/index",
-      "style": {
-        "navigationBarTitleText": "电子合同"
-      }
+      "style": { "navigationBarTitleText": "电子合同" }
     },
     {
       "path": "pages/deposit/index",
@@ -136,51 +110,31 @@
     },
     {
       "path": "pages/trade-rules/index",
-      "style": {
-        "navigationBarTitleText": "交易规范"
-      }
+      "style": { "navigationBarTitleText": "交易规范" }
     },
     {
       "path": "pages/finance/index",
-      "style": {
-        "navigationBarTitleText": "金融服务"
-      }
+      "style": { "navigationBarTitleText": "金融服务" }
     },
     {
       "path": "pages/settings/index",
-      "style": {
-        "navigationBarTitleText": "系统设置"
-      }
+      "style": { "navigationBarTitleText": "系统设置" }
     },
     {
       "path": "pages/auction/index",
-      "style": {
-        "navigationBarTitleText": "在线拍卖"
-      }
+      "style": { "navigationBarTitleText": "在线拍卖" }
     },
     {
       "path": "pages/auction-detail/index",
-      "style": {
-        "navigationBarTitleText": "拍卖详情"
-      }
+      "style": { "navigationBarTitleText": "拍卖详情" }
     },
     {
       "path": "pages/purchase-demand/index",
-      "style": {
-        "navigationBarTitleText": "发布求购"
-      }
+      "style": { "navigationBarTitleText": "发布求购" }
     },
     {
       "path": "pages/my-purchase-demand/index",
-      "style": {
-        "navigationBarTitleText": "我的求购"
-      }
-    },
-    {
-      "path": "pages/tutorial/index",
-      "style": {
-        "navigationBarTitleText": "使用教程"
-      }
+      "style": { "navigationBarTitleText": "我的求购" }
     },
     {
       "path": "pages/purchase-demand-list/index",
@@ -188,34 +142,63 @@
         "navigationBarTitleText": "求购车源",
         "navigationStyle": "custom"
       }
-    }
+    },
+    {
+      "path": "pages/my-car-source/index",
+      "style": {
+        "navigationBarTitleText": "我的车源",
+        "navigationStyle": "custom"
+      }
+    },
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "5D好车",
     "navigationBarBackgroundColor": "#FFFFFF",
-    "backgroundColor": "#F5F5F5"
+    "backgroundColor": "#F8FAFC"
   },
   "tabBar": {
     "custom": true,
-    "color": "#7A7E83",
-    "selectedColor": "#1f2937",
+    "color": "#64748B",
+    "selectedColor": "#0F172A",
     "borderStyle": "white",
     "backgroundColor": "#FFFFFF",
     "list": [
-      { "pagePath": "pages/home/index", "text": "找车" },
-      { "pagePath": "pages/purchase-demand-list/index", "text": "求购" },
-      { "pagePath": "pages/purchase-demand-list/index", "text": "AI助理" },
-      { "pagePath": "pages/message/index", "text": "消息" },
-      { "pagePath": "pages/profile/index", "text": "我的" }
+      {
+        "pagePath": "pages/home/index",
+        "iconPath": "static/tab/home.png",
+        "selectedIconPath": "static/tab/home-active.png",
+        "text": "找车"
+      },
+      {
+        "pagePath": "pages/purchase-demand-list/index",
+        "iconPath": "static/tab/trade.png",
+        "selectedIconPath": "static/tab/trade-active.png",
+        "text": "求购"
+      },
+      {
+        "pagePath": "pages/ai/index",
+        "iconPath": "static/tab/ai.png",
+        "selectedIconPath": "static/tab/ai-active.png",
+        "text": "AI助理"
+      },
+      {
+        "pagePath": "pages/message/index",
+        "iconPath": "static/tab/message.png",
+        "selectedIconPath": "static/tab/message-active.png",
+        "text": "消息"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "iconPath": "static/tab/profile.png",
+        "selectedIconPath": "static/tab/profile-active.png",
+        "text": "我的"
+      }
     ]
   },
   "easycom": {
-    "autoscan": false,
+    "autoscan": true,
     "custom": {
-      "^u-field$": "@/components/u-field/u-field.vue",
-      "^u-cell-item$": "@/components/u-cell-item/u-cell-item.vue",
-      "^u-loading$": "uview-plus/components/u-loading-icon/u-loading-icon.vue",
       "^u-(.*)": "uview-plus/components/u-$1/u-$1.vue"
     }
   }
