@@ -30,6 +30,7 @@
 
 <script>
 import { formatPrice, formatMileage, formatTime } from '@/utils/format'
+import { getBrowsingHistory, clearBrowsingHistory } from '@/api/user'
 export default {
 	data() {
 		return { recordList: [], page: 1, pageSize: 20, loading: false, loadStatus: 'loadmore', hasMore: true }
@@ -44,7 +45,7 @@ export default {
 			if (reset) { this.page = 1; this.hasMore = true }
 			this.loading = true; this.loadStatus = 'loading'
 			try {
-				const res = await uni.http.get('/users/me/browsing', { params: { page: this.page, size: this.pageSize } })
+				const res = await getBrowsingHistory({ page: this.page, size: this.pageSize })
 				const list = res.data.list || res.data.records || res.data || []
 				this.recordList = reset || this.page === 1 ? list : this.recordList.concat(list)
 				this.hasMore = list.length >= this.pageSize
@@ -59,7 +60,7 @@ export default {
 				success: async (res) => {
 					if (res.confirm) {
 						try {
-							await uni.http.delete('/users/me/browsing')
+							await clearBrowsingHistory()
 							this.recordList = []
 							uni.$u.toast('已清空')
 						} catch (e) { console.error(e) }

@@ -26,6 +26,7 @@
 
 <script>
 import { formatPrice, formatMileage } from '@/utils/format'
+import { getFavorites } from '@/api/car'
 export default {
 	data() {
 		return { carList: [], page: 1, pageSize: 10, loading: false, loadStatus: 'loadmore', hasMore: true }
@@ -40,7 +41,7 @@ export default {
         if (reset) { this.page = 1; this.hasMore = true }
         this.loading = true; this.loadStatus = 'loading'
         try {
-            const res = await uni.http.get('/cars/favorites', { params: { page: this.page, size: this.pageSize } })
+            const res = await getFavorites({ page: this.page, size: this.pageSize })
 				const list = res.data.list || res.data.records || res.data || []
 				this.carList = reset || this.page === 1 ? list : this.carList.concat(list)
 				this.hasMore = list.length >= this.pageSize

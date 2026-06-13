@@ -57,7 +57,7 @@ const CERTIFIED_ENDPOINTS = [
   { path: /^\/ai\/distribute$/, method: 'POST' },
   { path: /^\/ai\/auto-outreach$/, method: 'POST' },
   { path: /^\/ai\/customer-generation$/, method: 'POST' },
-  { path: /^\/ai\/generate-copywriting$/, method: 'POST' },
+  { path: /^\/ai\/copywriting$/, method: 'POST' },
   { path: /^\/purchases$/, method: 'POST' },
   { path: /^\/auctions$/, method: 'POST' }
 ]

@@ -107,7 +107,7 @@
 </template>
 
 <script>
-import { getMyCars, getMarketAnalysis, getCompetitors, getSuggestions } from '@/api/ai'
+import { getMyCars, marketAnalysis, getCompetitors, getSuggestions } from '@/api/ai'
 import { formatPrice, formatMileage } from '@/utils/format'
 import { requireAuth } from '@/utils/auth'
 
@@ -158,7 +158,7 @@ export default {
     },
     async loadMarketData() {
       try {
-        const res = await getMarketAnalysis()
+        const res = await marketAnalysis()
         this.marketData = res.data || {}
       } catch (e) {
         console.error('加载行情数据失败', e)

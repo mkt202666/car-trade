@@ -37,6 +37,7 @@ export const uploadAvatar = (filePath) => {
     })
   })
 }
+export const logout = () => uni.http.post('/users/logout')
 export const getBrowsingHistory = (params) => uni.http.get('/users/me/browsing', { params })
 export const clearBrowsingHistory = () => uni.http.delete('/users/me/browsing')
 export const getUnreadCount = () => uni.http.get('/messages/unread-count')

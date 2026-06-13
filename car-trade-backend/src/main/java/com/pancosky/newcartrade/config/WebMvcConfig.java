@@ -52,6 +52,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         // 匿名接口（无需登录）
                         "/api/v1/users/login",
                         "/api/v1/users/register",
+                        "/api/v1/users/sms/send",          // 发送短信验证码
+                        "/api/v1/users/{id:[0-9]+}",       // 查看用户公开信息
 
                         // 车源浏览（仅公开 GET 接口，排除需要登录的路径）
                         "/api/v1/cars",                     // GET 列表
@@ -84,6 +86,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         // 城市数据
                         "/api/v1/cities",
                         "/api/v1/cities/**",
+
+                        // 品牌车系车型
+                        "/api/v1/brands",
+                        "/api/v1/brands/**",
 
                         // 静态资源
                         "/uploads/**",

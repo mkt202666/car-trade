@@ -94,6 +94,42 @@ public class PurchaseDemandServiceImpl implements PurchaseDemandService {
         demandMapper.updateById(demand);
     }
 
+    @Override
+    public PurchaseDemandVO detail(Long id) {
+        PurchaseDemand demand = demandMapper.selectById(id);
+        if (demand == null) throw new BusinessException("求购不存在");
+        return toVO(demand);
+    }
+
+    @Override
+    @Transactional
+    public PurchaseDemandVO update(Long id, PurchaseDemandCreateDTO dto) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) throw new BusinessException("请先登录");
+        PurchaseDemand demand = demandMapper.selectById(id);
+        if (demand == null) throw new BusinessException("求购不存在");
+        if (!demand.getUserId().equals(userId)) throw new BusinessException("只能修改自己的求购");
+        if (!"ACTIVE".equals(demand.getStatus())) throw new BusinessException("只能修改进行中的求购");
+
+        demand.setBrandName(dto.getBrandName());
+        demand.setSeriesName(dto.getSeriesName());
+        demand.setModelName(dto.getModelName());
+        demand.setYearFrom(dto.getYearFrom());
+        demand.setYearTo(dto.getYearTo());
+        demand.setPriceMin(dto.getPriceMin());
+        demand.setPriceMax(dto.getPriceMax());
+        demand.setMileageMax(dto.getMileageMax());
+        demand.setColor(dto.getColor());
+        demand.setCityCode(dto.getCityCode());
+        demand.setCityName(dto.getCityName());
+        demand.setEnergyType(dto.getEnergyType());
+        demand.setDescription(dto.getDescription());
+        demandMapper.updateById(demand);
+
+        log.info("User {} updated purchase demand {}", userId, id);
+        return toVO(demand);
+    }
+
     private PurchaseDemandVO toVO(PurchaseDemand d) {
         PurchaseDemandVO vo = new PurchaseDemandVO();
         vo.setId(d.getId());

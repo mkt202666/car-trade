@@ -8,16 +8,15 @@ const post = (url, data) => uni.http.post(url, data, { timeout: AI_TIMEOUT })
 export const marketAnalysis = (data) => post('/ai/market-analysis', data)
 export const aiSearch = (data) => post('/ai/search', data)
 export const generateCopywriting = (data) => post('/ai/copywriting', data)
+export const generateCustomerCopywriting = (data) => post('/ai/customer-generation', data)
 export const autoOutreach = (data) => post('/ai/auto-outreach', data)
 export const distributeCar = (data) => post('/ai/distribute', data)
 export const aiChat = (data) => post('/ai/chat', data)
 export const carAnalysis = (data) => post('/ai/car-analysis', data)
 export const priceEstimate = (data) => post('/ai/price-estimate', data)
 export const getMyCars = (params) => uni.http.get('/cars', { params })
-export const getMarketAnalysis = (data) => post('/ai/market-analysis', data)
 export const getCompetitors = (params) => uni.http.get('/ai/competitors', { params })
 export const getSuggestions = (params) => uni.http.get('/ai/suggestions', { params })
-export const searchAllCars = (data) => post('/ai/search', data)
 
 /**
  * AI 流式对话 - 使用 fetch + ReadableStream 读取 SSE

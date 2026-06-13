@@ -192,6 +192,7 @@
 </template>
 
 <script>
+import { changePassword, updatePhone, logout } from '@/api/user'
 export default {
   data() {
     return {
@@ -235,7 +236,7 @@ export default {
       if (!newPassword || newPassword.length < 6) { uni.$u.toast('新密码长度不能少于6位'); return }
       if (newPassword !== confirmPassword) { uni.$u.toast('两次密码不一致'); return }
       try {
-        await uni.http.put('/users/me/password', { oldPassword, newPassword })
+        await changePassword({ oldPassword, newPassword })
         uni.$u.toast('密码修改成功')
         this.showPasswordPopup = false
         this.passwordForm = { oldPassword: '', newPassword: '', confirmPassword: '' }
@@ -245,7 +246,7 @@ export default {
       const { newPhone } = this.phoneForm
       if (!newPhone || newPhone.length < 11) { uni.$u.toast('请输入正确手机号'); return }
       try {
-        await uni.http.put('/users/me/phone', { phone: newPhone })
+        await updatePhone({ phone: newPhone })
         uni.$u.toast('手机号更换成功')
         this.showPhonePopup = false
         this.phoneForm = { newPhone: '' }
@@ -272,11 +273,12 @@ export default {
       this.agreementContent = '<p><strong>《5D找车隐私政策》</strong></p><p>我们非常重视您的隐私保护。</p><p>1. 我们收集的信息：手机号、昵称、车行信息、车辆信息等必要数据。</p><p>2. 信息使用目的：提供平台服务、交易撮合、信用评估。</p><p>3. 信息安全：采用加密存储和传输，严格控制数据访问权限。</p><p>4. 信息共享：未经您同意，不会向第三方共享您的个人信息。</p><p>5. 您有权随时查看、修改或删除您的个人信息。</p><p>6. 如有疑问，请联系客服：400-XXX-XXXX。</p>'
       this.showAgreement = true
     },
-    handleLogout() {
+    async handleLogout() {
       uni.showModal({
         title: '确认退出', content: '确定要退出登录吗？',
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
+            try { await logout() } catch (e) {}
             this.$store.commit('logout')
             uni.$u.toast('已退出登录')
             setTimeout(() => uni.reLaunch({ url: '/pages/login/index' }), 500)

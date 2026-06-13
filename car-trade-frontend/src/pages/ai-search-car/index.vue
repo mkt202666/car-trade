@@ -119,7 +119,7 @@
 </template>
 
 <script>
-import { searchAllCars } from '@/api/ai'
+import { aiSearch } from '@/api/ai'
 import { formatPrice } from '@/utils/format'
 
 export default {
@@ -163,7 +163,7 @@ export default {
       this.carList = []
 
       try {
-        const res = await searchAllCars({
+        const res = await aiSearch({
           keyword: this.searchKeyword,
           source: this.activeFilter,
           page: this.page,
@@ -190,7 +190,7 @@ export default {
       this.loading = true
 
       try {
-        const res = await searchAllCars({
+        const res = await aiSearch({
           keyword: this.searchKeyword,
           source: this.activeFilter,
           page: this.page,

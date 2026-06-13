@@ -24,6 +24,11 @@ public class PurchaseDemandController {
         return ApiResponse.success(purchaseDemandService.create(dto));
     }
 
+    @GetMapping("/{id}")
+    public ApiResponse<PurchaseDemandVO> detail(@PathVariable Long id) {
+        return ApiResponse.success(purchaseDemandService.detail(id));
+    }
+
     @GetMapping
     public ApiResponse<PageResult<PurchaseDemandVO>> list(
             @RequestParam(defaultValue = "1") Integer page,
@@ -42,6 +47,11 @@ public class PurchaseDemandController {
     public ApiResponse<Void> cancel(@PathVariable Long id) {
         purchaseDemandService.cancel(id);
         return ApiResponse.success();
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<PurchaseDemandVO> update(@PathVariable Long id, @Valid @RequestBody PurchaseDemandCreateDTO dto) {
+        return ApiResponse.success(purchaseDemandService.update(id, dto));
     }
 
 

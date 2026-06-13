@@ -153,7 +153,7 @@
 </template>
 
 <script>
-import { aiChat, aiChatStream, marketAnalysis, aiSearch, generateCopywriting, autoOutreach, carAnalysis, priceEstimate } from '@/api/ai'
+import { aiChat, aiChatStream, marketAnalysis, aiSearch, generateCopywriting, generateCustomerCopywriting, autoOutreach, carAnalysis, priceEstimate } from '@/api/ai'
 import { requireAuth } from '@/utils/auth'
 import CustomTabBar from '@/custom-tab-bar/index.vue'
 
@@ -167,7 +167,7 @@ export default {
       aiFunctions: [
         { id: 'search', name: '智能找车', desc: '描述需求，快速匹配', emoji: '🔍', bgGrad: 'linear-gradient(135deg, #0369A1 0%, #0EA5E9 100%)' },
         { id: 'market', name: '行情分析', desc: '掌握市场最新动态', emoji: '📈', bgGrad: 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)' },
-        { id: 'copywriting', name: '获客文案', desc: 'AI生成推广文案', emoji: '✍️', bgGrad: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)' },
+        { id: 'customer', name: '获客文案', desc: 'AI生成推广文案', emoji: '✍️', bgGrad: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)' },
         { id: 'outreach', name: '自动外联', desc: '智能触达潜在客户', emoji: '🤝', bgGrad: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)' },
         { id: 'analyze', name: '车源分析', desc: '车源价值评估', emoji: '🔬', bgGrad: 'linear-gradient(135deg, #06B6D4 0%, #22D3EE 100%)' },
         { id: 'price', name: '估价助手', desc: '快速估算车价', emoji: '💰', bgGrad: 'linear-gradient(135deg, #EF4444 0%, #F87171 100%)' }
@@ -245,6 +245,7 @@ export default {
         search: '帮我推荐一款适合家用的二手车',
         market: '请分析一下最近的二手车市场行情',
         copywriting: '帮我写一段吸引人的二手车推广文案',
+        customer: '帮我为这款车生成获客文案',
         outreach: '如何用AI自动触达潜在客户？',
         analyze: '请帮我分析一下这个车源的价值',
         price: '请帮我估算一下2018年宝马X5的价格'
@@ -267,6 +268,7 @@ export default {
         search: '您好！我是智能找车助手。请告诉我您的需求，比如：预算、品牌、车型、用途等，我会为您推荐最合适的车型。',
         market: '您好！我是行情分析助手。请问您想了解哪个品牌或车型市场行情？比如"BBA豪华品牌"或"日系紧凑型SUV"。',
         copywriting: '您好！我是获客文案助手。请告诉我您的车源信息，如：品牌、车型、配置、亮点等，我来帮您生成吸引人的推广文案。',
+        customer: '您好！我是获客文案助手。请提供车源详细信息，我将为您生成专业的营销文案，帮助快速吸引潜在买家。',
         outreach: '您好！我是自动外联助手。请提供客户信息和您的需求，我来帮您制定智能触达方案和话术。',
         analyze: '您好！我是车源分析助手。请提供车源信息，如：品牌、车型、年份、里程、车况描述等，我来帮您全面评估车辆价值。',
         price: '您好！我是估价助手。请告诉我车辆信息，如：品牌、车型、年份、里程、配置等，我来帮您估算合理的价格区间。'
@@ -278,6 +280,7 @@ export default {
         search: '正在匹配车源数据...',
         market: '正在分析市场行情...',
         copywriting: '正在为您构思文案...',
+        customer: '正在生成获客文案...',
         outreach: '正在生成触达方案...',
         analyze: '正在评估车源价值...',
         price: '正在估算车辆价格...'
@@ -376,6 +379,7 @@ export default {
         search: aiSearch,
         market: marketAnalysis,
         copywriting: generateCopywriting,
+        customer: generateCustomerCopywriting,
         outreach: autoOutreach,
         analyze: carAnalysis,
         price: priceEstimate
