@@ -22,6 +22,16 @@ car-trade-backend/.vscode/
 car-trade-backend/logs/
 car-trade-backend/.mimocode/node_modules/
 
+car-trade-admin-backend/logs/
+car-trade-admin-backend/target/
+car-trade-admin-backend/*.log
+car-trade-admin-backend/backend.log
+car-trade-admin-backend/.idea/
+car-trade-admin-backend/*.iml
+car-trade-admin-backend/.vscode/
+car-trade-admin-backend/logs/
+car-trade-admin-backend/.mimocode/node_modules/
+
 # ---- 前端 build / node_modules / 临时 ----
 car-trade-frontend/node_modules/
 car-trade-frontend/dist/
@@ -30,6 +40,14 @@ car-trade-frontend/build.log
 car-trade-frontend/.hbuilderx/
 car-trade-frontend/.idea/
 car-trade-frontend/.vscode/
+
+car-trade-admin-frontend/node_modules/
+car-trade-admin-frontend/dist/
+car-trade-admin-frontend/unpackage/
+car-trade-admin-frontend/build.log
+car-trade-admin-frontend/.hbuilderx/
+car-trade-admin-frontend/.idea/
+car-trade-admin-frontend/.vscode/
 
 # ---- 根目录临时文件 ----
 logs/
