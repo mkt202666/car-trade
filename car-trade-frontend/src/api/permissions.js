@@ -40,6 +40,8 @@ const PUBLIC_ENDPOINTS = [
   { path: /^\/membership\/plans$/, method: 'GET' },
   { path: /^\/cities/, method: 'GET' },
   { path: /^\/brands/, method: 'GET' },
+  { path: /^\/banners/, method: 'GET' },
+  { path: /^\/configs\/[\w-]+$/, method: 'GET' },
   { path: /^\/follows\/[\w-]+\/check$/, method: 'GET' },
   { path: /^\/ai\/chat$/, method: 'POST' },
   { path: /^\/ai\/search$/, method: 'POST' },

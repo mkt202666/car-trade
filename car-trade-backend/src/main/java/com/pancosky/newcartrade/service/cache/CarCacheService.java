@@ -4,10 +4,15 @@ import com.pancosky.newcartrade.vo.CarDetailVO;
 import com.pancosky.newcartrade.vo.CarVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -78,7 +83,19 @@ public class CarCacheService {
 
     public void clearListCache() {
         try {
-            java.util.Set<String> keys = redisTemplate.keys(LIST_PREFIX + "*");
+            Set<String> keys = redisTemplate.execute((RedisCallback<Set<String>>) connection -> {
+                Set<String> collectedKeys = new HashSet<>();
+                ScanOptions options = ScanOptions.scanOptions()
+                        .match(LIST_PREFIX + "*")
+                        .count(100)
+                        .build();
+                try (Cursor<byte[]> cursor = connection.scan(options)) {
+                    while (cursor.hasNext()) {
+                        collectedKeys.add(new String(cursor.next()));
+                    }
+                }
+                return collectedKeys;
+            });
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
                 log.debug("Cleared {} list cache entries", keys.size());

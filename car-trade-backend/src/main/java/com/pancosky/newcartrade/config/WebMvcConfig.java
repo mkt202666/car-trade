@@ -91,6 +91,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/v1/brands",
                         "/api/v1/brands/**",
 
+                        // Banner 广告位（只读）
+                        "/api/v1/banners",
+                        "/api/v1/banners/popup",
+
+                        // 系统配置文本（只读：用户协议/隐私条款等）
+                        "/api/v1/configs/**",
+
                         // 静态资源
                         "/uploads/**",
                         // 错误

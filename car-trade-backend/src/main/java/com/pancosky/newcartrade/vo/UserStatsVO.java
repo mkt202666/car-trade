@@ -42,6 +42,9 @@ public class UserStatsVO {
     /** 会员过期时间（null 表示非会员） */
     private LocalDateTime memberExpireAt;
 
+    /** 用户角色（PERSONAL-个人用户 / SHOP-车行用户 / ADMIN-系统管理员 / DEVELOPER-开发人员） */
+    private String userRole;
+
     /** 实名认证状态（NONE / PENDING / CERTIFIED / REJECTED） */
     private String certificationStatus;
 }

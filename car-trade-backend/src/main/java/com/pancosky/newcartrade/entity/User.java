@@ -84,6 +84,9 @@ public class User {
     /** 会员到期时间（会员身份的有效截止日期） */
     private LocalDateTime memberExpireAt;
 
+    /** 用户角色（PERSONAL-个人用户 / SHOP-车行用户 / ADMIN-系统管理员 / DEVELOPER-开发人员） */
+    private String userRole;
+
     /** 实名认证状态（NONE-未认证 / PENDING-审核中 / CERTIFIED-已认证 / REJECTED-已驳回） */
     private String certificationStatus;
 

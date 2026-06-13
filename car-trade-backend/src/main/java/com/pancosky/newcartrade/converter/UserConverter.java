@@ -25,6 +25,7 @@ public class UserConverter {
         vo.setCreditScore(user.getCreditScore());
         vo.setDealCount(user.getDealCount() == null ? 0 : user.getDealCount());
         vo.setMemberExpireAt(user.getMemberExpireAt());
+        vo.setUserRole(user.getUserRole() != null ? user.getUserRole() : "PERSONAL");
         // 保证金账户信息（演示环境下设置默认值，实际应由财务账户表查询）
         vo.setDepositBalance(BigDecimal.ZERO);
         vo.setDepositTotal(BigDecimal.ZERO);

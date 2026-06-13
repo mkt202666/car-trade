@@ -120,6 +120,7 @@ public class UserServiceImpl implements UserService {
             newUser.setFollowerCount(0);
             newUser.setFollowerCountToday(0);
             newUser.setStatus("ACTIVE");
+            newUser.setUserRole("PERSONAL");  // 默认个人用户
             newUser.setCertificationStatus("NONE");
             userMapper.insert(newUser);
             user = newUser;
@@ -303,6 +304,7 @@ public class UserServiceImpl implements UserService {
         user.setCreditScore(600);
         user.setCreditGrade("B");
         user.setStatus("ACTIVE");
+        user.setUserRole("PERSONAL");  // 默认个人用户
         user.setCertificationStatus("NONE");
         // 设置统计字段默认值，避免 null 导致序列化问题
         user.setDealCount(0);
@@ -375,6 +377,7 @@ public class UserServiceImpl implements UserService {
         vo.setDealCount(user.getDealCount());
         vo.setCreditScore(user.getCreditScore());
         vo.setMemberExpireAt(user.getMemberExpireAt());
+        vo.setUserRole(user.getUserRole() != null ? user.getUserRole() : "PERSONAL");
         vo.setCertificationStatus(user.getCertificationStatus());
         return vo;
     }
@@ -386,9 +389,13 @@ public class UserServiceImpl implements UserService {
         if (userId == null) throw new BusinessException("请先登录");
         User user = userMapper.selectById(userId);
         if (user == null) throw new BusinessException("用户不存在");
+        
+        // 提交认证时，将角色升级为车行用户
         user.setCertificationStatus("PENDING");
+        user.setUserRole("SHOP");  // 升级为车行用户
         userMapper.updateById(user);
-        log.info("User {} submitted certification", userId);
+        
+        log.info("User {} submitted certification, role upgraded to SHOP", userId);
     }
 
     @Override

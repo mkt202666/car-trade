@@ -41,6 +41,7 @@ CREATE TABLE users (
     login_fail_count INTEGER DEFAULT 0,
     locked_until    TIMESTAMP,
     notification_settings JSONB DEFAULT '{"system":true,"auto_promotion":true,"order":true,"contract":true,"deposit":true,"shop":true}',
+    user_role VARCHAR(20) DEFAULT 'PERSONAL',
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at      TIMESTAMP
@@ -75,6 +76,8 @@ COMMENT ON COLUMN users.status IS '账号状态: ACTIVE-正常, DISABLE-禁用';
 COMMENT ON COLUMN users.created_at IS '创建时间';
 COMMENT ON COLUMN users.updated_at IS '更新时间';
 COMMENT ON COLUMN users.deleted_at IS '删除时间，软删除';
+CREATE INDEX IF NOT EXISTS idx_users_user_role ON users(user_role);
+CREATE INDEX IF NOT EXISTS idx_users_role_status ON users(user_role, status);
 
 -- ----------------------------------------------------------
 -- 表2: 汽车品牌表
