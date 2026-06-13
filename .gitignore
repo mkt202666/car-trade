@@ -7,6 +7,10 @@
 .env.local
 .env.*.local
 
+# ---- node_modules / 构建产物 ----
+node_modules/
+package-lock.json
+
 # ---- 后端 logs / target / IDE 文件 ----
 car-trade-backend/logs/
 car-trade-backend/target/
@@ -15,6 +19,8 @@ car-trade-backend/backend.log
 car-trade-backend/.idea/
 car-trade-backend/*.iml
 car-trade-backend/.vscode/
+car-trade-backend/logs/
+car-trade-backend/.mimocode/node_modules/
 
 # ---- 前端 build / node_modules / 临时 ----
 car-trade-frontend/node_modules/
@@ -24,6 +30,18 @@ car-trade-frontend/build.log
 car-trade-frontend/.hbuilderx/
 car-trade-frontend/.idea/
 car-trade-frontend/.vscode/
+
+# ---- 根目录临时文件 ----
+logs/
+output/
+*.log
+debug.log
+verify.js
+login.json
+5D好车-功能开发计划.xlsx
+.npm-cache-tmp/
+.gstack/
+.mimocode/node_modules/
 
 # ---- 系统 / 编辑器 ----
 .DS_Store
