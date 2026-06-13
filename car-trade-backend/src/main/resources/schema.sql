@@ -80,6 +80,8 @@ CREATE TABLE IF NOT EXISTS users (
     member_expire_at TIMESTAMP,
     certification_status VARCHAR(20) DEFAULT 'UNCERTIFIED',
     status          VARCHAR(20) DEFAULT 'ACTIVE',
+    login_fail_count INTEGER DEFAULT 0,
+    locked_until    TIMESTAMP,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at      TIMESTAMP
@@ -478,6 +480,156 @@ CREATE TABLE IF NOT EXISTS chat_conversation_members (
     UNIQUE(conversation_id, user_id)
 );
 
+-- 29. 城市表
+CREATE TABLE IF NOT EXISTS cities (
+    id              SERIAL PRIMARY KEY,
+    code            VARCHAR(20) NOT NULL UNIQUE,
+    name            VARCHAR(50) NOT NULL,
+    province_code   VARCHAR(20),
+    province_name   VARCHAR(50),
+    city_code       VARCHAR(20),
+    city_name       VARCHAR(50),
+    district_code   VARCHAR(20),
+    district_name   VARCHAR(50),
+    level           VARCHAR(10) NOT NULL,  -- PROVINCE/CITY/DISTRICT
+    hot             BOOLEAN DEFAULT FALSE,
+    sort_order      INTEGER DEFAULT 0,
+    status          VARCHAR(20) DEFAULT 'ACTIVE',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_cities_code ON cities(code);
+CREATE INDEX IF NOT EXISTS idx_cities_level ON cities(level);
+CREATE INDEX IF NOT EXISTS idx_cities_province_code ON cities(province_code);
+CREATE INDEX IF NOT EXISTS idx_cities_city_code ON cities(city_code);
+CREATE INDEX IF NOT EXISTS idx_cities_hot ON cities(hot);
+COMMENT ON TABLE cities IS '城市表';
+COMMENT ON COLUMN cities.level IS '层级: PROVINCE-省份, CITY-城市, DISTRICT-区县';
+
+-- 30. 拍卖表
+CREATE TABLE IF NOT EXISTS auctions (
+    id              BIGINT PRIMARY KEY,
+    car_id          BIGINT NOT NULL,
+    seller_id       BIGINT NOT NULL,
+    start_price     DECIMAL(12,2) NOT NULL,
+    reserve_price   DECIMAL(12,2),
+    current_price   DECIMAL(12,2) NOT NULL,
+    bid_increment   DECIMAL(10,2) NOT NULL DEFAULT 1000,
+    start_time      TIMESTAMP NOT NULL,
+    end_time        TIMESTAMP NOT NULL,
+    actual_end_time TIMESTAMP,
+    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    winner_id       BIGINT,
+    winning_price   DECIMAL(12,2),
+    total_bids      INT NOT NULL DEFAULT 0,
+    view_count      BIGINT NOT NULL DEFAULT 0,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version         INT NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_auctions_car_id ON auctions(car_id);
+CREATE INDEX IF NOT EXISTS idx_auctions_seller_id ON auctions(seller_id);
+CREATE INDEX IF NOT EXISTS idx_auctions_status ON auctions(status);
+CREATE INDEX IF NOT EXISTS idx_auctions_start_time ON auctions(start_time);
+CREATE INDEX IF NOT EXISTS idx_auctions_end_time ON auctions(end_time);
+COMMENT ON TABLE auctions IS '拍卖表';
+COMMENT ON COLUMN auctions.status IS '状态: PENDING-待开始, BIDDING-竞拍中, ENDED-已结束, SETTLED-已结算, CANCELLED-已取消, FAILED-流拍';
+
+-- 31. 拍卖出价记录表
+CREATE TABLE IF NOT EXISTS auction_bids (
+    id          BIGINT PRIMARY KEY,
+    auction_id  BIGINT NOT NULL,
+    bidder_id   BIGINT NOT NULL,
+    bid_price   DECIMAL(12,2) NOT NULL,
+    bid_time    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_winning  BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_auction_bids_auction_id ON auction_bids(auction_id);
+CREATE INDEX IF NOT EXISTS idx_auction_bids_bidder_id ON auction_bids(bidder_id);
+CREATE INDEX IF NOT EXISTS idx_auction_bids_bid_time ON auction_bids(bid_time);
+COMMENT ON TABLE auction_bids IS '拍卖出价记录表';mimo-v2.5-pro-ultraspeed
+
+-- 32. 拍卖关注/观看表
+CREATE TABLE IF NOT EXISTS auction_watches (
+    id         BIGINT PRIMARY KEY,
+    auction_id BIGINT NOT NULL,
+    user_id    BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(auction_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_auction_watches_user_id ON auction_watches(user_id);
+
+COMMENT ON TABLE auctions IS '拍卖表';
+COMMENT ON COLUMN auctions.id IS '主键ID';
+COMMENT ON COLUMN auctions.car_id IS '关联车源ID';
+COMMENT ON COLUMN auctions.seller_id IS '卖家用户ID';
+COMMENT ON COLUMN auctions.start_price IS '起拍价(元)';
+COMMENT ON COLUMN auctions.reserve_price IS '保留价/底价(元)';
+COMMENT ON COLUMN auctions.current_price IS '当前最高出价(元)';
+COMMENT ON COLUMN auctions.bid_increment IS '每次加价幅度(元)';
+COMMENT ON COLUMN auctions.start_time IS '拍卖开始时间';
+COMMENT ON COLUMN auctions.end_time IS '拍卖计划结束时间';
+COMMENT ON COLUMN auctions.actual_end_time IS '拍卖实际结束时间';
+COMMENT ON COLUMN auctions.status IS '状态: PENDING-待开始, BIDDING-竞拍中, ENDED-已结束, SETTLED-已结算, CANCELLED-已取消, FAILED-流拍';
+COMMENT ON COLUMN auctions.winner_id IS '中标者用户ID';
+COMMENT ON COLUMN auctions.winning_price IS '中标价格(元)';
+COMMENT ON COLUMN auctions.total_bids IS '累计出价次数';
+COMMENT ON COLUMN auctions.view_count IS '浏览次数';
+COMMENT ON COLUMN auctions.created_at IS '创建时间';
+COMMENT ON COLUMN auctions.updated_at IS '更新时间';
+COMMENT ON COLUMN auctions.version IS '乐观锁版本号';
+
+COMMENT ON TABLE auction_bids IS '拍卖出价记录表';
+COMMENT ON COLUMN auction_bids.id IS '主键ID';
+COMMENT ON COLUMN auction_bids.auction_id IS '关联拍卖ID';
+COMMENT ON COLUMN auction_bids.bidder_id IS '出价者用户ID';
+COMMENT ON COLUMN auction_bids.bid_price IS '出价金额(元)';
+COMMENT ON COLUMN auction_bids.bid_time IS '出价时间';
+COMMENT ON COLUMN auction_bids.is_winning IS '是否为当前最高出价';
+COMMENT ON COLUMN auction_bids.created_at IS '创建时间';
+
+COMMENT ON TABLE auction_watches IS '拍卖关注表';
+COMMENT ON COLUMN auction_watches.id IS '主键ID';
+COMMENT ON COLUMN auction_watches.auction_id IS '关联拍卖ID';
+COMMENT ON COLUMN auction_watches.user_id IS '关注用户ID';
+COMMENT ON COLUMN auction_watches.created_at IS '关注时间';
+COMMENT ON TABLE auction_watches IS '拍卖关注表';
+
+-- 33. 求购意向表
+CREATE TABLE IF NOT EXISTS purchase_demands (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         BIGINT NOT NULL REFERENCES users(id),
+    brand_name      VARCHAR(50),
+    series_name     VARCHAR(50),
+    model_name      VARCHAR(100),
+    year_from       INTEGER,
+    year_to         INTEGER,
+    price_min       DECIMAL(12,2),
+    price_max       DECIMAL(12,2),
+    mileage_max     INTEGER,
+    color           VARCHAR(20),
+    city_code       VARCHAR(20),
+    city_name       VARCHAR(50),
+    energy_type     VARCHAR(20),
+    description     TEXT,
+    status          VARCHAR(20) DEFAULT 'ACTIVE',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_purchase_demands_user_id ON purchase_demands(user_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_demands_status ON purchase_demands(status);
+CREATE INDEX IF NOT EXISTS idx_purchase_demands_created_at ON purchase_demands(created_at DESC);
+COMMENT ON TABLE purchase_demands IS '求购意向表';
+COMMENT ON COLUMN purchase_demands.user_id IS '求购用户ID';
+COMMENT ON COLUMN purchase_demands.brand_name IS '意向品牌';
+COMMENT ON COLUMN purchase_demands.price_min IS '最低预算';
+COMMENT ON COLUMN purchase_demands.price_max IS '最高预算';
+COMMENT ON COLUMN purchase_demands.status IS '状态: ACTIVE-有效, CANCELLED-已取消, FULFILLED-已成交';
+
 -- 确保已存在的数据库也能获取新列
 ALTER TABLE car_sources ADD COLUMN IF NOT EXISTS export_countries VARCHAR(100);
 
@@ -631,130 +783,4 @@ SELECT setval('models_id_seq', (SELECT COALESCE(MAX(id), 0) FROM models));
 SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 0) FROM users));
 SELECT setval('car_sources_id_seq', (SELECT COALESCE(MAX(id), 0) FROM car_sources));
 SELECT setval('car_images_id_seq', (SELECT COALESCE(MAX(id), 0) FROM car_images));
-
--- Test append
-
--- 拍卖表
-CREATE TABLE IF NOT EXISTS auctions (
-    id              BIGINT PRIMARY KEY,
-    car_id          BIGINT NOT NULL,
-    seller_id       BIGINT NOT NULL,
-    start_price     DECIMAL(12,2) NOT NULL,
-    reserve_price   DECIMAL(12,2),
-    current_price   DECIMAL(12,2) NOT NULL,
-    bid_increment   DECIMAL(10,2) NOT NULL DEFAULT 1000,
-    start_time      TIMESTAMP NOT NULL,
-    end_time        TIMESTAMP NOT NULL,
-    actual_end_time TIMESTAMP,
-    status          VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    winner_id       BIGINT,
-    winning_price   DECIMAL(12,2),
-    total_bids      INT NOT NULL DEFAULT 0,
-    view_count      BIGINT NOT NULL DEFAULT 0,
-    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version         INT NOT NULL DEFAULT 0
-);
-
-CREATE INDEX IF NOT EXISTS idx_auctions_car_id ON auctions(car_id);
-CREATE INDEX IF NOT EXISTS idx_auctions_seller_id ON auctions(seller_id);
-CREATE INDEX IF NOT EXISTS idx_auctions_status ON auctions(status);
-CREATE INDEX IF NOT EXISTS idx_auctions_start_time ON auctions(start_time);
-CREATE INDEX IF NOT EXISTS idx_auctions_end_time ON auctions(end_time);
-COMMENT ON TABLE auctions IS '拍卖表';
-COMMENT ON COLUMN auctions.status IS '状态: PENDING-待开始, BIDDING-竞拍中, ENDED-已结束, SETTLED-已结算, CANCELLED-已取消, FAILED-流拍';
-
--- 拍卖出价记录表
-CREATE TABLE IF NOT EXISTS auction_bids (
-    id          BIGINT PRIMARY KEY,
-    auction_id  BIGINT NOT NULL,
-    bidder_id   BIGINT NOT NULL,
-    bid_price   DECIMAL(12,2) NOT NULL,
-    bid_time    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    is_winning  BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_auction_bids_auction_id ON auction_bids(auction_id);
-CREATE INDEX IF NOT EXISTS idx_auction_bids_bidder_id ON auction_bids(bidder_id);
-CREATE INDEX IF NOT EXISTS idx_auction_bids_bid_time ON auction_bids(bid_time);
-COMMENT ON TABLE auction_bids IS '拍卖出价记录表';
-
--- 拍卖关注/观看表
-CREATE TABLE IF NOT EXISTS auction_watches (
-    id         BIGINT PRIMARY KEY,
-    auction_id BIGINT NOT NULL,
-    user_id    BIGINT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(auction_id, user_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_auction_watches_user_id ON auction_watches(user_id);
-
-COMMENT ON TABLE auctions IS '拍卖表';
-COMMENT ON COLUMN auctions.id IS '主键ID';
-COMMENT ON COLUMN auctions.car_id IS '关联车源ID';
-COMMENT ON COLUMN auctions.seller_id IS '卖家用户ID';
-COMMENT ON COLUMN auctions.start_price IS '起拍价(元)';
-COMMENT ON COLUMN auctions.reserve_price IS '保留价/底价(元)';
-COMMENT ON COLUMN auctions.current_price IS '当前最高出价(元)';
-COMMENT ON COLUMN auctions.bid_increment IS '每次加价幅度(元)';
-COMMENT ON COLUMN auctions.start_time IS '拍卖开始时间';
-COMMENT ON COLUMN auctions.end_time IS '拍卖计划结束时间';
-COMMENT ON COLUMN auctions.actual_end_time IS '拍卖实际结束时间';
-COMMENT ON COLUMN auctions.status IS '状态: PENDING-待开始, BIDDING-竞拍中, ENDED-已结束, SETTLED-已结算, CANCELLED-已取消, FAILED-流拍';
-COMMENT ON COLUMN auctions.winner_id IS '中标者用户ID';
-COMMENT ON COLUMN auctions.winning_price IS '中标价格(元)';
-COMMENT ON COLUMN auctions.total_bids IS '累计出价次数';
-COMMENT ON COLUMN auctions.view_count IS '浏览次数';
-COMMENT ON COLUMN auctions.created_at IS '创建时间';
-COMMENT ON COLUMN auctions.updated_at IS '更新时间';
-COMMENT ON COLUMN auctions.version IS '乐观锁版本号';
-
-COMMENT ON TABLE auction_bids IS '拍卖出价记录表';
-COMMENT ON COLUMN auction_bids.id IS '主键ID';
-COMMENT ON COLUMN auction_bids.auction_id IS '关联拍卖ID';
-COMMENT ON COLUMN auction_bids.bidder_id IS '出价者用户ID';
-COMMENT ON COLUMN auction_bids.bid_price IS '出价金额(元)';
-COMMENT ON COLUMN auction_bids.bid_time IS '出价时间';
-COMMENT ON COLUMN auction_bids.is_winning IS '是否为当前最高出价';
-COMMENT ON COLUMN auction_bids.created_at IS '创建时间';
-
-COMMENT ON TABLE auction_watches IS '拍卖关注表';
-COMMENT ON COLUMN auction_watches.id IS '主键ID';
-COMMENT ON COLUMN auction_watches.auction_id IS '关联拍卖ID';
-COMMENT ON COLUMN auction_watches.user_id IS '关注用户ID';
-COMMENT ON COLUMN auction_watches.created_at IS '关注时间';
-COMMENT ON TABLE auction_watches IS '拍卖关注表';
-
--- 32. 求购意向表
-CREATE TABLE IF NOT EXISTS purchase_demands (
-    id              BIGSERIAL PRIMARY KEY,
-    user_id         BIGINT NOT NULL REFERENCES users(id),
-    brand_name      VARCHAR(50),
-    series_name     VARCHAR(50),
-    model_name      VARCHAR(100),
-    year_from       INTEGER,
-    year_to         INTEGER,
-    price_min       DECIMAL(12,2),
-    price_max       DECIMAL(12,2),
-    mileage_max     INTEGER,
-    color           VARCHAR(20),
-    city_code       VARCHAR(20),
-    city_name       VARCHAR(50),
-    energy_type     VARCHAR(20),
-    description     TEXT,
-    status          VARCHAR(20) DEFAULT 'ACTIVE',
-    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_purchase_demands_user_id ON purchase_demands(user_id);
-CREATE INDEX IF NOT EXISTS idx_purchase_demands_status ON purchase_demands(status);
-CREATE INDEX IF NOT EXISTS idx_purchase_demands_created_at ON purchase_demands(created_at DESC);
-COMMENT ON TABLE purchase_demands IS '求购意向表';
-COMMENT ON COLUMN purchase_demands.user_id IS '求购用户ID';
-COMMENT ON COLUMN purchase_demands.brand_name IS '意向品牌';
-COMMENT ON COLUMN purchase_demands.price_min IS '最低预算';
-COMMENT ON COLUMN purchase_demands.price_max IS '最高预算';
-COMMENT ON COLUMN purchase_demands.status IS '状态: ACTIVE-有效, CANCELLED-已取消, FULFILLED-已成交';
+SELECT setval('cities_id_seq', (SELECT COALESCE(MAX(id), 0) FROM cities));

@@ -1158,3 +1158,4 @@ SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 0) FROM users));
 SELECT setval('car_sources_id_seq', (SELECT COALESCE(MAX(id), 0) FROM car_sources));
 SELECT setval('car_images_id_seq', (SELECT COALESCE(MAX(id), 0) FROM car_images));
 SELECT setval('member_plans_id_seq', (SELECT COALESCE(MAX(id), 0) FROM member_plans));
+SELECT setval('cities_id_seq', (SELECT COALESCE(MAX(id), 0) FROM cities));
