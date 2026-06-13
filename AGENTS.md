@@ -64,6 +64,17 @@ Controller → Service → Manager → Mapper
 - **Transaction**: `@Transactional(rollbackFor = Exception.class)` on service methods that need it
 - **Message push**: Always go through `PushManager`, never use `SimpMessagingTemplate` directly
 - **MQ messages**: System/chat messages should go through RocketMQ → Consumer, not direct WebSocket push
+- **Owner checks**: Use `OwnerAssert.assertOwner()` / `assertBuyerOrSeller()` for IDOR protection
+
+### Auth system
+
+Four levels via `@RequiresAuth` annotation: `PUBLIC`, `PROTECTED`, `CERTIFIED`, `ADMIN`.
+
+- Method-level annotation overrides class-level
+- `WebMvcConfig` excludes specific paths from the auth interceptor
+- `AuthenticationInterceptor` reads `@RequiresAuth` + checks token + Redis blacklist
+- `TokenBlacklistService` manages JWT blacklisting in Redis (fail-open if Redis is down)
+- `SecurityUtils.getCurrentUserId()` reads the current user from request attributes
 
 ### Profile & Config
 
@@ -76,14 +87,22 @@ Controller → Service → Manager → Mapper
 
 - `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` — PostgreSQL connection
 - `REDIS_HOST`, `REDIS_PASSWORD` — Redis connection
-- `JWT_SECRET` — JWT signing key (fail-fast if missing)
+- `JWT_SECRET` — JWT signing key (fail-fast if missing, must be ≥ 32 bytes)
 - `AI_API_KEY` — Volcengine Ark API key
+
+### Local dev gotchas
+
+- `app.demo-mode=true` in local profile — allows auto-register on login + resets mismatched passwords
+- `security.login-lock.enabled=false` in local profile — disables account lockout for debugging
+- RocketMQ beans (`MessageConsumer`, `MessageProducer`) use `@ConditionalOnBean(RocketMQTemplate.class)` — won't load if RocketMQ is not configured
+- `schema.sql` is NOT a migration script — it contains data updates (UPDATE statements) and test data inserts with `WHERE NOT EXISTS`. `init.sql` is the actual DDL (1083 lines)
+- `GlobalExceptionHandler` returns HTTP 200 for `BusinessException` (via `@ResponseStatus(HttpStatus.OK)`) — clients must check `ApiResponse.code`, not HTTP status
 
 ## Frontend Architecture
 
 ### Page structure (`pages.json`)
 
-24+ pages registered. 5-tab custom tab bar: 找车 / 求购 / AI助理 / 消息 / 我的
+34 pages registered. 5-tab custom tab bar: 找车 / 求购 / AI助理 / 消息 / 我的
 
 ### API layer (`src/api/`)
 
@@ -109,13 +128,21 @@ Controller → Service → Manager → Mapper
 
 Vuex 4 in `src/store/` — only for global state (user info, token). Server data stays in page components.
 
+### Frontend gotchas
+
+- Vite dev server proxies `/api` to `http://localhost:8080` (see `vite.config.js`)
+- Token storage uses both `uni.setStorageSync` and `localStorage` for H5/mini-program compatibility
+- `STORAGE_KEYS` constants in `src/constants/storage.js` — never hardcode storage keys elsewhere
+- `permissions.js` public endpoint list must stay in sync with `WebMvcConfig` exclude list on backend
+- Auth level check in `request.js` intercepts 401 → attempts refresh token → retry → logout on failure
+
 ## Infrastructure
 
-- **PostgreSQL 16** — 34 tables, schema in `car-trade-backend/src/main/resources/schema.sql`
-- **Redis 7** — car source caching, token storage, hot data
+- **PostgreSQL 16** — 33 entity tables, DDL in `car-trade-backend/src/main/resources/init.sql`
+- **Redis 7** — car source caching, token/blacklist storage, hot data
 - **RocketMQ 5.x** — async message processing (order events, auction settlement, notifications)
-- **WebSocket (STOMP)** — real-time chat, order status push
-- **JWT** — token auth via `JwtUtil` + `AuthenticationInterceptor`
+- **WebSocket (STOMP)** — real-time chat, order status push (`/ws` endpoint with SockJS fallback)
+- **JWT** — token auth via `JwtUtil` + `AuthenticationInterceptor`; refresh token rotation via `TokenBlacklistService`
 
 ## Testing
 
@@ -132,3 +159,61 @@ Detailed design docs in `docs/`:
 
 - Branches: `feat-*`, `fix-*`, `refactor-*` → merge to `develop`; `release/v*` → merge to `main`
 - Commit format: `<type>(<scope>): <description>` (feat/fix/refactor/docs/style/chore)
+
+---
+
+## Gotchas and Non-obvious Patterns
+
+These are hard-earned facts that agents would likely get wrong without explicit guidance.
+
+### Error handling returns HTTP 200
+
+`GlobalExceptionHandler` returns HTTP 200 for **all** `BusinessException` cases. Clients must check `ApiResponse.code` (non-zero = error), not the HTTP status code. This is by design, not a bug.
+
+### Schema is both init and migration
+
+`schema.sql` uses `CREATE TABLE IF NOT EXISTS` + `ALTER TABLE ADD COLUMN IF NOT EXISTS`. It runs once at startup via `StartupRunner` (when `car-trade.init-db=true`). There is no separate migration tool — this file IS the migration.
+
+### Field changes require 6-layer updates
+
+When adding/modifying a DB column, update in this exact order:
+1. `init.sql` — DDL (CREATE TABLE / ALTER TABLE)
+2. `schema.sql` — migration script (same DDL, idempotent)
+3. Entity class — add field with `@TableField`
+4. VOs — response objects
+5. DTOs — request objects
+6. Converters — mapping logic
+
+Missing any layer causes silent runtime failures. Always verify with `mvn compile -q`.
+
+### Auth config maintained in two places
+
+- `WebMvcConfig` — excludes specific paths from the auth interceptor (backend)
+- `permissions.js` — maintains a parallel `PUBLIC_ENDPOINTS` list (frontend)
+
+If you add a public endpoint, update BOTH files. They must stay in sync.
+
+### Login logic has 3 paths
+
+`UserServiceImpl.login()`:
+1. BCrypt password verification (normal path)
+2. Passwordless login for accounts without password field
+3. Silent registration when `app.demo-mode=true`
+
+**Account lockout**: 5 failed attempts → 5-minute lock (returns HTTP 200 with `code: 423`). Mitigation: use correct test credentials (`13800138001` / `123456`) or wait 5 minutes.
+
+### Design docs are stale
+
+`04-数据库设计.md` references 28 tables. `init.sql` is the source of truth with 33 tables. Many fields added via ALTER TABLE are missing from the docs. Always check `init.sql`, not the docs, for actual schema.
+
+### notification_settings is raw JSON
+
+The `notification_settings JSONB` column is stored and passed as a raw JSON String (not deserialized to a Map). The `GET/PUT /api/v1/messages/notification-settings` endpoint returns/accepts the raw JSON string. Don't try to deserialize it to a typed object.
+
+### Cities data has quality issues
+
+`data-cities.sql` has duplicate entries — hot cities (武汉/广州/深圳/成都/重庆) appear twice. City code "ZHUHai" has inconsistent casing. "XI'AN" vs "XIAN" same city different codes. Don't assume uniqueness when querying city data.
+
+### SMS endpoint requires auth
+
+`/api/v1/users/sms/send` is NOT in the public exclude list. It returns 401 without auth. If this should be callable pre-login for verification codes, it needs to be added to the WebMvcConfig exclude list.

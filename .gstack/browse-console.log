@@ -1,0 +1,251 @@
+[2026-06-12T16:55:57.203Z] [debug] [vite] connecting...
+[2026-06-12T16:55:57.335Z] [debug] [vite] connected.
+[2026-06-12T16:55:57.649Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T16:55:57.659Z] [log] [Store init] token from storage: not found
+[2026-06-12T16:55:57.761Z] [log] [App] onLaunch - checking login status
+[2026-06-12T16:55:57.761Z] [log] [App] token from storage: not found
+[2026-06-12T16:55:57.761Z] [log] [App] onShow - app resumed
+[2026-06-12T16:55:58.062Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T16:55:58.095Z] [warning] [Vue warn]: Failed to resolve component: up-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+ at <UPopup>
+at <View>
+at <Index>
+at <AsyncComponentWrapper>
+at <PageBody>
+at <Page>
+at <Anonymous>
+at <KeepAlive>
+at <RouterView>
+at <Layout>
+at <App>
+[2026-06-12T16:59:08.814Z] [log] [App] onHide - app paused
+[2026-06-12T16:59:08.880Z] [debug] [vite] connecting...
+[2026-06-12T16:59:08.998Z] [debug] [vite] connected.
+[2026-06-12T16:59:09.035Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T16:59:09.035Z] [log] [Store init] token from storage: not found
+[2026-06-12T16:59:09.051Z] [log] [App] onLaunch - checking login status
+[2026-06-12T16:59:09.051Z] [log] [App] token from storage: not found
+[2026-06-12T16:59:09.051Z] [log] [App] onShow - app resumed
+[2026-06-12T16:59:09.664Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T16:59:09.664Z] [warning] [Vue warn]: Failed to resolve component: up-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+ at <UPopup>
+at <View>
+at <Index>
+at <AsyncComponentWrapper>
+at <PageBody>
+at <Page>
+at <Anonymous>
+at <KeepAlive>
+at <RouterView>
+at <Layout>
+at <App>
+[2026-06-12T16:59:35.721Z] [log] [App] onHide - app paused
+[2026-06-12T16:59:35.778Z] [debug] [vite] connecting...
+[2026-06-12T16:59:35.866Z] [debug] [vite] connected.
+[2026-06-12T16:59:35.876Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T16:59:35.887Z] [log] [Store init] token from storage: not found
+[2026-06-12T16:59:35.902Z] [log] [App] onLaunch - checking login status
+[2026-06-12T16:59:35.902Z] [log] [App] token from storage: not found
+[2026-06-12T16:59:35.903Z] [log] [App] onShow - app resumed
+[2026-06-12T16:59:36.293Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T16:59:36.294Z] [warning] [Vue warn]: Failed to resolve component: up-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+ at <UPopup>
+at <View>
+at <Index>
+at <AsyncComponentWrapper>
+at <PageBody>
+at <Page>
+at <Anonymous>
+at <KeepAlive>
+at <RouterView>
+at <Layout>
+at <App>
+[2026-06-12T17:01:04.931Z] [log] [App] onHide - app paused
+[2026-06-12T17:01:04.977Z] [debug] [vite] connecting...
+[2026-06-12T17:01:05.012Z] [debug] [vite] connected.
+[2026-06-12T17:01:05.056Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T17:01:05.056Z] [log] [Store init] token from storage: not found
+[2026-06-12T17:01:05.091Z] [log] [App] onLaunch - checking login status
+[2026-06-12T17:01:05.091Z] [log] [App] token from storage: not found
+[2026-06-12T17:01:05.091Z] [log] [App] onShow - app resumed
+[2026-06-12T17:01:05.720Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T17:01:05.720Z] [warning] [Vue warn]: Failed to resolve component: up-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+ at <UPopup>
+at <View>
+at <Index>
+at <AsyncComponentWrapper>
+at <PageBody>
+at <Page>
+at <Anonymous>
+at <KeepAlive>
+at <RouterView>
+at <Layout>
+at <App>
+[2026-06-12T17:01:53.402Z] [log] [App] onHide - app paused
+[2026-06-12T17:01:53.446Z] [debug] [vite] connecting...
+[2026-06-12T17:01:53.505Z] [debug] [vite] connected.
+[2026-06-12T17:01:53.705Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T17:01:53.705Z] [log] [Store init] token from storage: not found
+[2026-06-12T17:01:53.725Z] [log] [App] onLaunch - checking login status
+[2026-06-12T17:01:53.725Z] [log] [App] token from storage: not found
+[2026-06-12T17:01:53.725Z] [log] [App] onShow - app resumed
+[2026-06-12T17:01:53.957Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T17:01:53.958Z] [warning] [Vue warn]: Failed to resolve component: up-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+ at <UPopup>
+at <View>
+at <Index>
+at <AsyncComponentWrapper>
+at <PageBody>
+at <Page>
+at <Anonymous>
+at <KeepAlive>
+at <RouterView>
+at <Layout>
+at <App>
+[2026-06-12T17:25:45.539Z] [log] [App] onHide - app paused
+[2026-06-12T17:25:45.575Z] [debug] [vite] connecting...
+[2026-06-12T17:25:45.691Z] [debug] [vite] connected.
+[2026-06-12T17:25:45.776Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T17:25:45.780Z] [log] [Store init] token from storage: not found
+[2026-06-12T17:25:45.850Z] [log] [App] onLaunch - checking login status
+[2026-06-12T17:25:45.850Z] [log] [App] token from storage: not found
+[2026-06-12T17:25:45.850Z] [log] [App] onShow - app resumed
+[2026-06-12T17:25:46.459Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T17:25:46.474Z] [warning] [Vue warn]: Failed to resolve component: up-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+ at <UPopup>
+at <View>
+at <Index>
+at <AsyncComponentWrapper>
+at <PageBody>
+at <Page>
+at <Anonymous>
+at <KeepAlive>
+at <RouterView>
+at <Layout>
+at <App>
+[2026-06-12T17:25:55.629Z] [log] [App] onHide - app paused
+[2026-06-12T17:25:55.667Z] [debug] [vite] connecting...
+[2026-06-12T17:25:55.748Z] [debug] [vite] connected.
+[2026-06-12T17:25:55.845Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T17:25:55.845Z] [log] [Store init] token from storage: not found
+[2026-06-12T17:25:55.858Z] [log] [App] onLaunch - checking login status
+[2026-06-12T17:25:55.859Z] [log] [App] token from storage: not found
+[2026-06-12T17:25:55.859Z] [log] [App] onShow - app resumed
+[2026-06-12T17:25:56.323Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T17:25:56.324Z] [warning] [Vue warn]: Failed to resolve component: up-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+ at <UPopup>
+at <View>
+at <Index>
+at <AsyncComponentWrapper>
+at <PageBody>
+at <Page>
+at <Anonymous>
+at <KeepAlive>
+at <RouterView>
+at <Layout>
+at <App>
+[2026-06-12T17:26:00.154Z] [log] [App] onHide - app paused
+[2026-06-12T17:26:00.181Z] [debug] [vite] connecting...
+[2026-06-12T17:26:00.259Z] [debug] [vite] connected.
+[2026-06-12T17:26:00.297Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T17:26:00.297Z] [log] [Store init] token from storage: not found
+[2026-06-12T17:26:00.317Z] [log] [App] onLaunch - checking login status
+[2026-06-12T17:26:00.317Z] [log] [App] token from storage: not found
+[2026-06-12T17:26:00.317Z] [log] [App] onShow - app resumed
+[2026-06-12T17:26:00.709Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T17:26:00.716Z] [warning] [Vue warn]: Failed to resolve component: up-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+ at <UPopup>
+at <View>
+at <Index>
+at <AsyncComponentWrapper>
+at <PageBody>
+at <Page>
+at <Anonymous>
+at <KeepAlive>
+at <RouterView>
+at <Layout>
+at <App>
+[2026-06-12T17:26:25.653Z] [log] [App] onHide - app paused
+[2026-06-12T17:26:25.707Z] [debug] [vite] connecting...
+[2026-06-12T17:26:25.817Z] [debug] [vite] connected.
+[2026-06-12T17:26:25.830Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T17:26:25.830Z] [log] [Store init] token from storage: not found
+[2026-06-12T17:26:25.855Z] [log] [App] onLaunch - checking login status
+[2026-06-12T17:26:25.855Z] [log] [App] token from storage: not found
+[2026-06-12T17:26:25.855Z] [log] [App] onShow - app resumed
+[2026-06-12T17:26:26.212Z] [log] 
+ %c uview-plus V3 %c https://uview-plus.jiangruyi.com/ 
+
+ color: #ffffff; background: #3c9cff; padding:5px 0; color: #3c9cff;background: #ffffff; padding:5px 0;
+[2026-06-12T17:26:26.225Z] [warning] [Vue warn]: Failed to resolve component: up-icon
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement. 
+ at <UPopup>
+at <View>
+at <Index>
+at <AsyncComponentWrapper>
+at <PageBody>
+at <Page>
+at <Anonymous>
+at <KeepAlive>
+at <RouterView>
+at <Layout>
+at <App>
