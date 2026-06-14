@@ -46,7 +46,10 @@ export default {
 				this.carList = reset || this.page === 1 ? list : this.carList.concat(list)
 				this.hasMore = list.length >= this.pageSize
 				this.loadStatus = this.hasMore ? 'loadmore' : 'nomore'
-			} catch (e) { console.error(e) } finally { this.loading = false }
+			} catch (e) {
+				console.error(e)
+				uni.$u.toast('加载收藏列表失败')
+			} finally { this.loading = false }
 		},
 		loadMore() { if (this.hasMore) { this.page++; this.fetchList(false) } },
 		goDetail(id) { uni.navigateTo({ url: '/pages/car-detail/index?id=' + id }) }

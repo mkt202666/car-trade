@@ -356,57 +356,21 @@
 </template>
 
 <script>
-import { createCar } from '@/api/car'
+import { createCar, uploadCarImage, uploadCarImages, uploadCarDocument, recognizeVin, recognizeDrivingLicense } from '@/api/car'
+import { getBrands, getSeries, getModels } from '@/api/brand'
 import { requireAuth } from '@/utils/auth'
 import { isValidPrice, isValidMileage } from '@/utils/validate'
 
-// 品牌数据
-const brandData = [
-  { id: 1, name: '宝马', firstLetter: 'B' },
-  { id: 2, name: '奔驰', firstLetter: 'B' },
-  { id: 3, name: '奥迪', firstLetter: 'A' },
-  { id: 4, name: '保时捷', firstLetter: 'B' },
-  { id: 5, name: '丰田', firstLetter: 'T' },
-  { id: 6, name: '本田', firstLetter: 'B' },
-  { id: 7, name: '大众', firstLetter: 'D' },
-  { id: 8, name: '特斯拉', firstLetter: 'T' },
-  { id: 9, name: '比亚迪', firstLetter: 'B' },
-  { id: 10, name: '蔚来', firstLetter: 'W' },
-  { id: 11, name: '小鹏', firstLetter: 'X' },
-  { id: 12, name: '理想', firstLetter: 'L' },
-  { id: 13, name: '小米', firstLetter: 'X' }
+// 城市数据(保持硬编码,因为城市变化频率低)
+const cityData = [
+  { id: 1, name: '北京' },
+  { id: 2, name: '上海' },
+  { id: 3, name: '广州' },
+  { id: 4, name: '深圳' },
+  { id: 5, name: '成都' }
 ]
 
-// 车系数据
-const seriesData = [
-  // 宝马
-  { id: 1, brandId: 1, name: '3系' },
-  { id: 2, brandId: 1, name: '5系' },
-  { id: 3, brandId: 1, name: '7系' },
-  { id: 4, brandId: 1, name: 'X3' },
-  { id: 5, brandId: 1, name: 'X5' },
-  { id: 6, brandId: 1, name: 'X7' },
-  { id: 7, brandId: 1, name: 'M4' },
-  // 奔驰
-  { id: 8, brandId: 2, name: 'C级' },
-  { id: 9, brandId: 2, name: 'E级' },
-  { id: 10, brandId: 2, name: 'S级' },
-  { id: 11, brandId: 2, name: 'GLC' },
-  { id: 12, brandId: 2, name: 'GLE' },
-  { id: 13, brandId: 2, name: 'EQE' },
-  // 奥迪
-  { id: 14, brandId: 3, name: 'A4L' },
-  { id: 15, brandId: 3, name: 'A6L' },
-  { id: 16, brandId: 3, name: 'Q5L' },
-  { id: 17, brandId: 3, name: 'RS7' },
-  // 保时捷
-  { id: 18, brandId: 4, name: '911' },
-  { id: 19, brandId: 4, name: 'Cayenne' },
-  { id: 20, brandId: 4, name: 'Panamera' },
-  // 丰田
-  { id: 21, brandId: 5, name: '卡罗拉' },
-  { id: 22, brandId: 5, name: '凯美瑞' },
-  { id: 23, brandId: 5, name: 'RAV4' },
+export default {
   { id: 24, brandId: 5, name: '埃尔法' },
   // 本田
   { id: 25, brandId: 6, name: '思域' },
@@ -442,67 +406,6 @@ const seriesData = [
   { id: 49, brandId: 12, name: 'L9' },
   // 小米
   { id: 50, brandId: 13, name: 'SU7' }
-]
-
-// 车型数据
-const modelData = [
-  // 宝马3系
-  { id: 1, seriesId: 1, name: '2023款 320i M运动套装' },
-  { id: 2, seriesId: 1, name: '2023款 325i M运动套装' },
-  { id: 3, seriesId: 1, name: '2024款 330i M运动曜夜套装' },
-  // 宝马5系
-  { id: 4, seriesId: 2, name: '2023款 525Li M运动套装' },
-  { id: 5, seriesId: 2, name: '2024款 530Li 领先型 M运动套装' },
-  // 宝马X5
-  { id: 6, seriesId: 5, name: '2023款 xDrive30Li 尊享型 M运动套装' },
-  { id: 7, seriesId: 5, name: '2024款 xDrive40Li M运动套装' },
-  // 奔驰C级
-  { id: 8, seriesId: 8, name: '2023款 C 200 L 运动版' },
-  { id: 9, seriesId: 8, name: '2024款 C 260 L 运动版' },
-  // 奔驰E级
-  { id: 10, seriesId: 9, name: '2023款 E 260 L 运动型' },
-  { id: 11, seriesId: 9, name: '2024款 E 300 L 豪华型' },
-  // 奥迪A6L
-  { id: 12, seriesId: 15, name: '2023款 45 TFSI 臻选动感型' },
-  { id: 13, seriesId: 15, name: '2024款 45 TFSI 臻选致雅型' },
-  // 大众Polo
-  { id: 14, seriesId: 27, name: '2023款 1.5L 自动全景乐享版' },
-  { id: 15, seriesId: 27, name: '2024款 1.5L 自动潮酷乐享版' },
-  // 特斯拉
-  { id: 16, seriesId: 31, name: '2023款 后驱版' },
-  { id: 17, seriesId: 31, name: '2024款 高性能版' },
-  { id: 18, seriesId: 32, name: '2023款 长续航版' },
-  { id: 19, seriesId: 32, name: '2024款 Performance高性能版' },
-  // 小米SU7
-  { id: 20, seriesId: 50, name: '2024款 后驱长续航智驾版' },
-  { id: 21, seriesId: 50, name: '2024款 四驱超长续航高阶版' }
-]
-
-// 城市数据
-const cityData = [
-  { code: '110000', name: '北京' },
-  { code: '120000', name: '天津' },
-  { code: '310000', name: '上海' },
-  { code: '320000', name: '南京' },
-  { code: '320100', name: '南京' },
-  { code: '320500', name: '苏州' },
-  { code: '330100', name: '杭州' },
-  { code: '330200', name: '宁波' },
-  { code: '330400', name: '温州' },
-  { code: '440100', name: '广州' },
-  { code: '440300', name: '深圳' },
-  { code: '440600', name: '佛山' },
-  { code: '441900', name: '东莞' },
-  { code: '500000', name: '重庆' },
-  { code: '510100', name: '成都' },
-  { code: '610100', name: '西安' },
-  { code: '370100', name: '济南' },
-  { code: '370200', name: '青岛' },
-  { code: '370300', name: '淄博' },
-  { code: '210200', name: '大连' },
-  { code: '210100', name: '沈阳' },
-  { code: '350100', name: '福州' },
-  { code: '350200', name: '厦门' }
 ]
 
 // 能源类型
@@ -571,14 +474,37 @@ export default {
       // 颜色列表
       colorList: ['黑色', '白色', '银色', '灰色', '红色', '蓝色', '棕色', '香槟色', '黄色', '绿色', '橙色', '紫色', '粉色', '青色', '其他'],
 
-      // 静态数据
-      brandList: brandData,
-      seriesList: [],
-      modelList: [],
+      // 动态数据(从API加载)
+      brandList: [],  // 品牌列表
+      seriesList: [],  // 车系列表
+      modelList: [],  // 车型列表
       cityList: cityData,
       energyTypes: energyTypes
     }
   },
+
+  onLoad() {
+    // 页面加载时获取品牌列表
+    this.loadBrands()
+  },
+
+  methods: {
+    // 加载品牌列表
+    async loadBrands() {
+      try {
+        uni.showLoading({ title: '加载中...' })
+        const response = await getBrands()
+        if (response.data && response.code === 200) {
+          this.brandList = response.data
+          console.log('品牌列表加载成功:', this.brandList.length, '个品牌')
+        }
+      } catch (error) {
+        console.error('加载品牌列表失败:', error)
+        uni.$u.toast('加载品牌列表失败')
+      } finally {
+        uni.hideLoading()
+      }
+    },
   
   onLoad() {
     // 验证登录状态
@@ -589,7 +515,7 @@ export default {
   
   methods: {
     // 选择品牌
-    onBrandConfirm(e) {
+    async onBrandConfirm(e) {
       const index = e[0]
       const brand = this.brandList[index]
       this.form.brandId = brand.id
@@ -603,15 +529,29 @@ export default {
       this.selectedModelName = ''
       this.seriesPickerIndex = 0
       this.modelPickerIndex = 0
+      this.seriesList = []
+      this.modelList = []
       
-      // 获取该品牌的车系
-      this.seriesList = seriesData.filter(s => s.brandId === brand.id)
+      // 从API加载该品牌的车系
+      try {
+        uni.showLoading({ title: '加载车系中...' })
+        const response = await getSeries(brand.id)
+        if (response.data && response.code === 200) {
+          this.seriesList = response.data
+          console.log('车系列表加载成功:', this.seriesList.length, '个车系')
+        }
+      } catch (error) {
+        console.error('加载车系列表失败:', error)
+        uni.$u.toast('加载车系失败')
+      } finally {
+        uni.hideLoading()
+      }
       
       uni.$u.toast('已选择：' + brand.name)
     },
     
     // 选择车系
-    onSeriesConfirm(e) {
+    async onSeriesConfirm(e) {
       const index = e[0]
       const series = this.seriesList[index]
       this.form.seriesId = series.id
@@ -622,9 +562,27 @@ export default {
       this.form.modelId = null
       this.selectedModelName = ''
       this.modelPickerIndex = 0
+      this.modelList = []
       
-      // 获取该车系的车型
-      this.modelList = modelData.filter(m => m.seriesId === series.id)
+      // 从API加载该车系的车型
+      try {
+        uni.showLoading({ title: '加载车型中...' })
+        const response = await getModels(series.id)
+        if (response.data && response.code === 200) {
+          this.modelList = response.data
+          console.log('车型列表加载成功:', this.modelList.length, '个车型')
+        }
+      } catch (error) {
+        console.error('加载车型列表失败:', error)
+        uni.$u.toast('加载车型失败')
+      } finally {
+        uni.hideLoading()
+      }
+      
+      // 自动填充标题
+      if (!this.form.title) {
+        this.form.title = `${this.selectedBrandName} ${this.selectedSeriesName}`
+      }
       
       uni.$u.toast('已选择：' + series.name)
     },
@@ -662,15 +620,52 @@ export default {
       uni.$u.toast('已选择：' + city.name)
     },
     
-    chooseImage() {
+    async chooseImage() {
+      const remainCount = 9 - this.imageList.length
+      if (remainCount <= 0) {
+        uni.$u.toast('最多上传9张图片')
+        return
+      }
+      
+      uni.showLoading({ title: '选择图片中...' })
+      
       uni.chooseImage({
-        count: 9 - this.imageList.length,
+        count: remainCount,
         sizeType: ['compressed'],
         sourceType: ['album', 'camera'],
-        success: (res) => {
-          this.imageList = this.imageList.concat(res.tempFilePaths)
+        success: async (res) => {
+          uni.showLoading({ title: '上传中...' })
+          
+          try {
+            // 立即上传到服务器
+            const uploadedUrls = []
+            for (const tempFilePath of res.tempFilePaths) {
+              try {
+                const result = await uploadCarImage(tempFilePath)
+                // 假设后端返回格式: { code: 200, data: { url: 'https://...' } }
+                uploadedUrls.push(result.data.url)
+              } catch (uploadError) {
+                console.error('单张图片上传失败:', uploadError)
+                // 继续上传其他图片,不中断整个流程
+              }
+            }
+            
+            if (uploadedUrls.length > 0) {
+              // 将上传后的URL保存到imageList(而不是临时路径)
+              this.imageList = [...this.imageList, ...uploadedUrls]
+              uni.$u.toast(`成功上传${uploadedUrls.length}张图片`)
+            } else {
+              uni.$u.toast('图片上传失败,请重试')
+            }
+          } catch (error) {
+            console.error('批量上传失败:', error)
+            uni.$u.toast('上传失败,请检查网络连接')
+          } finally {
+            uni.hideLoading()
+          }
         },
         fail: (err) => {
+          uni.hideLoading()
           if (err.errMsg !== 'chooseImage:fail cancel') {
             uni.$u.toast('选择图片失败')
           }
@@ -707,64 +702,109 @@ export default {
     },
 
     // 扫描证件
-    scanDocument(type) {
+    async scanDocument(type) {
+      uni.showLoading({ title: '选择图片中...' })
+      
       uni.chooseImage({
         count: 1,
         sizeType: ['compressed'],
         sourceType: ['camera'],
-        success: (res) => {
-          // 调用OCR识别接口
-          uni.http.post('/ai/ocr', {
-            type: type,
-            imageUrl: res.tempFilePaths[0]
-          }).then(response => {
-            if (response.data && response.data.vin) {
-              this.form.vin = response.data.vin
+        success: async (res) => {
+          uni.showLoading({ title: '上传并识别中...' })
+          
+          try {
+            // 先上传图片
+            const uploadResult = await uploadCarDocument(res.tempFilePaths[0], type)
+            const imageUrl = uploadResult.data.url
+            
+            // 调用OCR识别接口(传入已上传的图片URL)
+            const ocrResponse = await uni.http.post('/ai/ocr', {
+              type: type,
+              imageUrl: imageUrl
+            })
+            
+            if (ocrResponse.data && ocrResponse.data.vin) {
+              this.form.vin = ocrResponse.data.vin
               uni.$u.toast('识别成功')
+              
+              // 如果是行驶证,自动填充其他字段
+              if (type === 'driving_license' && ocrResponse.data) {
+                if (ocrResponse.data.plateNo) this.form.plateNo = ocrResponse.data.plateNo
+                if (ocrResponse.data.registerDate) {
+                  const year = new Date(ocrResponse.data.registerDate).getFullYear()
+                  this.form.year = String(year)
+                }
+              }
             } else {
               uni.$u.toast('识别失败，请手动输入')
             }
-          }).catch(() => {
+          } catch (error) {
+            console.error('OCR识别失败:', error)
             uni.$u.toast('识别失败，请手动输入')
-          })
+          } finally {
+            uni.hideLoading()
+          }
+        },
+        fail: (err) => {
+          uni.hideLoading()
+          if (err.errMsg !== 'chooseImage:fail cancel') {
+            uni.$u.toast('选择图片失败')
+          }
         }
       })
     },
 
     // 上传检测报告
-    uploadReport() {
+    async uploadReport() {
+      uni.showLoading({ title: '选择文件中...' })
+      
       uni.chooseFile({
         count: 1,
         type: 'file',
         extension: ['.pdf'],
-        success: (res) => {
-          // 上传文件
-          uni.http.post('/upload/file', {
-            file: res.tempFilePaths[0]
-          }).then(response => {
-            if (response.data && response.data.url) {
-              this.form.inspectionReportUrl = response.data.url
+        success: async (res) => {
+          uni.showLoading({ title: '上传中...' })
+          
+          try {
+            // 上传文件
+            const uploadResult = await uploadCarDocument(res.tempFilePaths[0], 'inspection_report')
+            
+            if (uploadResult.data && uploadResult.data.url) {
+              this.form.inspectionReportUrl = uploadResult.data.url
               uni.$u.toast('上传成功')
             }
-          }).catch(() => {
+          } catch (error) {
+            console.error('检测报告上传失败:', error)
             uni.$u.toast('上传失败')
-          })
+          } finally {
+            uni.hideLoading()
+          }
+        },
+        fail: (err) => {
+          uni.hideLoading()
+          if (err.errMsg !== 'chooseFile:fail cancel') {
+            uni.$u.toast('选择文件失败')
+          }
         }
       })
     },
 
     // 上传证件材料
-    uploadMaterial(type) {
+    async uploadMaterial(type) {
+      uni.showLoading({ title: '选择图片中...' })
+      
       uni.chooseImage({
         count: 1,
         sizeType: ['compressed'],
         sourceType: ['album', 'camera'],
-        success: (res) => {
-          // 上传图片
-          uni.http.post('/upload/image', {
-            file: res.tempFilePaths[0]
-          }).then(response => {
-            if (response.data && response.data.url) {
+        success: async (res) => {
+          uni.showLoading({ title: '上传中...' })
+          
+          try {
+            // 上传图片
+            const uploadResult = await uploadCarDocument(res.tempFilePaths[0], `certificate_${type}`)
+            
+            if (uploadResult.data && uploadResult.data.url) {
               // 解析现有的证件材料
               let materials = {}
               try {
@@ -772,13 +812,22 @@ export default {
               } catch (e) {
                 materials = {}
               }
-              materials[type] = response.data.url
+              materials[type] = uploadResult.data.url
               this.form.certificateMaterials = JSON.stringify(materials)
               uni.$u.toast('上传成功')
             }
-          }).catch(() => {
+          } catch (error) {
+            console.error('证件上传失败:', error)
             uni.$u.toast('上传失败')
-          })
+          } finally {
+            uni.hideLoading()
+          }
+        },
+        fail: (err) => {
+          uni.hideLoading()
+          if (err.errMsg !== 'chooseImage:fail cancel') {
+            uni.$u.toast('选择图片失败')
+          }
         }
       })
     },

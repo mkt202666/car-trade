@@ -240,7 +240,10 @@ export default {
         uni.$u.toast('密码修改成功')
         this.showPasswordPopup = false
         this.passwordForm = { oldPassword: '', newPassword: '', confirmPassword: '' }
-      } catch (e) { console.error(e) }
+      } catch (e) {
+        console.error(e)
+        uni.$u.toast('密码修改失败,请重试')
+      }
     },
     async submitPhone() {
       const { newPhone } = this.phoneForm
@@ -250,7 +253,10 @@ export default {
         uni.$u.toast('手机号更换成功')
         this.showPhonePopup = false
         this.phoneForm = { newPhone: '' }
-      } catch (e) { console.error(e) }
+      } catch (e) {
+        console.error(e)
+        uni.$u.toast('手机号更换失败,请重试')
+      }
     },
     clearCache() {
       uni.showModal({

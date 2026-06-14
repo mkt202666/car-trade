@@ -1,0 +1,91 @@
+{
+  "skill": "extract",
+  "generated_at": "2026-06-14T12:35:00+08:00",
+  "source": {
+    "type": "external",
+    "url": "http://shengtaiprd.pancosky.com/5dadmin/",
+    "tool": "designlang@12.20.0",
+    "elements_analyzed": 348,
+    "extraction_date": "2026-06-14"
+  },
+  "meta": {
+    "slug": "admin-5d",
+    "target_framework": ["tailwind", "shadcn", "react-theme", "w3c-tokens"],
+    "fallback_applied": [],
+    "mode_resolved_by": "auto-detect-url"
+  },
+  "tokens": {
+    "color": {
+      "primary": {
+        "hex": "#e4e7eb",
+        "hsl": "hsl(214, 15%, 91%)",
+        "usage_count": 28,
+        "role": "Primary (light gray - likely used for borders/backgrounds in dark theme)"
+      },
+      "secondary": {
+        "hex": "#c12a00",
+        "hsl": "hsl(13, 100%, 38%)",
+        "usage_count": 19,
+        "role": "Secondary (red-orange - accent/action color)"
+      },
+      "accent": {
+        "hex": "#dae2ff",
+        "hsl": "hsl(227, 100%, 93%)",
+        "usage_count": 2,
+        "role": "Accent (light blue-purple)"
+      },
+      "neutral": {
+        "darkest": "#03060a",
+        "dark": "#252b39",
+        "medium": "#515b6d",
+        "light": "#f2f4f7",
+        "white": "#ffffff"
+      },
+      "semantic": {
+        "success": "#00a849",
+        "warning": "#de7000",
+        "error": "#d7000d",
+        "info": "#5d73ff"
+      }
+    },
+    "typography": {
+      "family": "Inter",
+      "weights": [400, 700, 900],
+      "scale": {
+        "h1": null,
+        "h2": "18px / 900 weight / 28px line-height",
+        "h3": "30px / 700 weight / 36px line-height | 14px / 700 weight / 20px line-height",
+        "body": "16px / 400 weight / 24px line-height",
+        "small": "12px / 900 weight / 16px line-height"
+      }
+    },
+    "spacing": {
+      "note": "运营端原型检测到丰富的间距系统,详见 tailwind.config.js"
+    },
+    "gradients": [
+      "linear-gradient(to right, oklch(0.208 0.042 265.755) 0%, oklch(0.257 0.09 281.288) 50%, oklch(0.208 0.042 265.755) 100%)",
+      "linear-gradient(to right bottom, oklch(0.359 0.144 278.697) 0%, oklch(0.257 0.09 281.288) 50%, oklch(0.208 0.042 265.755) 100%)"
+    ]
+  },
+  "artifacts": {
+    "design_md": "spark-output/extract/admin-5d/admin-5d-design-language.md",
+    "tokens_json": "spark-output/extract/admin-5d/admin-5d-design-tokens.json",
+    "tailwind_config": "spark-output/extract/admin-5d/admin-5d-tailwind.config.js",
+    "preview_html": "spark-output/extract/admin-5d/admin-5d-preview.html",
+    "total_files": 34
+  },
+  "handoff_hint": "# 运营端设计上下文\n本项目运营管理平台的设计语言已由 /extract 抽取,参考:\n- 完整 design.md: spark-output/extract/admin-5d/admin-5d-design-language.md\n- Token JSON: spark-output/extract/admin-5d/admin-5d-design-tokens.json\n- Tailwind 配置: spark-output/extract/admin-5d/admin-5d-tailwind.config.js\n- CSS Variables: spark-output/extract/admin-5d/admin-5d-variables.css\n\n✅ 运营端原型提取质量高(348个元素),色彩系统完整,可直接用于工程实现。",
+  "chain": {
+    "reads": {
+      "prd_admin": "spark-output/prd/admin-platform.md",
+      "upstream_docs": [
+        "docs/运营端功能清单.md",
+        "README.md"
+      ]
+    },
+    "writes": {
+      "extract_context": "spark-output/context/extract-admin.json",
+      "design_tokens_dir": "spark-output/extract/admin-5d/"
+    }
+  }
+}

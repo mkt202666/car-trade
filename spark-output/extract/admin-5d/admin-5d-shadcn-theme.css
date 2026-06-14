@@ -1,0 +1,19 @@
+/* shadcn/ui Theme — extracted from http://shengtaiprd.pancosky.com/5dadmin/ */
+/* Paste into your globals.css */
+
+@layer base {
+  :root {
+    --background: 206 30% 95%;
+    --foreground: 0 0% 0%;
+    --primary: 214 15% 91%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 13 100% 38%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 227 100% 93%;
+    --accent-foreground: 0 0% 0%;
+    --muted: 240 5% 67%;
+    --muted-foreground: 214 54% 3%;
+    --border: 216 24% 96%;
+    --radius: 8px;
+  }
+}

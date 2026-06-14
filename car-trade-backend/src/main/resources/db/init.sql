@@ -509,6 +509,8 @@ CREATE TABLE contracts (
     buyer_signed_at TIMESTAMP,
     seller_signed   BOOLEAN DEFAULT FALSE,
     seller_signed_at TIMESTAMP,
+    buyer_signature_url VARCHAR(500),
+    seller_signature_url VARCHAR(500),
     status          VARCHAR(20) DEFAULT 'DRAFT',
     file_url        VARCHAR(500),
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -530,6 +532,8 @@ COMMENT ON COLUMN contracts.buyer_signed IS '买家是否已签署';
 COMMENT ON COLUMN contracts.buyer_signed_at IS '买家签署时间';
 COMMENT ON COLUMN contracts.seller_signed IS '卖家是否已签署';
 COMMENT ON COLUMN contracts.seller_signed_at IS '卖家签署时间';
+COMMENT ON COLUMN contracts.buyer_signature_url IS '买家手写签名图片URL';
+COMMENT ON COLUMN contracts.seller_signature_url IS '卖家手写签名图片URL';
 COMMENT ON COLUMN contracts.status IS '状态: DRAFT-草稿, PENDING_SIGN-待签署, SIGNED-已签署, ARCHIVED-已归档';
 COMMENT ON COLUMN contracts.file_url IS '合同文件地址';
 COMMENT ON COLUMN contracts.created_at IS '创建时间';
@@ -1084,3 +1088,33 @@ CREATE INDEX IF NOT EXISTS idx_cities_city_code ON cities(city_code);
 CREATE INDEX IF NOT EXISTS idx_cities_hot ON cities(hot);
 COMMENT ON TABLE cities IS '城市表';
 COMMENT ON COLUMN cities.level IS '层级: PROVINCE-省份, CITY-城市, DISTRICT-区县';
+
+
+-- 34. 出口地区配置表
+CREATE TABLE IF NOT EXISTS export_regions (
+    id              SERIAL PRIMARY KEY,
+    name            VARCHAR(50) NOT NULL,
+    code            VARCHAR(10) NOT NULL UNIQUE,
+    flag            VARCHAR(10),
+    region_group    VARCHAR(50),
+    constraints     TEXT,
+    requirements    TEXT,
+    status          VARCHAR(20) DEFAULT 'ACTIVE',
+    sort_order      INTEGER DEFAULT 999,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at      TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_export_regions_code ON export_regions(code);
+CREATE INDEX IF NOT EXISTS idx_export_regions_status ON export_regions(status);
+CREATE INDEX IF NOT EXISTS idx_export_regions_sort_order ON export_regions(sort_order);
+COMMENT ON TABLE export_regions IS '出口地区配置表';
+COMMENT ON COLUMN export_regions.name IS '国家/地区名称';
+COMMENT ON COLUMN export_regions.code IS '国家代码(ISO 3166-1 alpha-2)';
+COMMENT ON COLUMN export_regions.flag IS '国旗emoji';
+COMMENT ON COLUMN export_regions.region_group IS '所属地区分组';
+COMMENT ON COLUMN export_regions.constraints IS '参数约束条件(JSON数组)';
+COMMENT ON COLUMN export_regions.requirements IS '出口要求描述';
+COMMENT ON COLUMN export_regions.status IS '状态: ACTIVE-启用, INACTIVE-禁用';
+COMMENT ON COLUMN export_regions.sort_order IS '排序号';
+

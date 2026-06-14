@@ -40,21 +40,30 @@ export default {
 			try {
 				const res = await getAvailableCoupons()
 				this.couponList = res.data || []
-			} catch (e) { console.error(e) } finally { this.loading = false }
+			} catch (e) {
+				console.error(e)
+				uni.$u.toast('加载优惠券失败')
+			} finally { this.loading = false }
 		},
 		async fetchMine() {
 			this.loading = true
 			try {
 				const res = await getMyCoupons()
 				this.couponList = res.data || []
-			} catch (e) { console.error(e) } finally { this.loading = false }
+			} catch (e) {
+				console.error(e)
+				uni.$u.toast('加载我的优惠券失败')
+			} finally { this.loading = false }
 		},
 		async claimCoupon(id) {
 			try {
 				await claimCoupon(id)
 				uni.$u.toast('领取成功')
 				this.couponList = this.couponList.filter(c => c.id !== id)
-			} catch (e) { console.error(e) }
+			} catch (e) {
+				console.error(e)
+				uni.$u.toast('领取失败,请重试')
+			}
 		}
 	}
 }

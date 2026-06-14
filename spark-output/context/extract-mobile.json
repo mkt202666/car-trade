@@ -1,0 +1,54 @@
+{
+  "skill": "extract",
+  "generated_at": "2026-06-14T12:30:00+08:00",
+  "source": {
+    "type": "external",
+    "url": "http://shengtaiprd.pancosky.com/5d/",
+    "tool": "designlang@12.20.0",
+    "elements_analyzed": 3,
+    "extraction_date": "2026-06-14"
+  },
+  "meta": {
+    "slug": "mobile-5d",
+    "target_framework": ["tailwind", "shadcn", "react-theme", "w3c-tokens"],
+    "fallback_applied": [],
+    "mode_resolved_by": "auto-detect-url"
+  },
+  "tokens": {
+    "color": {
+      "primary": null,
+      "note": "移动端原型为SPA空壳,仅检测到基础HTML结构,未渲染实际业务页面。建议直接访问浏览器查看完整UI后手动补充主色/辅色。"
+    },
+    "typography": {
+      "family": "Times New Roman (browser default)",
+      "scale": "16px base",
+      "note": "原型未加载真实字体,实际项目应使用系统字体或自定义Web Font"
+    },
+    "spacing": {
+      "anchor": "8px",
+      "values": ["8px"]
+    }
+  },
+  "artifacts": {
+    "design_md": "spark-output/extract/mobile-5d/mobile-5d-design-language.md",
+    "tokens_json": "spark-output/extract/mobile-5d/mobile-5d-design-tokens.json",
+    "tailwind_config": "spark-output/extract/mobile-5d/mobile-5d-tailwind.config.js",
+    "preview_html": "spark-output/extract/mobile-5d/mobile-5d-preview.html",
+    "total_files": 30
+  },
+  "handoff_hint": "# 移动端设计上下文\n本项目移动端App的设计语言已由 /extract 抽取,参考:\n- 完整 design.md: spark-output/extract/mobile-5d/mobile-5d-design-language.md\n- Token JSON: spark-output/extract/mobile-5d/mobile-5d-design-tokens.json\n- Tailwind 配置: spark-output/extract/mobile-5d/mobile-5d-tailwind.config.js\n\n⚠️ 注意: 由于原型是SPA应用且未完全渲染,提取的token较少。建议结合PRD中的视觉描述和实际浏览器访问结果手动补充设计规范。",
+  "chain": {
+    "reads": {
+      "prd_mobile": "spark-output/prd/mobile-app.md",
+      "upstream_docs": [
+        "docs/01-功能模块.md",
+        "docs/02-页面清单.md",
+        "README.md"
+      ]
+    },
+    "writes": {
+      "extract_context": "spark-output/context/extract-mobile.json",
+      "design_tokens_dir": "spark-output/extract/mobile-5d/"
+    }
+  }
+}

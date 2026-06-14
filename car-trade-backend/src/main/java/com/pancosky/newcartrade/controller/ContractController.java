@@ -4,11 +4,15 @@ import com.pancosky.newcartrade.common.AuthLevel;
 
 import com.pancosky.newcartrade.common.ApiResponse;
 import com.pancosky.newcartrade.service.ContractService;
+import com.pancosky.newcartrade.service.FileStorageService;
 import com.pancosky.newcartrade.vo.ContractDetailVO;
 import com.pancosky.newcartrade.vo.ContractVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -20,10 +24,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/contracts")
 @RequiredArgsConstructor
+@Slf4j
 @RequiresAuth(AuthLevel.PROTECTED)
 public class ContractController {
 
     private final ContractService contractService;
+    private final FileStorageService fileStorageService;
 
     /**
      * 创建合同
@@ -51,9 +57,10 @@ public class ContractController {
 
     /**
      * 签署合同
-     * HTTP: PUT /api/v1/contracts/{id}/sign?role=BUYER&userId=123
+     * HTTP: PUT /api/v1/contracts/{id}/sign?role=BUYER&userId=123&signatureUrl=https://...
      * 请求参数：id（path，合同ID）；role（query，BUYER/SELLER/PLATFORM）；
-     *         userId（可选，指定签署人ID，若不指定则使用当前登录用户）。
+     *         userId（可选，指定签署人ID，若不指定则使用当前登录用户）；
+     *         signatureUrl（可选，手写签名图片URL）。
      * 响应：ApiResponse&lt;Void&gt;
      * 认证要求：必须登录；必须是合同对应角色才能签署。
      */
@@ -61,8 +68,9 @@ public class ContractController {
     public ApiResponse<Void> sign(
             @PathVariable Long id,
             @RequestParam String role,
-            @RequestParam(required = false) Long userId) {
-        contractService.sign(id, role, userId);
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String signatureUrl) {
+        contractService.sign(id, role, userId, signatureUrl);
         return ApiResponse.success();
     }
 
@@ -76,5 +84,42 @@ public class ContractController {
     @GetMapping("/{id}/download")
     public ApiResponse<String> download(@PathVariable Long id) {
         return ApiResponse.success(contractService.download(id));
+    }
+
+    /**
+     * 上传合同签名图片
+     * HTTP: POST /api/v1/contracts/{id}/upload-signature
+     * 请求参数：id（path，合同ID）；file（multipart file，签名图片PNG/JPG）
+     * 响应：ApiResponse&lt;Map&gt; —— {signatureUrl: "https://..."}
+     * 认证要求：必须登录；必须是合同当事人
+     */
+    @PostMapping("/{id}/upload-signature")
+    public ApiResponse<Map<String, String>> uploadSignature(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            // 验证文件
+            if (file.isEmpty()) {
+                return ApiResponse.error(400, "签名图片不能为空");
+            }
+            if (!file.getContentType().startsWith("image/")) {
+                return ApiResponse.error(400, "只支持图片格式");
+            }
+            if (file.getSize() > 5 * 1024 * 1024) {
+                return ApiResponse.error(400, "签名图片不能超过5MB");
+            }
+
+            // 上传签名图片
+            String signatureUrl = fileStorageService.upload(file, "contract-signatures");
+            
+            Map<String, String> result = new HashMap<>();
+            result.put("signatureUrl", signatureUrl);
+            
+            log.info("合同签名上传成功: contractId={}, url={}", id, signatureUrl);
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            log.error("合同签名上传失败: contractId={}", id, e);
+            return ApiResponse.error(500, "签名上传失败: " + e.getMessage());
+        }
     }
 }

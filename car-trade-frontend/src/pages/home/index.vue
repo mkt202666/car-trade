@@ -313,6 +313,7 @@
 <script>
 import { getCarList } from '@/api/car'
 import { getHotCities } from '@/api/city'
+import { getBrands } from '@/api/brand'
 import CustomTabBar from '@/custom-tab-bar/index.vue'
 
 export default {
@@ -367,15 +368,8 @@ export default {
         { value: '纯电', label: '纯电' },
         { value: '混动', label: '混动' }
       ],
-      // 品牌数据（模拟数据）
-      brandList: [
-        { id: 1, name: '奔驰', series: ['C级', 'E级', 'S级', 'GLC', 'GLE'] },
-        { id: 2, name: '宝马', series: ['3系', '5系', 'X3', 'X5'] },
-        { id: 3, name: '奥迪', series: ['A4L', 'A6L', 'Q5', 'Q7'] },
-        { id: 4, name: '大众', series: ['帕萨特', '迈腾', '途观L', '探岳'] },
-        { id: 5, name: '丰田', series: ['凯美瑞', '亚洲龙', 'RAV4', '汉兰达'] },
-        { id: 6, name: '本田', series: ['雅阁', '思域', 'CR-V', '皓影'] }
-      ],
+      // 品牌列表（从后端动态获取）
+      brandList: [],
       // 顶部滚动广告位数据
       adList: [
         { title: '超级跑车专场', subtitle: '畅享极速体验，限时特惠', tag: 'HOT', bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
@@ -454,6 +448,7 @@ export default {
     const sysInfo = uni.getSystemInfoSync()
     this.statusBarHeight = sysInfo.statusBarHeight || 20
     this.fetchCityList()  // 加载城市列表
+    this.fetchBrandList() // 加载品牌列表
     this.fetchCarList()
   },
   onPullDownRefresh() {
@@ -506,6 +501,7 @@ export default {
         this.hasMore = this.carList.length < this.total
       } catch (e) {
         console.error('load cars fail', e)
+        uni.$u.toast('加载车源失败,请下拉刷新重试')
       } finally {
         this.loading = false
       }
@@ -570,6 +566,7 @@ export default {
         }
       } catch (e) {
         console.error('load cities fail', e)
+        uni.$u.toast('加载城市列表失败,使用默认城市')
         // 降级使用本地静态数据
         this.cityList = [
           { code: 'ALL', name: '全国', hot: true },
@@ -583,6 +580,24 @@ export default {
           { code: 'XIAN', name: '西安', hot: true },
           { code: 'CHONGQING', name: '重庆', hot: true }
         ]
+      }
+    },
+    // 加载品牌列表
+    async fetchBrandList() {
+      try {
+        const res = await getBrands()
+        const brands = res.data || []
+        // 转换为前端需要的格式
+        this.brandList = brands.map(brand => ({
+          id: brand.id,
+          name: brand.name,
+          series: [] // 车系需要点击品牌后异步加载
+        }))
+      } catch (e) {
+        console.error('load brands fail', e)
+        uni.$u.toast('加载品牌列表失败')
+        // 异常时使用空数组，用户将无法看到品牌选项
+        this.brandList = []
       }
     },
     filterByCountry(code) {

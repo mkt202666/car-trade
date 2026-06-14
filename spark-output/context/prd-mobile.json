@@ -1,0 +1,34 @@
+{
+  "skill": "prd",
+  "generated_at": "2026-06-14T10:30:00+08:00",
+  "project_name": "5D好车 B2B二手车交易平台",
+  "direction": "移动端App",
+  "prd_file": "spark-output/prd/mobile-app.md",
+  "sections_summary": {
+    "summary": "5D好车移动端App为B2B二手车交易提供车源发布、智能搜索、在线交易全流程服务,目标用户是车商和个人卖家,通过保证金机制保障交易安全。",
+    "primary_persona": "车行采购商 张建国",
+    "product_goal": "帮助车行将车源采购周期从平均7天缩短至3天以内,同时降低采购成本10%以上。",
+    "success_metrics": [
+      { "metric": "DAU (日活车行数)", "target": ">500", "timeframe": "90天" },
+      { "metric": "GMV (月交易额)", "target": ">2亿元", "timeframe": "90天" },
+      { "metric": "车源转化率", "target": ">15%", "timeframe": "60天" },
+      { "metric": "平均成交周期", "target": "<3天", "timeframe": "90天" }
+    ],
+    "feature_count": 13,
+    "in_scope_features": ["车源浏览与搜索", "车源发布", "订单创建与交易", "用户认证与个人中心", "即时通讯与消息中心", "AI助理", "车行管理", "电子合同", "在线客服", "关注系统", "金融服务", "会员体系", "出口业务"],
+    "out_of_scope_features": ["C端零售业务", "车辆物流服务", "金融贷款服务(MVP)", "车辆检测服务"],
+    "critical_assumption": "如果车行愿意为交易安全保障支付保证金(通常3000-5000元/笔),则证明市场对可信交易环境的付费意愿成立",
+    "mvp_stories": ["Story 1: 车源浏览与搜索", "Story 2: 车源发布", "Story 3: 订单创建与交易", "Story 4: 用户认证与个人中心"]
+  },
+  "source_skills": {
+    "brief": false,
+    "stories": false,
+    "sitemap": false,
+    "flow_web": false,
+    "flow_mobile": false,
+    "frame": false,
+    "scope": false,
+    "check": false
+  },
+  "thin_sections": []
+}

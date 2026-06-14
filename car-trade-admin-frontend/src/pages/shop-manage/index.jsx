@@ -4,6 +4,7 @@ import { shopApi } from '../../api/shop'
 import { usePagination } from '../../hooks/usePagination'
 import { SkeletonTable } from '../../components/Skeleton'
 import { formatDate, maskPhone, getStatusColor, getStatusText } from '../../utils/format'
+import { exportFile } from '../../utils/export'
 
 const STATUS_OPTIONS = ['全部', 'ACTIVE', 'FROZEN']
 
@@ -92,11 +93,17 @@ export default function ShopManage() {
   }, [toggleTarget, fetchShops])
 
   // Export
-  const handleExport = useCallback(() => {
-    const params = new URLSearchParams()
-    if (debouncedSearch) params.append('keyword', debouncedSearch)
-    if (statusFilter !== '全部') params.append('status', statusFilter)
-    window.open(`/api/v1/admin/shops/export?${params.toString()}`, '_blank')
+  const handleExport = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (debouncedSearch) params.append('keyword', debouncedSearch)
+      if (statusFilter !== '全部') params.append('status', statusFilter)
+      
+      await exportFile(`/shops/export?${params.toString()}`, `车行列表_${new Date().toLocaleDateString()}.xlsx`)
+    } catch (error) {
+      console.error('导出失败:', error)
+      alert('导出失败: ' + error.message)
+    }
   }, [debouncedSearch, statusFilter])
 
   // Pagination

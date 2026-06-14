@@ -207,7 +207,10 @@ export default {
 					this.auction.isWatching = true
 					uni.$u.toast('已关注')
 				}
-			} catch (e) { console.error(e) }
+			} catch (e) {
+				console.error(e)
+				uni.$u.toast('操作失败,请重试')
+			}
 		},
 		async submitBid() {
 			const price = Number(this.bidPrice)
@@ -221,7 +224,10 @@ export default {
 				this.showBidPopup = false
 				this.bidPrice = ''
 				this.fetchDetail()
-			} catch (e) { console.error(e) }
+			} catch (e) {
+				console.error(e)
+				uni.$u.toast('出价失败,请重试')
+			}
 		},
 		statusText(status) {
 			const map = { PENDING: '待开始', BIDDING: '竞拍中', ENDED: '已结束', SETTLED: '已结算', CANCELLED: '已取消', FAILED: '流拍' }

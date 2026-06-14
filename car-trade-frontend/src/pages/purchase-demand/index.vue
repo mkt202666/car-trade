@@ -81,7 +81,10 @@ export default {
 				await createPurchaseDemand(data)
 				uni.$u.toast('发布成功')
 				setTimeout(() => uni.navigateBack(), 1500)
-			} catch (e) { console.error(e) }
+			} catch (e) {
+				console.error(e)
+				uni.$u.toast('发布失败,请重试')
+			}
 		}
 	}
 }

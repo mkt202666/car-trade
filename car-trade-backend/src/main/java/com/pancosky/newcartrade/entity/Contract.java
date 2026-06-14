@@ -60,6 +60,12 @@ public class Contract {
     /** 卖家签署时间 */
     private LocalDateTime sellerSignedAt;
 
+    /** 买家手写签名图片URL */
+    private String buyerSignatureUrl;
+
+    /** 卖家手写签名图片URL */
+    private String sellerSignatureUrl;
+
     /** 合同状态（DRAFT=草稿；PENDING_SIGN=待签署；SIGNED=已签署；
      *  VOID=已作废；ARCHIVED=归档） */
     private String status;

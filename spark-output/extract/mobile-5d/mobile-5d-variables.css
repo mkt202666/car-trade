@@ -1,0 +1,26 @@
+:root {
+  /* Colors — Primary */
+
+  /* Colors — Neutrals */
+  --color-neutral-50: #000000;
+
+  /* Colors — Text */
+  --color-text: #000000;
+
+  /* Typography — Families */
+  --font-body: 'Times New Roman', sans-serif;
+
+  /* Typography — Scale */
+  --font-size-16: 16px;
+
+  /* Spacing */
+  --spacing-8: 8px;
+
+  /* Original Site Variables */
+  /* — semantic — */
+  success: [object Object];
+  warning: [object Object];
+  error: [object Object];
+  info: [object Object];
+
+}

@@ -50,7 +50,10 @@ export default {
 				this.recordList = reset || this.page === 1 ? list : this.recordList.concat(list)
 				this.hasMore = list.length >= this.pageSize
 				this.loadStatus = this.hasMore ? 'loadmore' : 'nomore'
-			} catch (e) { console.error(e) } finally { this.loading = false }
+			} catch (e) {
+				console.error(e)
+				uni.$u.toast('加载浏览记录失败')
+			} finally { this.loading = false }
 		},
 		loadMore() { if (this.hasMore) { this.page++; this.fetchList(false) } },
 		goDetail(id) { uni.navigateTo({ url: '/pages/car-detail/index?id=' + id }) },
@@ -63,7 +66,10 @@ export default {
 							await clearBrowsingHistory()
 							this.recordList = []
 							uni.$u.toast('已清空')
-						} catch (e) { console.error(e) }
+						} catch (e) {
+							console.error(e)
+							uni.$u.toast('清空失败,请重试')
+						}
 					}
 				}
 			})

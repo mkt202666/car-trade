@@ -34,7 +34,10 @@ export default {
 			try {
 				const res = await getMyFollows()
 				this.followList = res.data || []
-			} catch (e) { console.error(e) } finally { this.loading = false }
+			} catch (e) {
+				console.error(e)
+				uni.$u.toast('加载关注列表失败')
+			} finally { this.loading = false }
 		},
 		async unfollow(id, name) {
 			uni.showModal({
@@ -45,7 +48,10 @@ export default {
 							await unfollowUser(id)
 							this.followList = this.followList.filter(f => f.id !== id)
 							uni.$u.toast('已取消关注')
-						} catch (e) { console.error(e) }
+						} catch (e) {
+							console.error(e)
+							uni.$u.toast('操作失败,请重试')
+						}
 					}
 				}
 			})

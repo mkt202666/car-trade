@@ -115,6 +115,44 @@ export default function PurchaseManage() {
     setDetailData(null)
   }, [])
 
+  // Close purchase request
+  const handleClose = useCallback(async (id) => {
+    if (!confirm('确定要关闭这条求购需求吗？')) return
+    try {
+      await purchaseApi.close(id, { reason: '管理员关闭' })
+      alert('已关闭')
+      // Reload list
+      const params = { page, size }
+      if (debouncedSearch) params.keyword = debouncedSearch
+      if (brand !== '全部') params.brand = brand
+      if (statusFilter) params.status = statusFilter
+      const data = await purchaseApi.list(params)
+      setRecords(data.list || data.records || [])
+      setTotal(data.total || data.totalItems || 0)
+    } catch (err) {
+      alert(err.response?.data?.message || err.message || '关闭失败')
+    }
+  }, [page, size, debouncedSearch, brand, statusFilter])
+
+  // Match cars for purchase request
+  const handleMatch = useCallback(async (id) => {
+    if (!confirm('确定要为这条求购需求匹配车源吗？')) return
+    try {
+      await purchaseApi.match(id)
+      alert('匹配成功')
+      // Reload list
+      const params = { page, size }
+      if (debouncedSearch) params.keyword = debouncedSearch
+      if (brand !== '全部') params.brand = brand
+      if (statusFilter) params.status = statusFilter
+      const data = await purchaseApi.list(params)
+      setRecords(data.list || data.records || [])
+      setTotal(data.total || data.totalItems || 0)
+    } catch (err) {
+      alert(err.response?.data?.message || err.message || '匹配失败')
+    }
+  }, [page, size, debouncedSearch, brand, statusFilter])
+
   // Pagination calcs
   const start = total === 0 ? 0 : (page - 1) * size + 1
   const end = Math.min(page * size, total)
@@ -276,13 +314,31 @@ export default function PurchaseManage() {
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <button
-                            onClick={() => handleViewDetail(record)}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-indigo-400 hover:bg-indigo-500/10 transition-colors"
-                          >
-                            <Eye className="w-3 h-3" />
-                            查看
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleViewDetail(record)}
+                              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+                            >
+                              <Eye className="w-3 h-3" />
+                              查看
+                            </button>
+                            {record.status === 'OPEN' && (
+                              <>
+                                <button
+                                  onClick={() => handleMatch(record.id)}
+                                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                                >
+                                  匹配
+                                </button>
+                                <button
+                                  onClick={() => handleClose(record.id)}
+                                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-red-400 hover:bg-red-500/10 transition-colors"
+                                >
+                                  关闭
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     )

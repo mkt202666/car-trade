@@ -4,6 +4,7 @@ import { getOrderList, getOrderDetail, getOrderLogs, confirmOrder, forceCancelOr
 import { usePagination } from '../../hooks/usePagination'
 import { SkeletonTable } from '../../components/Skeleton'
 import { formatDate, maskPhone } from '../../utils/format'
+import { exportFile } from '../../utils/export'
 
 const STATUS_OPTIONS = ['全部', 'PENDING_DEPOSIT', 'CONTRACT_DRAFT', 'CONTRACT_SIGNED', 'IN_TRANSIT', 'COMPLETED', 'CANCELLED', 'TERMINATED', 'DISPUTE']
 
@@ -169,14 +170,20 @@ export default function TradeManage() {
   }
 
   // Export
-  const handleExport = useCallback(() => {
-    const params = {}
-    if (debouncedSearch) params.keyword = debouncedSearch
-    if (statusFilter !== '全部') params.status = statusFilter
-    if (startDate) params.startDate = startDate
-    if (endDate) params.endDate = endDate
-    const qs = new URLSearchParams(params).toString()
-    window.open(`/api/v1/admin/orders/export${qs ? '?' + qs : ''}`, '_blank')
+  const handleExport = useCallback(async () => {
+    try {
+      const params = {}
+      if (debouncedSearch) params.keyword = debouncedSearch
+      if (statusFilter !== '全部') params.status = statusFilter
+      if (startDate) params.startDate = startDate
+      if (endDate) params.endDate = endDate
+      const qs = new URLSearchParams(params).toString()
+      
+      await exportFile(`/orders/export${qs ? '?' + qs : ''}`, `订单列表_${new Date().toLocaleDateString()}.xlsx`)
+    } catch (error) {
+      console.error('导出失败:', error)
+      alert('导出失败: ' + error.message)
+    }
   }, [debouncedSearch, statusFilter, startDate, endDate])
 
   // Check what actions are available for an order

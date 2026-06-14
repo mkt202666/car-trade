@@ -422,14 +422,20 @@ export default {
           this.carInfo.favorited = true
           uni.$u.toast('已收藏')
         }
-      } catch (e) { console.error(e) }
+      } catch (e) {
+        console.error(e)
+        uni.$u.toast('操作失败,请重试')
+      }
     },
     async contact() {
       if (!requireAuth()) return
       try {
         await contactSeller(this.carInfo.id)
         uni.navigateTo({ url: `/pages/message/index?targetId=${this.carInfo.seller.id}` })
-      } catch (e) { console.error(e) }
+      } catch (e) {
+        console.error(e)
+        uni.$u.toast('联系卖家失败,请重试')
+      }
     },
     payDeposit() {
       if (!requireAuth()) return
@@ -449,7 +455,10 @@ export default {
           this.carInfo.seller.followerCount = (this.carInfo.seller.followerCount || 0) + 1
           uni.$u.toast('关注成功')
         }
-      } catch (e) { console.error(e) }
+      } catch (e) {
+        console.error(e)
+        uni.$u.toast('操作失败,请重试')
+      }
     },
     toSellerHome() {
       uni.navigateTo({ url: `/pages/seller-home/index?id=${this.carInfo.seller.id}` })

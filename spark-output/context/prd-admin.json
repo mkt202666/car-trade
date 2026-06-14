@@ -1,0 +1,34 @@
+{
+  "skill": "prd",
+  "generated_at": "2026-06-14T11:00:00+08:00",
+  "project_name": "5D好车 B2B二手车交易平台",
+  "direction": "运营管理平台",
+  "prd_file": "spark-output/prd/admin-platform.md",
+  "sections_summary": {
+    "summary": "5D好车运营管理平台为运营团队提供数据管理、审核审批、纠纷处理、资源配置等能力,目标用户是超级管理员/审核专员/财务专员,通过系统化工作流提升运营效率3倍以上。",
+    "primary_persona": "超级合规风控管理员 赵敏",
+    "product_goal": "将平台运营效率提升3倍以上,车行审核时效从48小时缩短至4小时以内,纠纷处理时效从72小时缩短至24小时以内。",
+    "success_metrics": [
+      { "metric": "审核时效", "target": "<4小时", "timeframe": "60天" },
+      { "metric": "纠纷处理时效", "target": "<24小时", "timeframe": "60天" },
+      { "metric": "运营人均效能", "target": ">50单/日", "timeframe": "90天" },
+      { "metric": "数据准确率", "target": "100%", "timeframe": "30天" }
+    ],
+    "feature_count": 10,
+    "in_scope_features": ["分析仪表盘", "用户管理", "车行管理与注册审核", "5D车源管理", "求购管理", "交易管理与纠纷处理", "保证金现金流管理", "车型库管理", "资源管理", "出口配置"],
+    "out_of_scope_features": ["移动端业务逻辑", "财务系统对接(MVP)", "BI数据分析平台", "客服呼叫中心"],
+    "critical_assumption": "如果运营团队愿意使用系统化工作流(而非微信/Excel),则证明标准化流程能提升效率",
+    "mvp_stories": ["Story 1: 分析仪表盘", "Story 2: 用户管理", "Story 3: 车行管理与注册审核", "Story 4: 5D车源管理", "Story 6: 交易管理与纠纷处理", "Story 7: 保证金现金流管理"]
+  },
+  "source_skills": {
+    "brief": false,
+    "stories": false,
+    "sitemap": false,
+    "flow_web": false,
+    "flow_mobile": false,
+    "frame": false,
+    "scope": false,
+    "check": false
+  },
+  "thin_sections": []
+}

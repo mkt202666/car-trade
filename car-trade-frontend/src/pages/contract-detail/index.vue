@@ -83,16 +83,41 @@
         </view>
       </block>
     </view>
+    
+    <!-- 手写签名弹窗 -->
+    <u-popup v-model="showSignatureModal" mode="bottom" height="60%" border-radius="16">
+      <view class="signature-modal">
+        <view class="modal-header">
+          <text class="modal-title">{{ signRole === 'BUYER' ? '买方' : '卖方' }}手写签名</text>
+          <u-icon name="close" size="24" @click="onSignatureCancel"></u-icon>
+        </view>
+        
+        <SignaturePad 
+          ref="signaturePad"
+          @confirm="onSignatureConfirm"
+          title="请在下方区域签名"
+          hint="签名完成后点击确认按钮"
+        />
+        
+        <view class="modal-footer">
+          <u-button type="info" size="default" shape="circle" @click="$refs.signaturePad.clear()">重新签名</u-button>
+        </view>
+      </view>
+    </u-popup>
   </view>
 </template>
 
 <script>
-import { getContractDetail, signContract, downloadContract as downloadContractApi } from '@/api/contract'
+import { getContractDetail, signContract, downloadContract as downloadContractApi, uploadSignature } from '@/api/contract'
 import { formatPrice, formatTime } from '@/utils/format'
 import { requireAuth } from '@/utils/auth'
+import SignaturePad from '@/components/signature-pad.vue'
 import store from '@/store'
 
 export default {
+  components: {
+    SignaturePad
+  },
   data() {
     return {
       contract: {
@@ -107,7 +132,11 @@ export default {
       ],
       loading: false,
       signing: false,
-      id: ''
+      id: '',
+      // 签名相关
+      showSignatureModal: false,
+      signatureImage: null,
+      signRole: '' // 'BUYER' or 'SELLER'
     }
   },
   computed: {
@@ -177,10 +206,22 @@ export default {
         return
       }
       
+      // 显示签名弹窗
+      this.signRole = 'BUYER'
+      this.showSignatureModal = true
+      this.signatureImage = null
+    },
+    
+    // 确认手写签名
+    async onSignatureConfirm(tempFilePath) {
+      this.signatureImage = tempFilePath
+      this.showSignatureModal = false
+      
+      // 二次确认
       const res = await new Promise((resolve) => {
         uni.showModal({
           title: '确认签署',
-          content: '作为买方确认签署此合同？签署后不可撤回。',
+          content: `作为${this.signRole === 'BUYER' ? '买方' : '卖方'}确认签署此合同？签署后不可撤回。`,
           success: (modalRes) => {
             if (modalRes.confirm) resolve(true)
             else resolve(false)
@@ -188,19 +229,39 @@ export default {
         })
       })
       
-      if (!res) return
+      if (!res) {
+        this.signatureImage = null
+        return
+      }
       
       this.signing = true
       try {
-        await signContract(this.id, 'BUYER', this.currentUserId)
+        // 1. 先上传签名图片
+        uni.showLoading({ title: '上传签名中...' })
+        const uploadResult = await uploadSignature(this.id, this.signatureImage)
+        const signatureUrl = uploadResult.data.signatureUrl
+        
+        // 2. 调用签署接口(传入签名URL)
+        uni.showLoading({ title: '签署合同中...' })
+        await signContract(this.id, this.signRole, this.currentUserId, signatureUrl)
+        
+        uni.hideLoading()
         uni.$u.toast('签署成功')
         this.loadContract()
       } catch (e) {
+        uni.hideLoading()
         console.error('签署失败', e)
         uni.$u.toast(e.message || '签署失败，请重试')
       } finally {
         this.signing = false
+        this.signatureImage = null
       }
+    },
+    
+    // 取消签名
+    onSignatureCancel() {
+      this.showSignatureModal = false
+      this.signatureImage = null
     },
     async handleSellerSign() {
       if (!requireAuth()) return
@@ -211,30 +272,10 @@ export default {
         return
       }
       
-      const res = await new Promise((resolve) => {
-        uni.showModal({
-          title: '确认签署',
-          content: '作为卖方确认签署此合同？签署后不可撤回。',
-          success: (modalRes) => {
-            if (modalRes.confirm) resolve(true)
-            else resolve(false)
-          }
-        })
-      })
-      
-      if (!res) return
-      
-      this.signing = true
-      try {
-        await signContract(this.id, 'SELLER', this.currentUserId)
-        uni.$u.toast('签署成功')
-        this.loadContract()
-      } catch (e) {
-        console.error('签署失败', e)
-        uni.$u.toast(e.message || '签署失败，请重试')
-      } finally {
-        this.signing = false
-      }
+      // 显示签名弹窗
+      this.signRole = 'SELLER'
+      this.showSignatureModal = true
+      this.signatureImage = null
     },
     async downloadContract() {
       try {
@@ -423,6 +464,26 @@ $transition: all 0.2s ease;
   border-radius: $border-radius;
   transition: $transition;
 
+  &:active {
+    background: rgba(0, 0, 0, 0.02);
+  }
+}
+.party-label {
+  font-size: 24rpx;
+  color: $text-secondary;
+  margin-bottom: 12rpx;
+}
+.party-status-text {
+  font-size: 24rpx;
+  color: $text-color;
+  margin-top: 8rpx;
+}
+.party-time {
+  font-size: 20rpx;
+  color: $text-secondary;
+  margin-top: 4rpx;
+}
+</style>
   &:active {
     background: rgba(0, 0, 0, 0.02);
   }

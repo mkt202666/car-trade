@@ -40,7 +40,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/uploads/**")
+        // 使用/static-uploads/前缀避免与/api/v1/uploads API路径冲突
+        registry.addResourceHandler("/static-uploads/**")
                 .addResourceLocations("file:uploads/");
     }
 
@@ -98,8 +99,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         // 系统配置文本（只读：用户协议/隐私条款等）
                         "/api/v1/configs/**",
 
-                        // 静态资源
-                        "/uploads/**",
+                        // 静态资源（使用/static-uploads/避免与API冲突）
+                        "/static-uploads/**",
                         // 错误
                         "/error",
                         "/favicon.ico"

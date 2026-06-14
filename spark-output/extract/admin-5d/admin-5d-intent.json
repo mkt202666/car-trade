@@ -1,0 +1,118 @@
+{
+  "pageIntent": {
+    "type": "unknown",
+    "confidence": 0,
+    "path": "/5dadmin",
+    "title": "My Google AI Studio App",
+    "description": "",
+    "signals": [],
+    "alternates": [],
+    "needsSmart": true
+  },
+  "sectionRoles": {
+    "sections": [
+      {
+        "index": 0,
+        "tag": "header",
+        "role": "nav",
+        "subrole": null,
+        "confidence": 0.4,
+        "heading": "5D Auto Operation Desk",
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "w": 1280,
+          "h": 64
+        },
+        "buttonCount": 1,
+        "cardCount": 6,
+        "slots": {
+          "heading": "5D Auto Operation Desk",
+          "ctaCount": 1,
+          "lede": "5D\n5D Auto Operation Desk"
+        },
+        "needsSmart": true
+      },
+      {
+        "index": 1,
+        "tag": "aside",
+        "role": "sidebar",
+        "subrole": null,
+        "confidence": 0.4,
+        "heading": null,
+        "bounds": {
+          "x": 0,
+          "y": 64,
+          "w": 240,
+          "h": 1070.3125
+        },
+        "buttonCount": 11,
+        "cardCount": 23,
+        "slots": {
+          "ctaCount": 11,
+          "lede": "OPERATION MODULES\n分析仪表盘\n用户管理\n车行管理\n车行注册审核\n3\n5D 车源管理\n求购管理\n交易管理\n1\n保证金现金流\n出口配置\n车型库\n资源管理\n5D 业务线管区规章"
+        },
+        "needsSmart": true
+      },
+      {
+        "index": 2,
+        "tag": "nav",
+        "role": "nav",
+        "subrole": null,
+        "confidence": 0.9,
+        "heading": null,
+        "bounds": {
+          "x": 16,
+          "y": 111,
+          "w": 207,
+          "h": 436
+        },
+        "buttonCount": 11,
+        "cardCount": 22,
+        "slots": {
+          "ctaCount": 11,
+          "lede": "分析仪表盘\n用户管理\n车行管理\n车行注册审核\n3\n5D 车源管理\n求购管理\n交易管理\n1\n保证金现金流\n出口配置\n车型库\n资源管理"
+        },
+        "needsSmart": false
+      },
+      {
+        "index": 3,
+        "tag": "main",
+        "role": "content",
+        "subrole": null,
+        "confidence": 0.3,
+        "heading": "5D Auto 数据全景透视",
+        "bounds": {
+          "x": 240,
+          "y": 64,
+          "w": 1040,
+          "h": 1070.3125
+        },
+        "buttonCount": 3,
+        "cardCount": 30,
+        "slots": {
+          "heading": "5D Auto 数据全景透视",
+          "subheadings": [
+            "￥928,500",
+            "3 台",
+            "￥7,000",
+            "3 件"
+          ],
+          "ctaCount": 3
+        },
+        "needsSmart": true
+      }
+    ],
+    "counts": {
+      "nav": 2,
+      "sidebar": 1,
+      "content": 1
+    },
+    "readingOrder": [
+      "nav",
+      "sidebar",
+      "content",
+      "nav"
+    ]
+  }
+}

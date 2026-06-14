@@ -6,6 +6,6 @@ import com.pancosky.newcartrade.vo.ContractVO;
 public interface ContractService {
     ContractVO create(String orderId);
     ContractDetailVO detail(Long id);
-    void sign(Long id, String role, Long userId);
+    void sign(Long id, String role, Long userId, String signatureUrl);
     String download(Long id);
 }

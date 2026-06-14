@@ -61,7 +61,10 @@ export default {
 			try {
 				const res = await getShopMembers()
 				this.memberList = res.data || []
-			} catch (e) { console.error(e) } finally { this.loading = false }
+			} catch (e) {
+				console.error(e)
+				uni.$u.toast('加载成员列表失败')
+			} finally { this.loading = false }
 		},
 		async doInvite() {
 			if (!this.invitePhone || this.invitePhone.length < 11) { uni.$u.toast('请输入正确手机号'); return }
@@ -69,14 +72,20 @@ export default {
 				await inviteMember({ phone: this.invitePhone })
 				uni.$u.toast('邀请已发送')
 				this.showInvite = false; this.invitePhone = ''
-			} catch (e) { console.error(e) }
+			} catch (e) {
+				console.error(e)
+				uni.$u.toast('邀请发送失败,请重试')
+			}
 		},
 		async approve(id) {
 			try {
 				await approveMember(id)
 				this.fetchMembers()
 				uni.$u.toast('已通过')
-			} catch (e) { console.error(e) }
+			} catch (e) {
+				console.error(e)
+				uni.$u.toast('操作失败,请重试')
+			}
 		},
 		async remove(id) {
 			uni.showModal({
@@ -87,7 +96,10 @@ export default {
 							await removeMember(id)
 							this.memberList = this.memberList.filter(m => m.id !== id)
 							uni.$u.toast('已移除')
-						} catch (e) { console.error(e) }
+						} catch (e) {
+							console.error(e)
+							uni.$u.toast('移除失败,请重试')
+						}
 					}
 				}
 			})

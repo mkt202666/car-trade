@@ -3,6 +3,7 @@ package com.pancosky.newcartrade.service.impl;
 import com.pancosky.newcartrade.exception.BusinessException;
 import com.pancosky.newcartrade.service.FileStorageService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,6 +16,7 @@ import java.io.IOException;
  */
 @Slf4j
 @Service("localFileStorageService")
+@Primary
 public class LocalFileStorageServiceImpl implements FileStorageService {
 
     private static final String BASE_DIR = "uploads";

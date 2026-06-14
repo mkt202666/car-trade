@@ -1,0 +1,78 @@
+{
+  "tone": "neutral",
+  "pronoun": "third-person",
+  "headingStyle": "all-lowercase",
+  "headingLengthClass": "tight",
+  "ctaVerbs": [
+    {
+      "value": "d",
+      "count": 1
+    }
+  ],
+  "buttonPatterns": [
+    {
+      "value": "前往处理",
+      "count": 3
+    },
+    {
+      "value": "还原预设",
+      "count": 1
+    },
+    {
+      "value": "分析仪表盘",
+      "count": 1
+    },
+    {
+      "value": "用户管理",
+      "count": 1
+    },
+    {
+      "value": "车行管理",
+      "count": 1
+    },
+    {
+      "value": "车行注册审核\n3",
+      "count": 1
+    },
+    {
+      "value": "5d 车源管理",
+      "count": 1
+    },
+    {
+      "value": "求购管理",
+      "count": 1
+    },
+    {
+      "value": "交易管理\n1",
+      "count": 1
+    },
+    {
+      "value": "保证金现金流",
+      "count": 1
+    },
+    {
+      "value": "出口配置",
+      "count": 1
+    },
+    {
+      "value": "车型库",
+      "count": 1
+    },
+    {
+      "value": "资源管理",
+      "count": 1
+    }
+  ],
+  "sampleHeadings": [
+    "5D Auto Operation Desk",
+    "5D Auto 数据全景透视",
+    "￥928,500",
+    "3 台",
+    "￥7,000",
+    "3 件"
+  ],
+  "stats": {
+    "buttons": 15,
+    "headings": 6
+  }
+}

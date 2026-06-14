@@ -95,7 +95,7 @@ public class ContractServiceImpl implements ContractService {
 
     @Override
     @Transactional
-    public void sign(Long id, String role, Long userId) {
+    public void sign(Long id, String role, Long userId, String signatureUrl) {
         Contract contract = contractMapper.selectById(id);
         if (contract == null) throw new BusinessException("Contract not found");
         
@@ -109,6 +109,10 @@ public class ContractServiceImpl implements ContractService {
             }
             contract.setBuyerSigned(true);
             contract.setBuyerSignedAt(LocalDateTime.now());
+            if (signatureUrl != null && !signatureUrl.isEmpty()) {
+                contract.setBuyerSignatureUrl(signatureUrl);
+                log.info("Contract {} buyer signature saved: {}", id, signatureUrl);
+            }
             log.info("Contract {} signed by buyer {}", id, userId);
         } else if ("SELLER".equalsIgnoreCase(role)) {
             if (contract.getSellerId() != null && !contract.getSellerId().equals(userId)) {
@@ -119,6 +123,10 @@ public class ContractServiceImpl implements ContractService {
             }
             contract.setSellerSigned(true);
             contract.setSellerSignedAt(LocalDateTime.now());
+            if (signatureUrl != null && !signatureUrl.isEmpty()) {
+                contract.setSellerSignatureUrl(signatureUrl);
+                log.info("Contract {} seller signature saved: {}", id, signatureUrl);
+            }
             log.info("Contract {} signed by seller {}", id, userId);
         } else {
             throw new BusinessException("Invalid role, must be BUYER or SELLER");
@@ -152,7 +160,7 @@ public class ContractServiceImpl implements ContractService {
                 String html = buildContractHtml(contract, buyer, seller);
                 java.nio.file.Files.write(file.toPath(), html.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
-                String fileUrl = "/uploads/contracts/" + fileName;
+                String fileUrl = "/static-uploads/contracts/" + fileName;
                 contract.setFileUrl(fileUrl);
                 contractMapper.updateById(contract);
                 log.info("Generated contract file: {}", fileUrl);

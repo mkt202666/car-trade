@@ -24,6 +24,7 @@
         <hutool.version>5.8.26</hutool.version>
         <rocketmq.version>2.3.2</rocketmq.version>
         <lombok.version>1.18.36</lombok.version>
+        <tencentcloud-sdk.version>3.1.1000</tencentcloud-sdk.version>
     </properties>
 
     <dependencies>
@@ -113,6 +114,13 @@
             <groupId>com.aliyun.openservices</groupId>
             <artifactId>aliyun-log-logback-appender</artifactId>
             <version>0.1.19</version>
+        </dependency>
+
+        <!-- Tencent Cloud OCR SDK -->
+        <dependency>
+            <groupId>com.tencentcloudapi</groupId>
+            <artifactId>tencentcloud-sdk-java-ocr</artifactId>
+            <version>${tencentcloud-sdk.version}</version>
         </dependency>
 
         <!-- Test -->

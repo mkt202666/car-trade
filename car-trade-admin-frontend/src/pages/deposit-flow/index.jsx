@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Wallet, Search, ChevronDown, PlusCircle, DollarSign, Users, TrendingUp } from 'lucide-react'
+import { getDepositRecords, getDepositSummary } from '../../api/deposit'
+import { SkeletonCard } from '../../components/Skeleton'
 
 const flowTypeOptions = [
   '所有的往来流水类型',
@@ -9,53 +11,86 @@ const flowTypeOptions = [
   '退还回原件提现',
 ]
 
-const transactions = [
-  {
-    id: 'TX-5001',
-    time: '2026/6/1 16:30:00',
-    customer: '张建国',
-    customerId: 'USR-3001',
-    type: '保证金网银充值',
-    amount: '+￥10,000',
-    balance: '￥50,000',
-    note: '支付宝线上扫画充值保证金',
-  },
-  {
-    id: 'TX-5002',
-    time: '2026/6/1 18:00:00',
-    customer: '张建国',
-    customerId: 'USR-3001',
-    type: '应标暂扣冻结',
-    amount: '-￥10,000',
-    balance: '￥40,000',
-    note: '用于锁定订单 ORD-2026053001 担保定金',
-  },
-  {
-    id: 'TX-5003',
-    time: '2026/5/31 00:45:00',
-    customer: '李思平',
-    customerId: 'USR-3002',
-    type: '释放退还原账',
-    amount: '+￥20,000',
-    balance: '￥20,000',
-    note: '订单成交交付完成，系统释放其全额挂单担保金',
-  },
-  {
-    id: 'TX-5004',
-    time: '2026/6/3 17:12:00',
-    customer: '王凯文',
-    customerId: 'USR-3003',
-    type: '应标暂扣冻结',
-    amount: '-￥5,000',
-    balance: '￥30,000',
-    note: '履约竞价暂扣锁定',
-  },
-]
-
 export default function DepositFlow() {
   const [flowType, setFlowType] = useState(flowTypeOptions[0])
   const [flowTypeOpen, setFlowTypeOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
+  
+  // 数据状态
+  const [transactions, setTransactions] = useState([])
+  const [summary, setSummary] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const pageSize = 10
+
+  // 加载流水记录
+  useEffect(() => {
+    loadRecords()
+  }, [page, flowType, searchText])
+
+  // 加载汇总数据
+  useEffect(() => {
+    loadSummary()
+  }, [])
+
+  const loadRecords = async () => {
+    setLoading(true)
+    try {
+      const params = {
+        page,
+        size: pageSize,
+      }
+      
+      // 添加筛选条件
+      if (flowType !== flowTypeOptions[0]) {
+        params.type = flowType
+      }
+      if (searchText) {
+        params.keyword = searchText
+      }
+      
+      const response = await getDepositRecords(params)
+      if (response.data && response.code === 200) {
+        setTransactions(response.data.list || [])
+        setTotal(response.data.total || 0)
+      }
+    } catch (error) {
+      console.error('加载保证金流水失败:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadSummary = async () => {
+    try {
+      const response = await getDepositSummary()
+      if (response.data && response.code === 200) {
+        setSummary(response.data)
+      }
+    } catch (error) {
+      console.error('加载汇总数据失败:', error)
+    }
+  }
+
+  // 格式化金额
+  const formatMoney = (amount) => {
+    if (amount == null) return '￥0'
+    return `￥${Number(amount).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
+
+  // 格式化时间
+  const formatTime = (timeStr) => {
+    if (!timeStr) return '-'
+    return new Date(timeStr).toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).replace(/\//g, '/')
+  }
 
   return (
     <div className="space-y-6">
@@ -67,36 +102,46 @@ export default function DepositFlow() {
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400 font-medium">当前冻结托管定金总和 (CNY)</span>
-            <Wallet className="w-4 h-4 text-indigo-500" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-lg text-gray-500">￥</span>
-            <span className="text-2xl font-bold font-mono text-gray-900">5,000</span>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400 font-medium">保证金流水累计交易规模</span>
-            <DollarSign className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-lg text-gray-500">￥</span>
-            <span className="text-2xl font-bold font-mono text-gray-900">45,000</span>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400 font-medium">入账商户往来核算账户数</span>
-            <Users className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-2xl font-bold font-mono text-gray-900">12</span>
-            <span className="text-sm text-gray-400 ml-1">个主体</span>
-          </div>
-        </div>
+        {loading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : (
+          <>
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-400 font-medium">当前所托管托管定金总和 (CNY)</span>
+                <Wallet className="w-4 h-4 text-indigo-500" />
+              </div>
+              <div className="mt-2 flex items-baseline gap-1">
+                <span className="text-lg text-gray-500">￥</span>
+                <span className="text-2xl font-bold font-mono text-gray-900">{summary?.totalBalance || 0}</span>
+              </div>
+            </div>
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-400 font-medium">保证金流水累计交易规模</span>
+                <DollarSign className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div className="mt-2 flex items-baseline gap-1">
+                <span className="text-lg text-gray-500">￥</span>
+                <span className="text-2xl font-bold font-mono text-gray-900">{summary?.totalTransactionVolume || 0}</span>
+              </div>
+            </div>
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-400 font-medium">入账商户往来核算账户数</span>
+                <Users className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="mt-2 flex items-baseline gap-1">
+                <span className="text-2xl font-bold font-mono text-gray-900">{summary?.accountCount || 0}</span>
+                <span className="text-sm text-gray-400 ml-1">个主体</span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Filters & action */}
@@ -154,29 +199,68 @@ export default function DepositFlow() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-gray-800">
-                    <div className="font-mono text-xs font-semibold text-gray-900">{tx.id}</div>
-                    <div className="text-[11px] text-gray-400 mt-0.5">{tx.time}</div>
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="px-4 py-8 text-center text-gray-400">
+                    <SkeletonCard />
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-800">
-                    <div className="font-medium text-gray-900">{tx.customer}</div>
-                    <div className="text-[11px] text-gray-400 mt-0.5">{tx.customerId}</div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800">{tx.type}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <span className={tx.amount.startsWith('+') ? 'text-emerald-600 font-semibold font-mono' : 'text-red-500 font-semibold font-mono'}>
-                      {tx.amount}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800 font-mono">{tx.balance}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600 max-w-[240px]">{tx.note}</td>
                 </tr>
-              ))}
+              ) : transactions.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="px-4 py-8 text-center text-gray-400">
+                    暂无保证金流水记录
+                  </td>
+                </tr>
+              ) : (
+                transactions.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-4 py-3 text-sm text-gray-800">
+                      <div className="font-mono text-xs font-semibold text-gray-900">{tx.id}</div>
+                      <div className="text-[11px] text-gray-400 mt-0.5">{formatTime(tx.createdAt)}</div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-800">
+                      <div className="font-medium text-gray-900">{tx.customerName}</div>
+                      <div className="text-[11px] text-gray-400 mt-0.5">{tx.customerId}</div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-800">{tx.type}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={tx.amount >= 0 ? 'text-emerald-600 font-semibold font-mono' : 'text-red-500 font-semibold font-mono'}>
+                        {formatMoney(tx.amount)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-800 font-mono">{formatMoney(tx.balanceAfter)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 max-w-[240px]">{tx.remark || '-'}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        {!loading && total > pageSize && (
+          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+            <div className="text-xs text-gray-500">
+              共 {total} 条记录，第 {page} / {Math.ceil(total / pageSize)} 页
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                上一页
+              </button>
+              <button
+                onClick={() => setPage(p => p + 1)}
+                disabled={page * pageSize >= total}
+                className="px-3 py-1 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                下一页
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

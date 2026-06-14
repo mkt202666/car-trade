@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   ChevronRight,
 } from 'lucide-react'
+import { LineChart, Line, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, PieChart as RePieChart, Pie, Cell, Legend } from 'recharts'
 import { dashboardApi } from '../../api/dashboard'
 import { SkeletonCard, SkeletonChart, SkeletonTable } from '../../components/Skeleton'
 import { formatMoney, formatDate } from '../../utils/format'
@@ -172,68 +173,62 @@ export default function Dashboard() {
   }, [])
 
   // 生成趋势 SVG 路径
+  // 生成折线图(使用Recharts)
   const renderTrendChart = () => {
     const data = trend || []
     if (!Array.isArray(data) || data.length === 0) return null
 
-    const width = 600, height = 240
-    const padL = 40, padR = 20, padT = 20, padB = 40
-    const chartW = width - padL - padR
-    const chartH = height - padT - padB
-
-    const amounts = data.map(d => d.tradeAmount ?? d.amount ?? 0)
-    const maxAmt = Math.max(...amounts, 1)
-    const minAmt = Math.min(...amounts, 0)
-
-    const points = data.map((d, i) => {
-      const amt = d.tradeAmount ?? d.amount ?? 0
-      const x = padL + (i / (data.length - 1 || 1)) * chartW
-      const y = padT + chartH - ((amt - minAmt) / (maxAmt - minAmt || 1)) * chartH
-      return { x, y, label: d.date || d.label || '' }
-    })
-
-    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ')
-    const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(2)} ${height - padB} L ${points[0].x.toFixed(2)} ${height - padB} Z`
-
-    // Y 轴标签
-    const yLabels = [0, 0.25, 0.5, 0.75, 1].map(t => ({
-      y: padT + chartH * (1 - t),
-      label: formatMoney(minAmt + (maxAmt - minAmt) * t).replace('¥', '¥').slice(0, 10),
+    // 转换数据格式为Recharts所需
+    const chartData = data.map(d => ({
+      date: d.date || d.label || '',
+      amount: d.tradeAmount ?? d.amount ?? 0,
     }))
 
     return (
-      <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.0" />
-          </linearGradient>
-        </defs>
-        {/* Grid */}
-        {yLabels.map((l, i) => (
-          <line key={i} x1={padL} y1={l.y} x2={width - padR} y2={l.y} stroke="#f1f5f9" strokeWidth="1" />
-        ))}
-        {/* X labels */}
-        {points.map((p, i) => (
-          <text key={i} x={p.x} y={height - padB + 20} textAnchor="middle" fill="#94a3b8" className="text-[11px] font-mono font-medium">
-            {p.label}
-          </text>
-        ))}
-        {/* Y labels */}
-        {yLabels.map((l, i) => (
-          <text key={i} x={padL - 6} y={l.y + 4} textAnchor="end" fill="#94a3b8" className="text-[11px] font-mono font-medium">
-            {l.label}
-          </text>
-        ))}
-        {/* Area */}
-        <path d={areaPath} fill="url(#chartGradient)" />
-        {/* Line */}
-        <path d={linePath} fill="none" stroke="#4f46e5" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Dots */}
-        {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="5" fill="#4f46e5" stroke="#ffffff" strokeWidth="2" className="cursor-pointer" />
-        ))}
-      </svg>
+      <ResponsiveContainer width="100%" height={240}>
+        <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+          <XAxis 
+            dataKey="date" 
+            tick={{ fontSize: 11, fill: '#94a3b8' }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis 
+            tickFormatter={(value) => formatMoney(value).replace('¥', '¥').slice(0, 10)}
+            tick={{ fontSize: 11, fill: '#94a3b8' }}
+            axisLine={false}
+            tickLine={false}
+            width={60}
+          />
+          <RechartsTooltip 
+            formatter={(value) => [formatMoney(value), '交易额']}
+            contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+          />
+          <Area 
+            type="monotone" 
+            dataKey="amount" 
+            stroke="#4f46e5" 
+            strokeWidth={2}
+            fillOpacity={1} 
+            fill="url(#colorAmount)" 
+          />
+          <Line 
+            type="monotone" 
+            dataKey="amount" 
+            stroke="#4f46e5" 
+            strokeWidth={3}
+            dot={{ r: 4, fill: '#4f46e5', stroke: '#fff', strokeWidth: 2 }}
+            activeDot={{ r: 6, fill: '#4f46e5', stroke: '#fff', strokeWidth: 2 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     )
   }
 

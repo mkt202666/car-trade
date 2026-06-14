@@ -4,6 +4,7 @@ import { getCarList, getCarDetail, updateCarStatus, violateCar } from '../../api
 import { usePagination } from '../../hooks/usePagination'
 import { SkeletonTable } from '../../components/Skeleton'
 import { formatDate, maskPhone } from '../../utils/format'
+import { exportFile } from '../../utils/export'
 
 const STATUS_OPTIONS = ['全部', 'ON_SALE', 'OFFLINE', 'SOLD', 'DRAFT']
 const ENERGY_OPTIONS = ['全部', '汽油', '柴油', '纯电', '插电混动']
@@ -124,12 +125,18 @@ export default function CarManage() {
   }
 
   // Export
-  const handleExport = useCallback(() => {
-    const params = new URLSearchParams()
-    if (debouncedSearch) params.append('keyword', debouncedSearch)
-    if (statusFilter !== '全部') params.append('status', statusFilter)
-    if (energyFilter !== '全部') params.append('energyType', energyFilter)
-    window.open(`/api/v1/admin/cars/export?${params.toString()}`, '_blank')
+  const handleExport = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (debouncedSearch) params.append('keyword', debouncedSearch)
+      if (statusFilter !== '全部') params.append('status', statusFilter)
+      if (energyFilter !== '全部') params.append('energyType', energyFilter)
+      
+      await exportFile(`/cars/export?${params.toString()}`, `车源列表_${new Date().toLocaleDateString()}.xlsx`)
+    } catch (error) {
+      console.error('导出失败:', error)
+      alert('导出失败: ' + error.message)
+    }
   }, [debouncedSearch, statusFilter, energyFilter])
 
   // Pagination

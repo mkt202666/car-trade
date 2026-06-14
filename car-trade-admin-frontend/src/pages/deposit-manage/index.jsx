@@ -4,6 +4,7 @@ import { getDepositAccounts, getDepositRecords, manualDepositAdjust, getDepositS
 import { usePagination } from '../../hooks/usePagination';
 import { SkeletonTable } from '../../components/Skeleton';
 import { formatDate, maskPhone } from '../../utils/format';
+import { exportFile } from '../../utils/export';
 
 const RECORD_TYPE_OPTIONS = ['全部', 'CHARGE', 'WITHDRAW', 'FREEZE', 'UNFREEZE', 'REFUND', 'MANUAL'];
 
@@ -197,11 +198,17 @@ export default function DepositManage() {
   };
 
   // Export records
-  const handleExportRecords = useCallback(() => {
-    const params = new URLSearchParams()
-    if (debouncedRecordSearch) params.append('keyword', debouncedRecordSearch)
-    if (recordTypeFilter !== '全部') params.append('type', recordTypeFilter)
-    window.open(`/api/v1/admin/deposits/records/export?${params.toString()}`, '_blank')
+  const handleExportRecords = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (debouncedRecordSearch) params.append('keyword', debouncedRecordSearch)
+      if (recordTypeFilter !== '全部') params.append('type', recordTypeFilter)
+      
+      await exportFile(`/deposits/records/export?${params.toString()}`, `保证金流水_${new Date().toLocaleDateString()}.xlsx`)
+    } catch (error) {
+      console.error('导出失败:', error)
+      alert('导出失败: ' + error.message)
+    }
   }, [debouncedRecordSearch, recordTypeFilter]);
 
   // Pagination helpers

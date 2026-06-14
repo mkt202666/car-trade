@@ -4,6 +4,7 @@ import { getDisputeList, handleDispute, getPendingDisputeCount } from '../../api
 import { usePagination } from '../../hooks/usePagination';
 import { SkeletonTable } from '../../components/Skeleton';
 import { formatDate } from '../../utils/format';
+import { exportFile } from '../../utils/export';
 
 const STATUS_OPTIONS = ['全部', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'];
 
@@ -136,11 +137,17 @@ export default function DisputeManage() {
   };
 
   // Export
-  const handleExport = useCallback(() => {
-    const params = new URLSearchParams()
-    if (debouncedSearch) params.append('keyword', debouncedSearch)
-    if (statusFilter !== '全部') params.append('status', statusFilter)
-    window.open(`/api/v1/admin/disputes/export?${params.toString()}`, '_blank')
+  const handleExport = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (debouncedSearch) params.append('keyword', debouncedSearch)
+      if (statusFilter !== '全部') params.append('status', statusFilter)
+      
+      await exportFile(`/disputes/export?${params.toString()}`, `纠纷列表_${new Date().toLocaleDateString()}.xlsx`)
+    } catch (error) {
+      console.error('导出失败:', error)
+      alert('导出失败: ' + error.message)
+    }
   }, [debouncedSearch, statusFilter]);
 
   // Pagination helpers
