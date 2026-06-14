@@ -86,7 +86,7 @@ public class AdminDepositController {
     @PostMapping("/records/manual")
     public ApiResponse<Void> manualAdjust(@Valid @RequestBody DepositManualDTO dto,
                                           HttpServletRequest request) {
-        Long operatorId = (Long) request.getAttribute("userId");
+        Long operatorId = (Long) request.getAttribute("ADMIN_ID");
         adminDepositService.manualAdjust(dto, operatorId);
         return ApiResponse.success();
     }

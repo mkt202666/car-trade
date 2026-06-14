@@ -2,10 +2,11 @@
 
 ## Project Overview
 
-5D好车 B2B二手车交易平台 — a monorepo with two independent sub-projects:
+5D好车 B2B二手车交易平台 — a monorepo with three independent sub-projects:
 
 - **`car-trade-backend/`** — Spring Boot 3.5.14, Java 21, Maven build
 - **`car-trade-frontend/`** — uni-app 3.0 (Vue 3.4, Vite 5, Vuex 4, uView Plus 3.8)
+- **`car-trade-admin-frontend/`** — Vue 3.5 (Element Plus 2.14, Vite 8, TypeScript 6, Tailwind 4.3)
 
 ## Quick Start
 
@@ -30,6 +31,15 @@ npm run build:h5        # production H5 build
 ```
 
 Only `dev:h5` and `build:h5` scripts exist — no WeChat Mini Program scripts are configured. `.npmrc` uses `registry.npmmirror.com` (Chinese mirror).
+
+### Admin Frontend (from `car-trade-admin-frontend/`)
+
+```bash
+cd car-trade-admin-frontend
+npm install
+npm run dev         # dev mode (Vite dev server, port 5174)
+npm run build       # production build (vue-tsc -b && vite build)
+```
 
 ## Backend Architecture
 
@@ -136,6 +146,65 @@ Vuex 4 in `src/store/` — only for global state (user info, token). Server data
 - `permissions.js` public endpoint list must stay in sync with `WebMvcConfig` exclude list on backend
 - Auth level check in `request.js` intercepts 401 → attempts refresh token → retry → logout on failure
 
+## Admin Frontend Architecture
+
+### Page structure (`views/`)
+
+12 pages under `AdminLayout`, lazy-loaded via vue-router:
+
+| Route | Module | Lines | Notes |
+|-------|--------|-------|-------|
+| `/login` | Login | 647 | Split layout, CSS animations, not under AdminLayout |
+| `/dashboard` | Dashboard | 437 | ECharts trend/pie charts, KPI stat cards |
+| `/users` | Users | 802 | el-table with expand rows + inline edit + image upload |
+| `/dealers` | Dealers | 1424 | el-table + filter bar + create dialog |
+| `/dealer-audit` | Dealer Audit | 712 | Native HTML table + split-pane approve/reject |
+| `/vehicles` | Vehicles | 1040 | el-table rich cells + detail drawer |
+| `/purchase` | Purchase | 377 | el-table with brand/trim/publisher/price |
+| `/transactions` | Transactions | 607 | Custom HTML grid layout (not el-table) |
+| `/deposit` | Deposit | 700 | Stat cards + el-table + manual journal entry |
+| `/export-config` | Export Config | 528 | el-table + constraint tags + create/edit dialog |
+| `/models` | Models | 1029 | Cascading brand→series→variant selects + Excel upload |
+| `/resources` | Resources | 622 | el-tabs (banner/popup/rules/privacy/contract) |
+
+### API layer (`src/utils/request/`)
+
+- `index.ts` — axios wrapper (get/post/put/del) with `code === 0` unwrap
+- `types.ts` — `ApiResponse<T>`, `PageResult`, `RequestConfig`
+- **NOT yet used by any view** — all views use hardcoded mock data (`SEED_*` constants in module hooks)
+
+### Component rules
+
+- Layout shell: `src/layouts/AdminLayout.vue` — AppHeader + SidebarNav + MobileNav + `<RouterView />`
+- Shared components: `src/components/` — `AppHeader.vue`, `SidebarNav.vue`, `MobileNav.vue`, `PageHeader.vue`, `StatCard.vue`, `StatusBadge.vue`
+- Page modules: `src/views/<module>/index.vue` + `hooks/use*.ts` + `hooks/types.ts` + `hooks/constants.ts`
+- **Never put business logic in `index.vue`** — use hooks composables
+
+### State management
+
+- **No Pinia/Vuex** — all state is local to views or composable singletons
+- `useAuth()` — token + user info, persisted to `localStorage`
+- `useTheme()` — light/dark toggle via `data-theme` attribute, persisted to `localStorage`
+
+### Admin frontend specifics
+
+- Use Element Plus components (auto-imported) — `el-table`, `el-card`, `el-dialog`, `el-button`, etc.
+- Icons from `@element-plus/icons-vue` — import in `<script setup>` explicitly
+- ECharts via `vue-echarts` — `VChart` component auto-registered
+- Tailwind v4 utility classes + SCSS scoped styles in `.vue` files
+- `npm run dev` → port 5174 (proxies `/api` to `http://localhost:8080`)
+- `npm run build` → `vue-tsc -b && vite build`
+
+### Admin frontend gotchas
+
+- **All data is mock** — no view calls API; `SEED_*` arrays in `hooks/constants.ts` are the source of truth
+- **Login is hardcoded** — credentials `yuan2026@5d.com` / `5d2026` in `useAuth.ts`
+- **No shared types** — each view defines its own TypeScript interfaces locally
+- **dealer-audit is architecturally inconsistent** — uses raw `<table>` + `<select>` + `<input>` instead of Element Plus components
+- **Vite proxy** targets `http://localhost:8080` for API dev; edit in `vite.config.ts`
+- **Theme CSS variables** in `src/style.css` — `:root` for light, `[data-theme='dark']` for dark
+- **Auto-imports** (`unplugin-auto-import`, `unplugin-vue-components`) — all Element Plus components and Vue APIs auto-registered; don't manually import them
+
 ## Infrastructure
 
 - **PostgreSQL 16** — 33 entity tables, DDL in `car-trade-backend/src/main/resources/init.sql`
@@ -148,7 +217,7 @@ Vuex 4 in `src/store/` — only for global state (user info, token). Server data
 
 - **No backend tests exist** — no test files in `car-trade-backend/src/test/`
 - **No frontend linting/formatting** — no ESLint, Prettier, or similar configured
-- To verify changes: `mvn compile -q` (backend), `npm run build:h5` (frontend)
+- To verify changes: `mvn compile -q` (backend), `npm run build:h5` (frontend), `npm run build` (admin frontend)
 
 ## Documentation
 

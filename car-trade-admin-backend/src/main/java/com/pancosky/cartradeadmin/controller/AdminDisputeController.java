@@ -77,7 +77,7 @@ public class AdminDisputeController {
     public ApiResponse<Void> handleDispute(@PathVariable Long id,
                                            @Valid @RequestBody DisputeHandleDTO dto,
                                            HttpServletRequest request) {
-        Long operatorId = (Long) request.getAttribute("userId");
+        Long operatorId = (Long) request.getAttribute("ADMIN_ID");
         adminDisputeService.handleDispute(id, dto, operatorId);
         return ApiResponse.success();
     }

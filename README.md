@@ -41,7 +41,7 @@
 
 ### 1.3 业务特点
 
-- **双端协同**: 移动端(uni-app) + 运营端(React Admin)
+- **双端协同**: 移动端(uni-app) + 运营端(Vue 3 Admin)
 - **实时交互**: WebSocket推送 + Redis Pub/Sub事件总线
 - **安全交易**: 保证金机制 + 智能合约 + 纠纷仲裁
 - **AI赋能**: AI助理匹配 + 智能定价 + 风险预警
@@ -294,47 +294,48 @@ new-car-trade/
 │   └── src/main/resources/
 │       └── application.properties
 │
-└── car-trade-admin-frontend/             # 运营端前端
-    ├── src/
-    │   ├── api/                          # API模块
-    │   │   ├── request.js                # HTTP实例 + 拦截器
-    │   │   ├── dashboard.js              # 仪表盘API
-    │   │   ├── user.js                   # 用户API
-    │   │   ├── shop.js                   # 车行API
-    │   │   ├── car.js                    # 车源API
-    │   │   ├── trade.js                  # 交易API
-    │   │   ├── dispute.js                # 纠纷API
-    │   │   └── deposit.js                # 保证金API
-    │   ├── pages/                        # 页面 (14个有效页面)
-    │   │   ├── login/                    # 登录页
-    │   │   ├── dashboard/                # 分析仪表盘
-    │   │   ├── user-manage/              # 用户管理 (+ M1字段)
-    │   │   ├── shop-manage/              # 车行管理
-    │   │   ├── shop-audit/               # 车行注册审核
-    │   │   ├── car-manage/               # 5D车源管理 (+ 图片+检测)
-    │   │   ├── car-library/              # 车型库
-    │   │   ├── car-model/                # 车型库维护 (API集成)
-    │   │   ├── purchase-manage/          # 求购管理
-    │   │   ├── trade-manage/             # 交易管理 (+ 订单操作)
-    │   │   ├── dispute-manage/           # 争议处理
-    │   │   ├── deposit-manage/           # 保证金管理
-    │   │   ├── resource-manage/          # 资源管理
-    │   │   └── export-config/            # 出口配置 (待后端)
-    │   ├── layouts/
-    │   │   └── AdminLayout.jsx           # 管理后台布局
-    │   ├── components/
-    │   │   ├── Skeleton.jsx              # 骨架屏组件
-    │   │   ├── LoadingBar.jsx            # 加载进度条
-    │   │   └── ErrorBoundary.jsx         # 错误边界
-    │   ├── hooks/
-    │   │   └── usePagination.js          # 分页Hook
-    │   ├── store/
-    │   │   └── AuthContext.jsx           # 认证上下文
-    │   ├── utils/
-    │   │   └── format.js                 # 格式化工具
-    │   └── App.jsx                       # 路由配置
-    ├── vite.config.js
-    └── package.json
+└── car-trade-admin-frontend/             # 运营端前端 (Vue 3)
+    ├── index.html
+    ├── vite.config.ts
+    ├── .env.development
+    ├── tsconfig.json / tsconfig.app.json / tsconfig.node.json
+    └── src/
+        ├── main.ts                       # 应用入口
+        ├── App.vue                       # ElConfigProvider + RouterView
+        ├── style.css                     # Tailwind v4 + 亮/暗主题 CSS 变量
+        ├── styles/page.css               # 页面共享样式类
+        ├── router/index.ts               # 路由表 + 登录守卫 (12条子路由)
+        ├── config/nav.ts                 # 侧边栏导航项 (11项)
+        ├── composables/
+        │   ├── useAuth.ts                # 登录/token/user (localStorage, 硬编码)
+        │   └── useTheme.ts               # light/dark 主题切换
+        ├── layouts/
+        │   ├── AdminLayout.vue           # AppHeader + Sidebar + MobileNav + RouterView
+        │   └── hooks/useAdminLayout.ts
+        ├── components/
+        │   ├── AppHeader.vue             # 顶栏 (brand, theme toggle, user dropdown)
+        │   ├── SidebarNav.vue            # 240px 侧边导航
+        │   ├── MobileNav.vue             # ≤749px 水平滚动导航
+        │   ├── PageHeader.vue            # 页面标题栏
+        │   ├── StatCard.vue              # KPI 统计卡片
+        │   ├── StatusBadge.vue           # 状态标签 (el-tag 包装)
+        │   └── hooks/                    # 组件级 composable (useNav 等)
+        ├── utils/request/
+        │   ├── index.ts                  # axios 封装 (get/post/put/del)
+        │   └── types.ts                  # ApiResponse, PageResult
+        └── views/                        # 12个业务模块 (mock 数据, 无API)
+            ├── login/                    # 登录页 (split layout + CSS动画)
+            ├── dashboard/                # 分析仪表盘 (echarts 趋势/渠道图)
+            ├── users/                    # 用户管理 (el-table expand + inline edit)
+            ├── dealers/                  # 车行管理 (el-table + 筛选 + 创建弹窗)
+            ├── dealer-audit/             # 车行注册审核 (split-pane 审批)
+            ├── vehicles/                 # 5D车源管理 (el-table + 详情抽屉)
+            ├── purchase/                 # 求购管理 (el-table)
+            ├── transactions/             # 交易管理 (自定义网格布局 + 日期筛选)
+            ├── deposit/                  # 保证金现金流 (汇总卡 + el-table)
+            ├── export-config/            # 出口配置 (el-table + 约束标签)
+            ├── models/                   # 车型库 (级联筛选 + Excel上传)
+            └── resources/                # 资源管理 (el-tabs: banner/协议)
 ```
 
 ### 3.2 代码结构与模式
@@ -1373,11 +1374,11 @@ npm run dev:h5  # H5开发模式 (Vite dev server, port 5173)
 # 运营端
 cd car-trade-admin-frontend
 npm install
-npm run dev     # React开发模式 (Vite dev server, port 5174)
+npm run dev     # Vue 3开发模式 (Vite dev server, port 5174)
 ```
 
-**代理配置** (vite.config.js):
-```javascript
+**代理配置** (vite.config.ts):
+```typescript
 server: {
   proxy: {
     '/api': {

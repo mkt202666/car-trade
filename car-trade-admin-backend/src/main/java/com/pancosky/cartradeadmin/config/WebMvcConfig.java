@@ -22,10 +22,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 限流拦截器 — 在鉴权之前，优先检查频率
-        registry.addInterceptor(rateLimitInterceptor)
+        // 鉴权拦截器 — 先验证身份，设置ADMIN_ID供后续使用
+        registry.addInterceptor(adminAuthInterceptor)
                 .addPathPatterns(apiPrefix + "/**")
                 .excludePathPatterns(
+                        apiPrefix + "/auth/login",
+                        apiPrefix + "/auth/refresh",
+                        apiPrefix + "/health",
                         "/swagger-ui/**",
                         "/v3/api-docs",
                         "/v3/api-docs/**",
@@ -34,13 +37,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 )
                 .order(1);
 
-        // 鉴权拦截器
-        registry.addInterceptor(adminAuthInterceptor)
+        // 限流拦截器 — 鉴权后执行，支持按用户维度限流
+        registry.addInterceptor(rateLimitInterceptor)
                 .addPathPatterns(apiPrefix + "/**")
                 .excludePathPatterns(
-                        apiPrefix + "/auth/login",
-                        apiPrefix + "/auth/refresh",
-                        apiPrefix + "/health",
                         "/swagger-ui/**",
                         "/v3/api-docs",
                         "/v3/api-docs/**",
