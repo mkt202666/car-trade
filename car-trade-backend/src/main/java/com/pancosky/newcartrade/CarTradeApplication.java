@@ -10,9 +10,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @MapperScan("com.pancosky.newcartrade.mapper")
 @EnableAsync
 @EnableScheduling
-public class NewCarTradeApplication {
+public class CarTradeApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(NewCarTradeApplication.class, args);
+        SpringApplication.run(CarTradeApplication.class, args);
     }
 }
