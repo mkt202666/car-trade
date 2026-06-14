@@ -1,1 +1,0 @@
-import{r as t}from"./vendor-C3i3T-xb.js";function b(c=20){const[n,a]=t.useState(1),[s,l]=t.useState(c),[o,i]=t.useState(0),u=t.useCallback(e=>{i(e)},[]),g=t.useCallback(()=>{a(1)},[]),r=t.useCallback(e=>{a(e)},[]),P=t.useCallback(e=>{l(e),a(1)},[]);return{page:n,size:s,total:o,totalPages:Math.ceil(o/s),setPage:r,setSize:P,setTotal:u,reset:g}}export{b as u};

@@ -5,7 +5,9 @@ import com.pancosky.cartradeadmin.annotation.RateLimit;
 import com.pancosky.cartradeadmin.common.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -17,7 +19,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * 基于Redis ZSet滑动窗口的接口限流拦截器
  * 算法：每次请求先移除窗口外记录，统计窗口内数量，超过阈值则拒绝
+ * 注意：当Redis不可用时，限流功能会自动降级（放行请求），不影响业务正常运行
  */
+@Slf4j
 @Component
 public class RateLimitInterceptor implements HandlerInterceptor {
 
@@ -40,6 +44,22 @@ public class RateLimitInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        // 如果Redis不可用，直接放行（限流降级）
+        try {
+            return doRateLimit(request, response, rateLimit);
+        } catch (RedisConnectionFailureException e) {
+            log.warn("[RateLimit] Redis连接失败，限流功能降级，放行请求. URI: {}", request.getRequestURI(), e);
+            return true; // 放行请求
+        } catch (Exception e) {
+            log.error("[RateLimit] 限流检查异常，放行请求. URI: {}", request.getRequestURI(), e);
+            return true; // 发生异常时放行请求
+        }
+    }
+
+    /**
+     * 执行限流逻辑
+     */
+    private boolean doRateLimit(HttpServletRequest request, HttpServletResponse response, RateLimit rateLimit) throws Exception {
         String key = buildKey(request, rateLimit);
         long now = System.currentTimeMillis();
         long windowStart = now - rateLimit.window() * 1000L;
