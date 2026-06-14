@@ -6,6 +6,7 @@
 .env
 .env.local
 .env.*.local
+.idea/
 
 # ---- node_modules / 构建产物 ----
 node_modules/
