@@ -4,6 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.pancosky.cartradeadmin.common.BusinessException;
 import com.pancosky.cartradeadmin.common.PageResult;
+import com.pancosky.cartradeadmin.dto.ShopCreateDTO;
+import com.pancosky.cartradeadmin.dto.ShopMemberAddDTO;
+import com.pancosky.cartradeadmin.dto.ShopMemberRoleUpdateDTO;
 import com.pancosky.cartradeadmin.dto.ShopQueryDTO;
 import com.pancosky.cartradeadmin.entity.AppShopMember;
 import com.pancosky.cartradeadmin.entity.AppUser;
@@ -14,6 +17,7 @@ import com.pancosky.cartradeadmin.vo.ShopMemberVO;
 import com.pancosky.cartradeadmin.vo.ShopVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,6 +32,38 @@ public class AdminShopService {
 
     @Autowired
     private AppShopMemberMapper appShopMemberMapper;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public Long createShop(ShopCreateDTO dto) {
+        // 检查手机号是否已存在
+        Long existCount = appUserMapper.selectCount(
+                new LambdaQueryWrapper<AppUser>()
+                        .eq(AppUser::getPhone, dto.getPhone())
+                        .isNull(AppUser::getDeletedAt));
+        if (existCount != null && existCount > 0) {
+            throw new BusinessException(400, "该手机号已被注册");
+        }
+
+        AppUser user = new AppUser();
+        user.setShopName(dto.getShopName());
+        user.setShopLogo(dto.getShopLogo());
+        user.setShopDescription(dto.getShopDescription());
+        user.setPhone(dto.getPhone());
+        user.setNickname(dto.getContactName() != null && !dto.getContactName().isEmpty()
+                ? dto.getContactName() : dto.getShopName());
+        user.setUserRole("SHOP");
+        user.setCertificationStatus("PENDING");
+        user.setStatus("ACTIVE");
+        user.setCreditScore(0);
+        user.setDealCount(0);
+        user.setPassword(passwordEncoder.encode("123456"));
+
+        appUserMapper.insert(user);
+        log.info("Created shop: id={}, shopName={}", user.getId(), user.getShopName());
+        return user.getId();
+    }
 
     public PageResult<ShopVO> getShopList(ShopQueryDTO query) {
         LambdaQueryWrapper<AppUser> wrapper = new LambdaQueryWrapper<AppUser>()
@@ -153,6 +189,81 @@ public class AdminShopService {
         }
         user.setStatus(status);
         appUserMapper.updateById(user);
+    }
+
+    public List<ShopMemberVO> getShopMembers(Long shopId) {
+        AppUser shop = appUserMapper.selectById(shopId);
+        if (shop == null || shop.getDeletedAt() != null || shop.getShopName() == null) {
+            throw new BusinessException(404, "车行不存在");
+        }
+        return appShopMemberMapper.selectMembersByShopUserId(shopId);
+    }
+
+    public void addShopMember(Long shopId, ShopMemberAddDTO dto) {
+        // Validate shop exists
+        AppUser shop = appUserMapper.selectById(shopId);
+        if (shop == null || shop.getDeletedAt() != null || shop.getShopName() == null) {
+            throw new BusinessException(404, "车行不存在");
+        }
+
+        // Find user by phone
+        AppUser member = appUserMapper.selectOne(
+                new LambdaQueryWrapper<AppUser>()
+                        .eq(AppUser::getPhone, dto.getPhone())
+                        .isNull(AppUser::getDeletedAt)
+                        .last("LIMIT 1"));
+        if (member == null) {
+            throw new BusinessException(404, "未找到该手机号对应的用户");
+        }
+
+        // Check if already a member
+        Long existCount = appShopMemberMapper.selectCount(
+                new LambdaQueryWrapper<AppShopMember>()
+                        .eq(AppShopMember::getShopUserId, shopId)
+                        .eq(AppShopMember::getMemberUserId, member.getId()));
+        if (existCount != null && existCount > 0) {
+            throw new BusinessException(400, "该用户已是车行成员");
+        }
+
+        AppShopMember shopMember = new AppShopMember();
+        shopMember.setShopUserId(shopId);
+        shopMember.setMemberUserId(member.getId());
+        shopMember.setRole(dto.getRole() != null && !dto.getRole().isEmpty() ? dto.getRole() : "MEMBER");
+        shopMember.setStatus("ACTIVE");
+        appShopMemberMapper.insert(shopMember);
+
+        // Update nickname if provided
+        if (dto.getNickname() != null && !dto.getNickname().isEmpty()) {
+            member.setNickname(dto.getNickname());
+            appUserMapper.updateById(member);
+        }
+
+        log.info("Added member to shop: shopId={}, memberUserId={}, phone={}", shopId, member.getId(), dto.getPhone());
+    }
+
+    public void updateMemberRole(Long shopId, Long memberId, ShopMemberRoleUpdateDTO dto) {
+        AppShopMember member = appShopMemberMapper.selectOne(
+                new LambdaQueryWrapper<AppShopMember>()
+                        .eq(AppShopMember::getId, memberId)
+                        .eq(AppShopMember::getShopUserId, shopId));
+        if (member == null) {
+            throw new BusinessException(404, "成员不存在");
+        }
+        member.setRole(dto.getRole());
+        appShopMemberMapper.updateById(member);
+        log.info("Updated member role: shopId={}, memberId={}, role={}", shopId, memberId, dto.getRole());
+    }
+
+    public void removeShopMember(Long shopId, Long memberId) {
+        AppShopMember member = appShopMemberMapper.selectOne(
+                new LambdaQueryWrapper<AppShopMember>()
+                        .eq(AppShopMember::getId, memberId)
+                        .eq(AppShopMember::getShopUserId, shopId));
+        if (member == null) {
+            throw new BusinessException(404, "成员不存在");
+        }
+        appShopMemberMapper.deleteById(memberId);
+        log.info("Removed member from shop: shopId={}, memberId={}", shopId, memberId);
     }
 
     private String maskPhone(String phone) {

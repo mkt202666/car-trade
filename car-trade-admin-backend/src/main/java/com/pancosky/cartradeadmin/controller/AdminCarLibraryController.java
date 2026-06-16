@@ -112,16 +112,16 @@ public class AdminCarLibraryController {
     @AuditLog(module = "car-library", action = "批量导入车型", targetType = "model")
     @PostMapping("/import")
     public ApiResponse<Map<String, Object>> importModels(@RequestParam("file") MultipartFile file) {
-        int count = adminCarLibraryService.importModels(file);
-        return ApiResponse.success(Map.of("imported", count));
+        Map<String, Object> result = adminCarLibraryService.importModels(file);
+        return ApiResponse.success(result);
     }
 
-    @GetMapping("/export-template")
-    public ResponseEntity<byte[]> exportTemplate() {
+    @GetMapping("/import-template")
+    public ResponseEntity<byte[]> importTemplate() {
         byte[] data = adminCarLibraryService.exportTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", "car_model_template.xlsx");
+        headers.setContentDispositionFormData("attachment", "car_model_import_template.xlsx");
         return ResponseEntity.ok().headers(headers).body(data);
     }
 }

@@ -111,6 +111,18 @@ public class AdminOrderController {
     }
 
     /**
+     * 管理员退款
+     * PUT /api/v1/admin/orders/{id}/refund
+     * refundAmount 不传则全额退款
+     */
+    @PutMapping("/{id}/refund")
+    @AuditLog(module = "order", action = "管理员退款", targetType = "order")
+    public ApiResponse<Void> refundOrder(@PathVariable String id, @RequestBody OrderActionDTO dto) {
+        adminOrderService.refundOrder(id, dto.getRefundAmount(), dto.getReason());
+        return ApiResponse.success();
+    }
+
+    /**
      * 订单状态中文映射（用于导出）
      * 与移动端 Order 实体的实际状态值保持一致
      */

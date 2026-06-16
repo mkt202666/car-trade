@@ -23,8 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,6 +75,16 @@ public class AdminCarService {
         Page<AppCarSource> page = appCarSourceMapper.selectPage(
                 new Page<>(query.getPage(), query.getSize()), wrapper);
 
+        // 批量查询卖家信息，避免 N+1
+        List<Long> sellerIds = page.getRecords().stream()
+                .map(AppCarSource::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, AppUser> sellerMap = sellerIds.isEmpty() ? Collections.emptyMap()
+                : appUserMapper.selectBatchIds(sellerIds).stream()
+                        .collect(Collectors.toMap(AppUser::getId, u -> u));
+
         List<CarVO> voList = page.getRecords().stream().map(car -> {
             CarVO vo = new CarVO();
             vo.setId(car.getId());
@@ -88,13 +100,10 @@ public class AdminCarService {
             vo.setViewCount(car.getViewCount());
             vo.setCreatedAt(car.getCreatedAt());
 
-            // 查询卖家信息
-            if (car.getUserId() != null) {
-                AppUser seller = appUserMapper.selectById(car.getUserId());
-                if (seller != null) {
-                    vo.setSellerName(seller.getNickname());
-                    vo.setSellerPhone(maskPhone(seller.getPhone()));
-                }
+            AppUser seller = sellerMap.get(car.getUserId());
+            if (seller != null) {
+                vo.setSellerName(seller.getNickname());
+                vo.setSellerPhone(maskPhone(seller.getPhone()));
             }
 
             return vo;
@@ -129,6 +138,16 @@ public class AdminCarService {
 
         List<AppCarSource> cars = appCarSourceMapper.selectList(wrapper);
 
+        // 批量查询卖家信息，避免 N+1
+        List<Long> sellerIds = cars.stream()
+                .map(AppCarSource::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, AppUser> sellerMap = sellerIds.isEmpty() ? Collections.emptyMap()
+                : appUserMapper.selectBatchIds(sellerIds).stream()
+                        .collect(Collectors.toMap(AppUser::getId, u -> u));
+
         return cars.stream().map(car -> {
             CarVO vo = new CarVO();
             vo.setId(car.getId());
@@ -144,12 +163,10 @@ public class AdminCarService {
             vo.setViewCount(car.getViewCount());
             vo.setCreatedAt(car.getCreatedAt());
 
-            if (car.getUserId() != null) {
-                AppUser seller = appUserMapper.selectById(car.getUserId());
-                if (seller != null) {
-                    vo.setSellerName(seller.getNickname());
-                    vo.setSellerPhone(maskPhone(seller.getPhone()));
-                }
+            AppUser seller = sellerMap.get(car.getUserId());
+            if (seller != null) {
+                vo.setSellerName(seller.getNickname());
+                vo.setSellerPhone(maskPhone(seller.getPhone()));
             }
 
             return vo;
@@ -313,6 +330,29 @@ public class AdminCarService {
         }
 
         log.info("Admin deleted car source: id={}, title={}", id, car.getTitle());
+    }
+
+    /**
+     * 管理员设置/取消车源推荐
+     */
+    public void recommendCar(Long id, Boolean recommended) {
+        AppCarSource car = appCarSourceMapper.selectById(id);
+        if (car == null) {
+            throw new BusinessException(404, "车源不存在");
+        }
+
+        car.setRecommended(recommended);
+        appCarSourceMapper.updateById(car);
+
+        // 如果设为推荐，发送通知给车主
+        if (Boolean.TRUE.equals(recommended) && car.getUserId() != null) {
+            adminNotificationService.notify(
+                    MobileNotification.NotifyType.CAR_STATUS_CHANGED, car.getUserId(),
+                    "车源被推荐", "您的车源「" + car.getTitle() + "」已被管理员设为推荐车源。",
+                    "car_source", String.valueOf(car.getId()));
+        }
+
+        log.info("Admin set car recommend: id={}, recommended={}", id, recommended);
     }
 
     private String maskPhone(String phone) {

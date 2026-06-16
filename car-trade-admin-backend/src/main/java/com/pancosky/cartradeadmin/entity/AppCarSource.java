@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -39,12 +40,26 @@ public class AppCarSource {
 
     private Integer year;
 
+    private String vin;
+
+    private String color;
+
+    private String transmission;
+
+    private LocalDate registrationDate;
+
+    private LocalDate insuranceExpiry;
+
+    private LocalDate inspectionExpiry;
+
     /** ON_SALE / SOLD / OFFLINE / DRAFT */
     private String status;
 
     private Long viewCount;
 
     private Integer favoriteCount;
+
+    private Boolean recommended;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

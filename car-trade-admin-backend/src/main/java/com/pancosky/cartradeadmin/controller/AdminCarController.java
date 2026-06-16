@@ -4,6 +4,7 @@ import com.pancosky.cartradeadmin.annotation.AuditLog;
 import com.pancosky.cartradeadmin.common.ApiResponse;
 import com.pancosky.cartradeadmin.common.PageResult;
 import com.pancosky.cartradeadmin.dto.CarQueryDTO;
+import com.pancosky.cartradeadmin.dto.CarRecommendDTO;
 import com.pancosky.cartradeadmin.dto.CarStatusUpdateDTO;
 import com.pancosky.cartradeadmin.dto.CarUpdateDTO;
 import com.pancosky.cartradeadmin.dto.CarViolateDTO;
@@ -100,6 +101,13 @@ public class AdminCarController {
     @PutMapping("/{id}")
     public ApiResponse<Void> updateCar(@PathVariable Long id, @Valid @RequestBody CarUpdateDTO dto) {
         adminCarService.updateCar(id, dto);
+        return ApiResponse.success();
+    }
+
+    @AuditLog(module = "car", action = "设置推荐", targetType = "car")
+    @PutMapping("/{id}/recommend")
+    public ApiResponse<Void> recommendCar(@PathVariable Long id, @Valid @RequestBody CarRecommendDTO dto) {
+        adminCarService.recommendCar(id, dto.getRecommended());
         return ApiResponse.success();
     }
 

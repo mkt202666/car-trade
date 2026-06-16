@@ -31,12 +31,24 @@ public class AdminResourceService {
 
     public List<BannerVO> listBanners(String status) {
         LambdaQueryWrapper<Banner> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Banner::getType, "BANNER");
         if (status != null && !status.isEmpty() && !"ALL".equalsIgnoreCase(status)) {
             wrapper.eq(Banner::getStatus, status);
         }
         wrapper.orderByAsc(Banner::getSortOrder);
         List<Banner> banners = bannerMapper.selectList(wrapper);
         return banners.stream().map(this::toBannerVO).collect(Collectors.toList());
+    }
+
+    public List<BannerVO> listPopups(String status) {
+        LambdaQueryWrapper<Banner> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Banner::getType, "POPUP");
+        if (status != null && !status.isEmpty() && !"ALL".equalsIgnoreCase(status)) {
+            wrapper.eq(Banner::getStatus, status);
+        }
+        wrapper.orderByAsc(Banner::getSortOrder);
+        List<Banner> popups = bannerMapper.selectList(wrapper);
+        return popups.stream().map(this::toBannerVO).collect(Collectors.toList());
     }
 
     public List<ConfigVO> listConfigs() {
@@ -54,12 +66,25 @@ public class AdminResourceService {
     public BannerVO createBanner(BannerCreateDTO dto) {
         Banner banner = new Banner();
         BeanUtils.copyProperties(dto, banner);
+        banner.setType("BANNER");
         banner.setStatus("ACTIVE");
         if (banner.getSortOrder() == null) {
             banner.setSortOrder(0);
         }
         bannerMapper.insert(banner);
         return toBannerVO(banner);
+    }
+
+    public BannerVO createPopup(BannerCreateDTO dto) {
+        Banner popup = new Banner();
+        BeanUtils.copyProperties(dto, popup);
+        popup.setType("POPUP");
+        popup.setStatus("ACTIVE");
+        if (popup.getSortOrder() == null) {
+            popup.setSortOrder(0);
+        }
+        bannerMapper.insert(popup);
+        return toBannerVO(popup);
     }
 
     public BannerVO updateBanner(Long id, BannerUpdateDTO dto) {
@@ -105,15 +130,59 @@ public class AdminResourceService {
         }
     }
 
+    public BannerVO updatePopup(Long id, BannerUpdateDTO dto) {
+        Banner popup = bannerMapper.selectById(id);
+        if (popup == null) {
+            throw new BusinessException(404, "弹窗不存在");
+        }
+        if (dto.getTitle() != null) popup.setTitle(dto.getTitle());
+        if (dto.getImageUrl() != null) popup.setImageUrl(dto.getImageUrl());
+        if (dto.getLinkUrl() != null) popup.setLinkUrl(dto.getLinkUrl());
+        if (dto.getSortOrder() != null) popup.setSortOrder(dto.getSortOrder());
+        if (dto.getStatus() != null) popup.setStatus(dto.getStatus());
+        bannerMapper.updateById(popup);
+        return toBannerVO(popup);
+    }
+
+    public void deletePopup(Long id) {
+        Banner popup = bannerMapper.selectById(id);
+        if (popup == null) {
+            throw new BusinessException(404, "弹窗不存在");
+        }
+        bannerMapper.deleteById(id);
+    }
+
+    public void updatePopupStatus(Long id, String status) {
+        Banner popup = bannerMapper.selectById(id);
+        if (popup == null) {
+            throw new BusinessException(404, "弹窗不存在");
+        }
+        popup.setStatus(status);
+        bannerMapper.updateById(popup);
+    }
+
+    @Transactional
+    public void updatePopupSort(List<BannerSortItem> items) {
+        for (BannerSortItem item : items) {
+            Banner popup = bannerMapper.selectById(item.getId());
+            if (popup != null) {
+                popup.setSortOrder(item.getSortOrder());
+                bannerMapper.updateById(popup);
+            }
+        }
+    }
+
     public ConfigVO getConfig(String key) {
         Config config = configMapper.selectById(key);
-        if (config == null) {
-            throw new BusinessException(404, "配置不存在");
-        }
         ConfigVO vo = new ConfigVO();
-        vo.setKey(config.getKey());
-        vo.setContent(config.getContent());
-        vo.setUpdatedAt(config.getUpdatedAt());
+        vo.setKey(key);
+        if (config != null) {
+            vo.setContent(config.getContent());
+            vo.setUpdatedAt(config.getUpdatedAt());
+        } else {
+            vo.setContent("");
+            vo.setUpdatedAt(null);
+        }
         return vo;
     }
 

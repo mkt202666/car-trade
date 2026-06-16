@@ -3,11 +3,15 @@ package com.pancosky.cartradeadmin.controller;
 import com.pancosky.cartradeadmin.annotation.AuditLog;
 import com.pancosky.cartradeadmin.common.ApiResponse;
 import com.pancosky.cartradeadmin.common.PageResult;
+import com.pancosky.cartradeadmin.dto.ShopCreateDTO;
+import com.pancosky.cartradeadmin.dto.ShopMemberAddDTO;
+import com.pancosky.cartradeadmin.dto.ShopMemberRoleUpdateDTO;
 import com.pancosky.cartradeadmin.dto.ShopQueryDTO;
 import com.pancosky.cartradeadmin.dto.ShopStatusUpdateDTO;
 import com.pancosky.cartradeadmin.service.AdminShopService;
 import com.pancosky.cartradeadmin.util.ExcelExportUtil;
 import com.pancosky.cartradeadmin.vo.ShopDetailVO;
+import com.pancosky.cartradeadmin.vo.ShopMemberVO;
 import com.pancosky.cartradeadmin.vo.ShopVO;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("${api.prefix}/shops")
@@ -28,6 +33,13 @@ public class AdminShopController {
     @GetMapping
     public ApiResponse<PageResult<ShopVO>> listShops(@ModelAttribute ShopQueryDTO query) {
         return ApiResponse.success(adminShopService.getShopList(query));
+    }
+
+    @AuditLog(module = "shop", action = "创建车行", targetType = "shop")
+    @PostMapping
+    public ApiResponse<Map<String, Long>> createShop(@Valid @RequestBody ShopCreateDTO dto) {
+        Long id = adminShopService.createShop(dto);
+        return ApiResponse.success(Map.of("id", id));
     }
 
     @GetMapping("/export")
@@ -92,6 +104,34 @@ public class AdminShopController {
     @PutMapping("/{id}/status")
     public ApiResponse<Void> updateShopStatus(@PathVariable Long id, @Valid @RequestBody ShopStatusUpdateDTO dto) {
         adminShopService.updateShopStatus(id, dto.getStatus());
+        return ApiResponse.success();
+    }
+
+    @GetMapping("/{shopId}/members")
+    public ApiResponse<List<ShopMemberVO>> listMembers(@PathVariable Long shopId) {
+        return ApiResponse.success(adminShopService.getShopMembers(shopId));
+    }
+
+    @AuditLog(module = "shop", action = "添加车行成员", targetType = "shop_member")
+    @PostMapping("/{shopId}/members")
+    public ApiResponse<Void> addMember(@PathVariable Long shopId, @Valid @RequestBody ShopMemberAddDTO dto) {
+        adminShopService.addShopMember(shopId, dto);
+        return ApiResponse.success();
+    }
+
+    @AuditLog(module = "shop", action = "修改成员角色", targetType = "shop_member")
+    @PutMapping("/{shopId}/members/{memberId}/role")
+    public ApiResponse<Void> updateMemberRole(@PathVariable Long shopId,
+                                               @PathVariable Long memberId,
+                                               @Valid @RequestBody ShopMemberRoleUpdateDTO dto) {
+        adminShopService.updateMemberRole(shopId, memberId, dto);
+        return ApiResponse.success();
+    }
+
+    @AuditLog(module = "shop", action = "移除车行成员", targetType = "shop_member")
+    @DeleteMapping("/{shopId}/members/{memberId}")
+    public ApiResponse<Void> removeMember(@PathVariable Long shopId, @PathVariable Long memberId) {
+        adminShopService.removeShopMember(shopId, memberId);
         return ApiResponse.success();
     }
 }

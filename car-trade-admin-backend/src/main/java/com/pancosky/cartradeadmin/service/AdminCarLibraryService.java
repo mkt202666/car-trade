@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -212,53 +213,178 @@ public class AdminCarLibraryService {
 
     @CacheEvict(value = "car-library", allEntries = true)
     @Transactional
-    public int importModels(MultipartFile file) {
+    public Map<String, Object> importModels(MultipartFile file) {
         try (InputStream is = file.getInputStream(); Workbook workbook = new XSSFWorkbook(is)) {
             Sheet sheet = workbook.getSheetAt(0);
-            int imported = 0;
+            int total = 0;
+            int created = 0;
+            int skipped = 0;
+            List<String> errors = new ArrayList<>();
+
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
-                Long seriesId = getLongValue(row.getCell(0));
-                String name = getStringValue(row.getCell(1));
-                Integer year = getIntValue(row.getCell(2));
-                BigDecimal price = getBigDecimalValue(row.getCell(3));
-                if (seriesId == null || name == null || name.isEmpty()) continue;
-                AdminCarModel model = new AdminCarModel();
-                model.setSeriesId(seriesId != null ? seriesId.intValue() : null);
-                model.setName(name);
-                model.setYear(year);
-                model.setGuidePrice(price);
-                model.setStatus("ACTIVE");
-                adminCarModelMapper.insert(model);
-                imported++;
+                total++;
+
+                String brandName = getStringValue(row.getCell(0));
+                String seriesName = getStringValue(row.getCell(1));
+                String modelName = getStringValue(row.getCell(2));
+                Integer year = getIntValue(row.getCell(3));
+                BigDecimal priceWan = getBigDecimalValue(row.getCell(4));
+
+                // 校验必填字段
+                if (brandName == null || brandName.isBlank()) {
+                    errors.add("第" + (i + 1) + "行: 品牌名称为空");
+                    skipped++;
+                    continue;
+                }
+                if (seriesName == null || seriesName.isBlank()) {
+                    errors.add("第" + (i + 1) + "行: 车系名称为空");
+                    skipped++;
+                    continue;
+                }
+                if (modelName == null || modelName.isBlank()) {
+                    errors.add("第" + (i + 1) + "行: 车型名称为空");
+                    skipped++;
+                    continue;
+                }
+
+                // 查找或创建品牌
+                AdminCarBrand brand = findOrCreateBrand(brandName.trim());
+
+                // 查找或创建车系
+                AdminCarSeries series = findOrCreateSeries(seriesName.trim(), brand.getId());
+
+                // 查找或创建车型
+                boolean modelCreated = findOrCreateModel(modelName.trim(), series.getId(), year, priceWan);
+                if (modelCreated) {
+                    created++;
+                } else {
+                    skipped++;
+                }
             }
-            return imported;
+
+            Map<String, Object> result = new java.util.LinkedHashMap<>();
+            result.put("total", total);
+            result.put("created", created);
+            result.put("skipped", skipped);
+            result.put("errors", errors);
+            return result;
         } catch (IOException e) {
             log.error("导入车型Excel失败", e);
             throw new BusinessException(500, "导入失败: " + e.getMessage());
         }
     }
 
+    /**
+     * 按名称查找品牌，不存在则自动创建
+     */
+    private AdminCarBrand findOrCreateBrand(String name) {
+        LambdaQueryWrapper<AdminCarBrand> wrapper = new LambdaQueryWrapper<AdminCarBrand>()
+                .eq(AdminCarBrand::getName, name);
+        AdminCarBrand brand = adminCarBrandMapper.selectOne(wrapper);
+        if (brand == null) {
+            brand = new AdminCarBrand();
+            brand.setName(name);
+            brand.setFirstLetter(name.substring(0, 1).toUpperCase());
+            brand.setSortOrder(0);
+            brand.setStatus("ACTIVE");
+            adminCarBrandMapper.insert(brand);
+            log.info("批量导入: 自动创建品牌 [{}]", name);
+        }
+        return brand;
+    }
+
+    /**
+     * 按名称和品牌ID查找车系，不存在则自动创建
+     */
+    private AdminCarSeries findOrCreateSeries(String name, Integer brandId) {
+        LambdaQueryWrapper<AdminCarSeries> wrapper = new LambdaQueryWrapper<AdminCarSeries>()
+                .eq(AdminCarSeries::getBrandId, brandId)
+                .eq(AdminCarSeries::getName, name);
+        AdminCarSeries series = adminCarSeriesMapper.selectOne(wrapper);
+        if (series == null) {
+            series = new AdminCarSeries();
+            series.setBrandId(brandId);
+            series.setName(name);
+            series.setSortOrder(0);
+            series.setStatus("ACTIVE");
+            adminCarSeriesMapper.insert(series);
+            log.info("批量导入: 自动创建车系 [{}] (品牌ID: {})", name, brandId);
+        }
+        return series;
+    }
+
+    /**
+     * 按名称和车系ID查找车型，不存在则创建；已存在则跳过
+     * @return true 表示新建，false 表示已存在跳过
+     */
+    private boolean findOrCreateModel(String name, Integer seriesId, Integer year, BigDecimal priceWan) {
+        LambdaQueryWrapper<AdminCarModel> wrapper = new LambdaQueryWrapper<AdminCarModel>()
+                .eq(AdminCarModel::getSeriesId, seriesId)
+                .eq(AdminCarModel::getName, name);
+        AdminCarModel existing = adminCarModelMapper.selectOne(wrapper);
+        if (existing != null) {
+            return false;
+        }
+
+        AdminCarModel model = new AdminCarModel();
+        model.setSeriesId(seriesId);
+        model.setName(name);
+        model.setYear(year);
+        // 指导价单位从万转为元
+        if (priceWan != null) {
+            model.setGuidePrice(priceWan.multiply(new BigDecimal("10000")));
+        }
+        model.setSortOrder(0);
+        model.setStatus("ACTIVE");
+        adminCarModelMapper.insert(model);
+        log.info("批量导入: 创建车型 [{}] (车系ID: {})", name, seriesId);
+        return true;
+    }
+
     public byte[] exportTemplate() {
         try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("车型导入模板");
+            Sheet sheet = workbook.createSheet("车型批量导入模板");
+
+            // 表头样式
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setFontHeightInPoints((short) 11);
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            // 表头
             Row header = sheet.createRow(0);
-            String[] headers = {"车系ID", "车型名称", "年份", "价格"};
+            String[] headers = {"品牌", "车系", "车型", "年款", "指导价(万)"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = header.createCell(i);
                 cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
             }
+
             // 示例数据行
-            Row example = sheet.createRow(1);
-            example.createCell(0).setCellValue(1);
-            example.createCell(1).setCellValue("2.0T 豪华版");
-            example.createCell(2).setCellValue(2025);
-            example.createCell(3).setCellValue(358800.00);
+            Row example1 = sheet.createRow(1);
+            example1.createCell(0).setCellValue("宝马");
+            example1.createCell(1).setCellValue("3系");
+            example1.createCell(2).setCellValue("320Li 豪华版");
+            example1.createCell(3).setCellValue(2024);
+            example1.createCell(4).setCellValue(29.99);
+
+            Row example2 = sheet.createRow(2);
+            example2.createCell(0).setCellValue("奔驰");
+            example2.createCell(1).setCellValue("C级");
+            example2.createCell(2).setCellValue("C260L 运动版");
+            example2.createCell(3).setCellValue(2024);
+            example2.createCell(4).setCellValue(34.98);
+
             // 自动调整列宽
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
             }
+
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             workbook.write(bos);
             return bos.toByteArray();

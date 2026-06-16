@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.pancosky.cartradeadmin.common.BusinessException;
 import com.pancosky.cartradeadmin.common.PageResult;
+import com.pancosky.cartradeadmin.dto.UserCreateDTO;
+import com.pancosky.cartradeadmin.dto.UserProfileUpdateDTO;
 import com.pancosky.cartradeadmin.dto.UserQueryDTO;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import com.pancosky.cartradeadmin.entity.AppDepositAccount;
 import com.pancosky.cartradeadmin.entity.AppUser;
 import com.pancosky.cartradeadmin.event.MobileNotification;
@@ -38,6 +41,40 @@ public class AdminUserService {
 
     @Autowired
     private AdminNotificationService adminNotificationService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public Long createUser(UserCreateDTO dto) {
+        // 检查手机号是否已注册
+        AppUser existing = appUserMapper.selectOne(
+                new LambdaQueryWrapper<AppUser>().eq(AppUser::getPhone, dto.getPhone()));
+        if (existing != null) {
+            throw new BusinessException("该手机号已注册");
+        }
+
+        AppUser user = new AppUser();
+        user.setPhone(dto.getPhone());
+        user.setPassword(passwordEncoder.encode(
+                dto.getPassword() != null ? dto.getPassword() : "123456"));
+        user.setNickname(dto.getNickname() != null
+                ? dto.getNickname()
+                : "用户" + dto.getPhone().substring(dto.getPhone().length() - 4));
+        user.setRealName(dto.getRealName());
+        user.setUserRole(dto.getUserRole() != null ? dto.getUserRole() : "PERSONAL");
+        user.setStatus("ACTIVE");
+        user.setCertificationStatus("NONE");
+        user.setCreditScore(0);
+        user.setDealCount(0);
+
+        if ("SHOP".equals(user.getUserRole()) && dto.getShopName() != null) {
+            user.setShopName(dto.getShopName());
+        }
+
+        appUserMapper.insert(user);
+        log.info("管理员创建用户成功, userId={}, phone={}", user.getId(), dto.getPhone());
+        return user.getId();
+    }
 
     public PageResult<AdminUserVO> listUsers(UserQueryDTO query) {
         String userType = query.getUserType();
@@ -210,6 +247,35 @@ public class AdminUserService {
         stats.put("depositBalance", account != null ? account.getBalance() : BigDecimal.ZERO);
 
         return stats;
+    }
+
+    public void updateUserProfile(Long id, UserProfileUpdateDTO dto) {
+        AppUser user = appUserMapper.selectById(id);
+        if (user == null || user.getDeletedAt() != null) {
+            throw new BusinessException(404, "用户不存在");
+        }
+
+        if (dto.getNickname() != null) {
+            user.setNickname(dto.getNickname());
+        }
+        if (dto.getRealName() != null) {
+            user.setRealName(dto.getRealName());
+        }
+        if (dto.getAvatarUrl() != null) {
+            user.setAvatarUrl(dto.getAvatarUrl());
+        }
+        if (dto.getShopName() != null) {
+            user.setShopName(dto.getShopName());
+        }
+        if (dto.getShopLogo() != null) {
+            user.setShopLogo(dto.getShopLogo());
+        }
+        if (dto.getShopDescription() != null) {
+            user.setShopDescription(dto.getShopDescription());
+        }
+
+        appUserMapper.updateById(user);
+        log.info("管理员更新用户资料成功, userId={}", id);
     }
 
     private AdminUserVO convertToVO(AppUser user) {

@@ -60,6 +60,46 @@ public class AdminResourceController {
         return ApiResponse.success();
     }
 
+    // ==================== Popup ====================
+
+    @GetMapping("/popups")
+    public ApiResponse<List<BannerVO>> listPopups(@RequestParam(required = false, defaultValue = "ALL") String status) {
+        return ApiResponse.success(adminResourceService.listPopups(status));
+    }
+
+    @AuditLog(module = "resource", action = "添加弹窗", targetType = "popup")
+    @PostMapping("/popups")
+    public ApiResponse<BannerVO> createPopup(@Valid @RequestBody BannerCreateDTO dto) {
+        return ApiResponse.success(adminResourceService.createPopup(dto));
+    }
+
+    @AuditLog(module = "resource", action = "编辑弹窗", targetType = "popup")
+    @PutMapping("/popups/{id}")
+    public ApiResponse<BannerVO> updatePopup(@PathVariable Long id, @RequestBody BannerUpdateDTO dto) {
+        return ApiResponse.success(adminResourceService.updatePopup(id, dto));
+    }
+
+    @AuditLog(module = "resource", action = "删除弹窗", targetType = "popup")
+    @DeleteMapping("/popups/{id}")
+    public ApiResponse<Void> deletePopup(@PathVariable Long id) {
+        adminResourceService.deletePopup(id);
+        return ApiResponse.success();
+    }
+
+    @AuditLog(module = "resource", action = "启停弹窗", targetType = "popup")
+    @PutMapping("/popups/{id}/status")
+    public ApiResponse<Void> updatePopupStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        adminResourceService.updatePopupStatus(id, body.get("status"));
+        return ApiResponse.success();
+    }
+
+    @AuditLog(module = "resource", action = "排序弹窗", targetType = "popup")
+    @PutMapping("/popups/sort")
+    public ApiResponse<Void> updatePopupSort(@RequestBody List<BannerSortItem> items) {
+        adminResourceService.updatePopupSort(items);
+        return ApiResponse.success();
+    }
+
     // ==================== Config ====================
 
     @GetMapping("/configs")

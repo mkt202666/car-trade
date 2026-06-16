@@ -6,12 +6,22 @@ import com.pancosky.cartradeadmin.common.BusinessException;
 import com.pancosky.cartradeadmin.common.PageResult;
 import com.pancosky.cartradeadmin.dto.OrderQueryDTO;
 import com.pancosky.cartradeadmin.entity.AppCarSource;
+import com.pancosky.cartradeadmin.entity.AppCarInspection;
+import com.pancosky.cartradeadmin.entity.AppCarImage;
+import com.pancosky.cartradeadmin.entity.AdminCarBrand;
+import com.pancosky.cartradeadmin.entity.AdminCarSeries;
+import com.pancosky.cartradeadmin.entity.AdminCarModel;
 import com.pancosky.cartradeadmin.entity.AppOrder;
 import com.pancosky.cartradeadmin.entity.AppOrderLog;
 import com.pancosky.cartradeadmin.entity.AppUser;
 import com.pancosky.cartradeadmin.entity.AdminUser;
 import com.pancosky.cartradeadmin.event.MobileNotification;
 import com.pancosky.cartradeadmin.mapper.AppCarSourceMapper;
+import com.pancosky.cartradeadmin.mapper.AppCarInspectionMapper;
+import com.pancosky.cartradeadmin.mapper.AppCarImageMapper;
+import com.pancosky.cartradeadmin.mapper.AdminCarBrandMapper;
+import com.pancosky.cartradeadmin.mapper.AdminCarSeriesMapper;
+import com.pancosky.cartradeadmin.mapper.AdminCarModelMapper;
 import com.pancosky.cartradeadmin.mapper.AppOrderLogMapper;
 import com.pancosky.cartradeadmin.mapper.AppOrderMapper;
 import com.pancosky.cartradeadmin.mapper.AppUserMapper;
@@ -25,10 +35,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,6 +53,21 @@ public class AdminOrderService {
 
     @Autowired
     private AppCarSourceMapper appCarSourceMapper;
+
+    @Autowired
+    private AppCarInspectionMapper appCarInspectionMapper;
+
+    @Autowired
+    private AppCarImageMapper appCarImageMapper;
+
+    @Autowired
+    private AdminCarBrandMapper adminCarBrandMapper;
+
+    @Autowired
+    private AdminCarSeriesMapper adminCarSeriesMapper;
+
+    @Autowired
+    private AdminCarModelMapper adminCarModelMapper;
 
     @Autowired
     private AppUserMapper appUserMapper;
@@ -87,6 +115,24 @@ public class AdminOrderService {
         Page<AppOrder> page = appOrderMapper.selectPage(
                 new Page<>(query.getPage(), query.getSize()), wrapper);
 
+        // 批量查询关联数据，避免 N+1
+        List<Long> carIds = page.getRecords().stream()
+                .map(AppOrder::getCarId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        List<Long> buyerIds = page.getRecords().stream()
+                .map(AppOrder::getBuyerId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        List<Long> sellerIds = page.getRecords().stream()
+                .map(AppOrder::getSellerId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+
+        Map<Long, AppCarSource> carMap = carIds.isEmpty() ? Collections.emptyMap()
+                : appCarSourceMapper.selectBatchIds(carIds).stream()
+                        .collect(Collectors.toMap(AppCarSource::getId, c -> c));
+        Map<Long, AppUser> buyerMap = buyerIds.isEmpty() ? Collections.emptyMap()
+                : appUserMapper.selectBatchIds(buyerIds).stream()
+                        .collect(Collectors.toMap(AppUser::getId, u -> u));
+        Map<Long, AppUser> sellerMap = sellerIds.isEmpty() ? Collections.emptyMap()
+                : appUserMapper.selectBatchIds(sellerIds).stream()
+                        .collect(Collectors.toMap(AppUser::getId, u -> u));
+
         List<OrderVO> voList = page.getRecords().stream().map(order -> {
             OrderVO vo = new OrderVO();
             vo.setId(order.getId());
@@ -96,28 +142,19 @@ public class AdminOrderService {
             vo.setStatus(order.getStatus());
             vo.setCreatedAt(order.getCreatedAt());
 
-            // 查询车源标题
-            if (order.getCarId() != null) {
-                AppCarSource car = appCarSourceMapper.selectById(order.getCarId());
-                if (car != null) {
-                    vo.setCarTitle(car.getTitle());
-                }
+            AppCarSource car = carMap.get(order.getCarId());
+            if (car != null) {
+                vo.setCarTitle(car.getTitle());
             }
 
-            // 查询买家信息
-            if (order.getBuyerId() != null) {
-                AppUser buyer = appUserMapper.selectById(order.getBuyerId());
-                if (buyer != null) {
-                    vo.setBuyerName(buyer.getNickname());
-                }
+            AppUser buyer = buyerMap.get(order.getBuyerId());
+            if (buyer != null) {
+                vo.setBuyerName(buyer.getNickname());
             }
 
-            // 查询卖家信息
-            if (order.getSellerId() != null) {
-                AppUser seller = appUserMapper.selectById(order.getSellerId());
-                if (seller != null) {
-                    vo.setSellerName(seller.getNickname());
-                }
+            AppUser seller = sellerMap.get(order.getSellerId());
+            if (seller != null) {
+                vo.setSellerName(seller.getNickname());
             }
 
             return vo;
@@ -153,6 +190,24 @@ public class AdminOrderService {
 
         List<AppOrder> orders = appOrderMapper.selectList(wrapper);
 
+        // 批量查询关联数据，避免 N+1
+        List<Long> carIds = orders.stream()
+                .map(AppOrder::getCarId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        List<Long> buyerIds = orders.stream()
+                .map(AppOrder::getBuyerId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        List<Long> sellerIds = orders.stream()
+                .map(AppOrder::getSellerId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+
+        Map<Long, AppCarSource> carMap = carIds.isEmpty() ? Collections.emptyMap()
+                : appCarSourceMapper.selectBatchIds(carIds).stream()
+                        .collect(Collectors.toMap(AppCarSource::getId, c -> c));
+        Map<Long, AppUser> buyerMap = buyerIds.isEmpty() ? Collections.emptyMap()
+                : appUserMapper.selectBatchIds(buyerIds).stream()
+                        .collect(Collectors.toMap(AppUser::getId, u -> u));
+        Map<Long, AppUser> sellerMap = sellerIds.isEmpty() ? Collections.emptyMap()
+                : appUserMapper.selectBatchIds(sellerIds).stream()
+                        .collect(Collectors.toMap(AppUser::getId, u -> u));
+
         return orders.stream().map(order -> {
             OrderVO vo = new OrderVO();
             vo.setId(order.getId());
@@ -162,28 +217,19 @@ public class AdminOrderService {
             vo.setStatus(order.getStatus());
             vo.setCreatedAt(order.getCreatedAt());
 
-            // 查询车源标题
-            if (order.getCarId() != null) {
-                AppCarSource car = appCarSourceMapper.selectById(order.getCarId());
-                if (car != null) {
-                    vo.setCarTitle(car.getTitle());
-                }
+            AppCarSource car = carMap.get(order.getCarId());
+            if (car != null) {
+                vo.setCarTitle(car.getTitle());
             }
 
-            // 查询买家信息
-            if (order.getBuyerId() != null) {
-                AppUser buyer = appUserMapper.selectById(order.getBuyerId());
-                if (buyer != null) {
-                    vo.setBuyerName(buyer.getNickname());
-                }
+            AppUser buyer = buyerMap.get(order.getBuyerId());
+            if (buyer != null) {
+                vo.setBuyerName(buyer.getNickname());
             }
 
-            // 查询卖家信息
-            if (order.getSellerId() != null) {
-                AppUser seller = appUserMapper.selectById(order.getSellerId());
-                if (seller != null) {
-                    vo.setSellerName(seller.getNickname());
-                }
+            AppUser seller = sellerMap.get(order.getSellerId());
+            if (seller != null) {
+                vo.setSellerName(seller.getNickname());
             }
 
             return vo;
@@ -199,6 +245,8 @@ public class AdminOrderService {
         OrderDetailVO vo = new OrderDetailVO();
         vo.setId(order.getId());
         vo.setCarId(order.getCarId());
+        vo.setBuyerId(order.getBuyerId());
+        vo.setSellerId(order.getSellerId());
         vo.setTotalPrice(order.getTotalPrice());
         vo.setDepositAmount(order.getDepositAmount());
         vo.setStatus(order.getStatus());
@@ -214,11 +262,78 @@ public class AdminOrderService {
         vo.setCompletedAt(order.getCompletedAt());
         vo.setCancelledAt(order.getCancelledAt());
 
-        // 查询车源标题
+        // 查询车源信息
         if (order.getCarId() != null) {
             AppCarSource car = appCarSourceMapper.selectById(order.getCarId());
             if (car != null) {
                 vo.setCarTitle(car.getTitle());
+                vo.setCarName(car.getTitle());
+                vo.setYear(car.getYear());
+                vo.setMileage(car.getMileage());
+                vo.setVin(car.getVin());
+                vo.setColor(car.getColor());
+                vo.setCity(car.getCityName());
+                vo.setEnergyType(car.getEnergyType());
+                vo.setTransmission(car.getTransmission());
+                if (car.getRegistrationDate() != null) {
+                    vo.setRegistrationDate(car.getRegistrationDate().toString());
+                }
+                if (car.getInsuranceExpiry() != null) {
+                    vo.setInsuranceExpiry(car.getInsuranceExpiry().toString());
+                }
+                if (car.getInspectionExpiry() != null) {
+                    vo.setInspectionExpiry(car.getInspectionExpiry().toString());
+                }
+
+                // 品牌名称
+                if (car.getBrandId() != null) {
+                    AdminCarBrand brand = adminCarBrandMapper.selectById(car.getBrandId());
+                    if (brand != null) {
+                        vo.setBrandName(brand.getName());
+                    }
+                }
+                // 车系名称
+                if (car.getSeriesId() != null) {
+                    AdminCarSeries series = adminCarSeriesMapper.selectById(car.getSeriesId());
+                    if (series != null) {
+                        vo.setSeriesName(series.getName());
+                    }
+                }
+                // 车型名称
+                if (car.getModelId() != null) {
+                    AdminCarModel model = adminCarModelMapper.selectById(car.getModelId());
+                    if (model != null) {
+                        vo.setModelName(model.getName());
+                    }
+                }
+
+                // 车辆首张图片
+                LambdaQueryWrapper<AppCarImage> imgWrapper = new LambdaQueryWrapper<AppCarImage>()
+                        .eq(AppCarImage::getCarId, car.getId())
+                        .orderByAsc(AppCarImage::getSortOrder)
+                        .last("LIMIT 1");
+                AppCarImage firstImage = appCarImageMapper.selectOne(imgWrapper);
+                if (firstImage != null) {
+                    vo.setCarImage(firstImage.getImageUrl());
+                }
+
+                // 检测信息
+                LambdaQueryWrapper<AppCarInspection> inspWrapper = new LambdaQueryWrapper<AppCarInspection>()
+                        .eq(AppCarInspection::getCarId, car.getId())
+                        .orderByDesc(AppCarInspection::getCreatedAt)
+                        .last("LIMIT 1");
+                AppCarInspection inspection = appCarInspectionMapper.selectOne(inspWrapper);
+                if (inspection != null) {
+                    vo.setOverallCondition(inspection.getOverallCondition());
+                    vo.setPaint(inspection.getPaint());
+                    vo.setStructure(inspection.getStructure());
+                    vo.setEngine(inspection.getEngine());
+                    vo.setTransmission(inspection.getTransmission() != null
+                            ? inspection.getTransmission() : car.getTransmission());
+                    vo.setTransferCount(inspection.getTransferCount());
+                    vo.setMileageType(inspection.getMileageType());
+                    vo.setMaterials(inspection.getDescription());
+                }
             }
         }
 
@@ -226,7 +341,7 @@ public class AdminOrderService {
         if (order.getBuyerId() != null) {
             AppUser buyer = appUserMapper.selectById(order.getBuyerId());
             if (buyer != null) {
-                vo.setBuyerName(buyer.getNickname());
+                vo.setBuyerName(buyer.getRealName() != null ? buyer.getRealName() : buyer.getNickname());
                 vo.setBuyerPhone(maskPhone(buyer.getPhone()));
             }
         }
@@ -235,9 +350,31 @@ public class AdminOrderService {
         if (order.getSellerId() != null) {
             AppUser seller = appUserMapper.selectById(order.getSellerId());
             if (seller != null) {
-                vo.setSellerName(seller.getNickname());
+                vo.setSellerName(seller.getRealName() != null ? seller.getRealName() : seller.getNickname());
                 vo.setSellerPhone(maskPhone(seller.getPhone()));
             }
+        }
+
+        // 派生合同状态
+        if (Boolean.TRUE.equals(order.getContractConfirmed())) {
+            vo.setContractStatus("CONFIRMED");
+        } else if (Boolean.TRUE.equals(order.getContractSubmitted())) {
+            vo.setContractStatus("SUBMITTED");
+        } else if (order.getContractNo() != null) {
+            vo.setContractStatus("DRAFT");
+        } else {
+            vo.setContractStatus("NONE");
+        }
+
+        // 派生保证金状态
+        boolean buyerPaid = Boolean.TRUE.equals(order.getBuyerDepositPaid());
+        boolean sellerPaid = Boolean.TRUE.equals(order.getSellerDepositPaid());
+        if (buyerPaid && sellerPaid) {
+            vo.setDepositStatus("PAID");
+        } else if (buyerPaid || sellerPaid) {
+            vo.setDepositStatus("PARTIAL");
+        } else {
+            vo.setDepositStatus("UNPAID");
         }
 
         return vo;
@@ -414,6 +551,48 @@ public class AdminOrderService {
         }
 
         log.info("[AdminOrder] Dispute on order {} resolved by admin {}, resolution: {}", orderId, adminId, resolution);
+    }
+
+    /**
+     * 管理员退款
+     * 适用场景：管理员介入后对订单执行退款操作
+     * @param orderId 订单ID（雪花ID字符串）
+     * @param refundAmount 退款金额，为null则全额退款
+     * @param reason 退款原因
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void refundOrder(String orderId, BigDecimal refundAmount, String reason) {
+        AppOrder order = appOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw new BusinessException(404, "订单不存在");
+        }
+
+        String currentStatus = order.getStatus();
+        if (!"CONTRACT_SIGNED".equals(currentStatus)
+                && !"IN_TRANSIT".equals(currentStatus)
+                && !"COMPLETED".equals(currentStatus)) {
+            throw new BusinessException("当前订单状态不支持退款");
+        }
+
+        if (refundAmount == null) {
+            refundAmount = order.getTotalPrice();
+        }
+
+        order.setStatus("CANCELLED");
+        order.setCancelReason("管理员退款: " + reason);
+        order.setCancelledAt(LocalDateTime.now());
+        appOrderMapper.updateById(order);
+
+        // 记录操作日志
+        logOrderAction(orderId, getAdminId(), "ADMIN_REFUND",
+                "退款金额: " + refundAmount + ", 原因: " + reason);
+
+        // 通知买家
+        notifyOrderStatusChanged(order.getBuyerId(), orderId, "订单退款通知",
+                "您的订单已退款，退款金额: ¥" + refundAmount);
+
+        log.info("[AdminOrder] Order {} refunded by admin {}, amount: {}, reason: {}",
+                orderId, getAdminId(), refundAmount, reason);
     }
 
     /**

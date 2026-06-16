@@ -234,5 +234,40 @@ CREATE INDEX IF NOT EXISTS idx_admin_notifications_status        ON admin_notifi
 CREATE INDEX IF NOT EXISTS idx_admin_notifications_created       ON admin_notifications(created_at DESC);
 
 -- =====================================================================
+-- 7. export_regions  -- 出口地区配置
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS export_regions (
+    id           BIGSERIAL PRIMARY KEY,
+    code         VARCHAR(10)  NOT NULL,
+    name         VARCHAR(100) NOT NULL,
+    flag         VARCHAR(10),
+    region_group VARCHAR(50)  NOT NULL,
+    group_key    VARCHAR(20)  NOT NULL,
+    icon         TEXT,
+    constraints  JSONB        NOT NULL DEFAULT '[]'::jsonb,
+    requirements JSONB        NOT NULL DEFAULT '[]'::jsonb,
+    status       VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',
+    sort_order      INTEGER DEFAULT 999,
+    created_at   TIMESTAMP    NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMP    NOT NULL DEFAULT NOW(),
+    deleted_at   TIMESTAMP
+);
+
+COMMENT ON TABLE  export_regions             IS '出口地区配置表';
+COMMENT ON COLUMN export_regions.code         IS '地区代码 (如 CN, US, EU)';
+COMMENT ON COLUMN export_regions.name         IS '地区名称';
+COMMENT ON COLUMN export_regions.flag         IS '国旗emoji';
+COMMENT ON COLUMN export_regions.region_group IS '地区分组名称';
+COMMENT ON COLUMN export_regions.group_key    IS '分组标识: asia / europe / americas / africa / oceania';
+COMMENT ON COLUMN export_regions.icon         IS '地区图标 (emoji 或图片URL)';
+COMMENT ON COLUMN export_regions.constraints  IS '参数约束条件 (JSONB数组)';
+COMMENT ON COLUMN export_regions.requirements IS '出口要求清单 (JSONB数组)';
+COMMENT ON COLUMN export_regions.status       IS '状态: ACTIVE / INACTIVE';
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_export_regions_code ON export_regions (code) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_export_regions_group_key ON export_regions (group_key);
+CREATE INDEX IF NOT EXISTS idx_export_regions_status ON export_regions (status);
+
+-- =====================================================================
 -- End of script
 -- =====================================================================
