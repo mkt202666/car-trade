@@ -8,7 +8,7 @@
       </div>
       <el-tag class="sync-badge" effect="plain" round>
         <el-icon class="sync-icon"><Clock /></el-icon>
-        <span>最新同步: 2026-06-04 11:33</span>
+        <span>最新同步: {{ syncTime }}</span>
       </el-tag>
     </header>
 
@@ -41,7 +41,7 @@
           <h2 class="panel-title">上架车源获取渠道构成</h2>
           <p class="panel-desc">多维度货源占比与平台转化效能分析</p>
         </div>
-        <div class="channel-summary">货源总计 <strong>6 台</strong></div>
+        <div class="channel-summary">货源总计 <strong>{{ kpi.carCount }} 台</strong></div>
         <VChart class="chart chart-pie" :option="channelChartOption" autoresize />
       </el-card>
     </section>
@@ -90,11 +90,23 @@
         <h2 class="panel-title">异常交易与资金预警系统</h2>
         <p class="panel-desc">自动拦截高风险、超时未成交订单定金</p>
       </div>
+      <template v-if="warnings.length > 0">
+        <el-alert
+          v-for="w in warnings"
+          :key="String(w.id)"
+          :type="mapWarningLevel(w.level)"
+          :closable="false"
+          show-icon
+          :title="w.message"
+          style="margin-bottom: 8px"
+        />
+      </template>
       <el-alert
+        v-else
         type="success"
         :closable="false"
         show-icon
-        title="平台当前共有 0 笔处于超期未流转的锁定保证金。资金链路总体健康。"
+        title="平台当前无异常预警，资金链路总体健康。"
       />
       <p class="alert-note">
         当任何保证金锁定超过 45 个法定期限，系统将自动发起人工接听核实流转。
@@ -110,18 +122,24 @@
  * 展示平台核心业务指标、交易趋势图、渠道占比图、优惠券统计、
  * 资质审批队列及资金预警信息；数据与图表配置由 useDashboard 提供。
  */
+import { computed } from 'vue'
 import { Clock } from '@element-plus/icons-vue'
 import VChart from 'vue-echarts'
 import DashboardStatCard from './components/DashboardStatCard.vue'
 import { useDashboard } from './hooks/useDashboard'
 
 const {
+  kpi,
   stats,
   trendChartOption,
   channelChartOption,
   coupons,
   approvalQueue,
+  warnings,
+  mapWarningLevel,
 } = useDashboard()
+
+const syncTime = computed(() => new Date().toLocaleString())
 
 </script>
 

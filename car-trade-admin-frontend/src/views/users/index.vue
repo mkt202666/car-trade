@@ -16,7 +16,6 @@
           <el-option label="全部业务角色" value="all" />
           <el-option label="个人用户" value="个人用户" />
           <el-option label="车行用户" value="车行用户" />
-          <el-option label="IT开发" value="IT开发" />
           <el-option label="系统管理员" value="系统管理员" />
           <el-option label="已注销" value="已注销" />
         </el-select>
@@ -204,14 +203,14 @@
                 type="primary"
                 link
                 size="small"
-                :disabled="row.category === '已注销'"
+                :disabled="row.category === '已注销' || row.category === '已冻结'"
                 @click="openAdjustDialog(row as User)"
               >
                 调保
               </el-button>
               <el-popconfirm
-                title="确定禁用该用户？禁用后账户将标记为已注销。"
-                confirm-button-text="确认禁用"
+                title="确定冻结该用户？冻结后账户将无法正常使用。"
+                confirm-button-text="确认冻结"
                 cancel-button-text="取消"
                 width="220"
                 @confirm="confirmDisable(row as User)"
@@ -221,9 +220,9 @@
                     type="danger"
                     link
                     size="small"
-                    :disabled="row.category === '已注销'"
+                    :disabled="row.category === '已注销' || row.category === '已冻结'"
                   >
-                    禁用
+                    冻结
                   </el-button>
                 </template>
               </el-popconfirm>

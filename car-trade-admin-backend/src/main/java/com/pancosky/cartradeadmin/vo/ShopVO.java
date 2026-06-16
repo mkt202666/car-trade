@@ -20,4 +20,10 @@ public class ShopVO {
     private String status;
     private String certificationStatus;
     private LocalDateTime createdAt;
+    private String province;
+    private String city;
+    private String address;
+    private String creditCode;
+    private Long depositBalance;
+    private String licenseUrl;
 }

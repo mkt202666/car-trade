@@ -4,10 +4,12 @@ import type { Dealer } from './types'
 /**
  * 车行准入状态对应的中文展示文案。
  * @param status 车行准入状态枚举
- * @returns 「正常开业」或「封禁挂起」
+ * @returns 「正常开业」、「已停业」或「封禁挂起」
  */
 export function statusLabel(status: Dealer['status']) {
-  return status === 'active' ? '正常开业' : '封禁挂起'
+  if (status === 'active') return '正常开业'
+  if (status === 'inactive') return '已停业'
+  return '封禁挂起'
 }
 
 /**
@@ -39,15 +41,15 @@ export function formatCredit(amount: number) {
 }
 
 /**
- * 基于现有车行列表生成递行车行 ID。
- * 扫描 DLR- 前缀编号取最大值后 +1，默认起始基数 5000。
+ * 基于现有车行列表生成递增 ID（S 前缀，与 API 返回的格式化一致）。
+ * 扫描 S 前缀编号取最大值后 +1，默认起始基数 0。
  * @param dealers 当前车行列表
- * @returns 新车行 ID，格式 DLR-xxxx
+ * @returns 新车行 ID，格式 S000001
  */
 export function generateDealerId(dealers: Dealer[]) {
   const maxNum = dealers.reduce((max, d) => {
-    const num = parseInt(d.id.replace('DLR-', ''), 10)
+    const num = parseInt(d.id.replace(/^S/, ''), 10)
     return num > max ? num : max
-  }, 5000)
-  return `DLR-${maxNum + 1}`
+  }, 0)
+  return `S${String(maxNum + 1).padStart(6, '0')}`
 }

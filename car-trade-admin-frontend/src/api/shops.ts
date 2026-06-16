@@ -1,5 +1,5 @@
 /** Shops (Dealers) API */
-import { get, post, put, del } from '../utils/request'
+import { get, post, put } from '../utils/request'
 import type { ApiResponse, PageResult, PaginationQuery } from './types'
 
 export interface Shop {
@@ -17,6 +17,12 @@ export interface Shop {
   status: string
   certificationStatus: string
   createdAt: string
+  province: string
+  city: string
+  address: string
+  creditCode: string
+  depositBalance: number
+  licenseUrl: string
 }
 
 export interface ShopQuery extends PaginationQuery {
@@ -27,10 +33,16 @@ export interface ShopQuery extends PaginationQuery {
 
 export interface ShopCreateDTO {
   shopName: string
-  shopLogo?: string
-  shopDescription?: string
-  phone: string
   contactName?: string
+  phone: string
+  creditCode?: string
+  province?: string
+  city?: string
+  address?: string
+  licenseUrl?: string
+  idCardNumber?: string
+  idCardImageUrl?: string
+  storeImageUrl?: string
 }
 
 export function getShops(params?: ShopQuery) {
@@ -43,14 +55,6 @@ export function getShop(id: number) {
 
 export function createShop(data: ShopCreateDTO) {
   return post<ApiResponse<Shop>>('/shops', data)
-}
-
-export function updateShop(id: number, data: Partial<ShopCreateDTO>) {
-  return put<ApiResponse<Shop>>(`/shops/${id}`, data)
-}
-
-export function deleteShop(id: number) {
-  return del<ApiResponse<void>>(`/shops/${id}`)
 }
 
 export function updateShopStatus(id: number, status: string) {

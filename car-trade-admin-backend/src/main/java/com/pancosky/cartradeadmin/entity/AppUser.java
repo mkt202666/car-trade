@@ -34,6 +34,42 @@ public class AppUser {
 
     private String shopDescription;
 
+    /** 统一社会信用代码 */
+    private String creditCode;
+
+    /** 所在省 / 驻点省份 */
+    private String province;
+
+    /** 所在市 / 驻点城市 */
+    private String city;
+
+    /** 实体店详细经营地址 */
+    private String address;
+
+    /** 身份证号码 */
+    private String idCardNumber;
+
+    /** 营业执照图片URL */
+    private String businessLicenseUrl;
+
+    /** 营业执照附件 URL (管理后台表单用) */
+    private String licenseUrl;
+
+    /** 身份证正面图片URL */
+    private String idCardFrontUrl;
+
+    /** 身份证反面图片URL */
+    private String idCardBackUrl;
+
+    /** 申请人身份证图片 URL (管理后台表单用) */
+    private String idCardImageUrl;
+
+    /** 车行实体门店图片 URL */
+    private String storeImageUrl;
+
+    /** 保证金余额（元） */
+    private Long depositBalance;
+
     private String creditGrade;
 
     private Integer creditScore;
@@ -67,8 +103,20 @@ public class AppUser {
     /** NONE / PENDING / CERTIFIED / REJECTED */
     private String certificationStatus;
 
-    /** ACTIVE / FROZEN / DELETED */
+    /** ACTIVE / FROZEN / DELETED / SUSPENDED / INACTIVE */
     private String status;
+
+    /** 营业执照号 */
+    private String businessLicense;
+
+    /** 最近一次审核拒绝原因 */
+    private String rejectReason;
+
+    /** 审核人ID (FK -> admin_users.id) */
+    private Long reviewerId;
+
+    /** 最近审核时间 */
+    private LocalDateTime reviewedAt;
 
     /** 连续登录失败次数 */
     private Integer loginFailCount;
@@ -77,6 +125,7 @@ public class AppUser {
     private LocalDateTime lockedUntil;
 
     /** 通知订阅设置 JSON */
+    @TableField(typeHandler = com.pancosky.cartradeadmin.handler.JsonbStringTypeHandler.class)
     private String notificationSettings;
 
     /** 非持久化字段：用户简介 */

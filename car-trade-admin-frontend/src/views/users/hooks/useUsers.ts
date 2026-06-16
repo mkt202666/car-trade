@@ -37,16 +37,35 @@ export {
 /**
  * 将后端 ApiUser 映射为前端 User 类型。
  * 后端字段与前端展示模型差异较大，此处做统一适配：
- * - nickname → name, role → category, createdAt → registerAt
- * - 聚合指标（listing/dealership/deposit/transaction/credit/profile）后端暂未返回，填充默认值
- * - status=DISABLED 映射为 category='已注销'
+ * - nickname → name, userRole → category (PERSONAL→个人用户, SHOP→车行用户, ADMIN→系统管理员)
+ * - createdAt → registerAt, status=FROZEN→已冻结, status=DELETED→已注销
+ * - 统计字段从 API 响应中读取：onSaleCount, dealCount, creditScore, creditGrade
+ * - 档案字段从 API 响应中读取：creditCode, province, city, idCardNumber, 图片URL等
  * @param u 后端返回的用户对象
  * @returns 前端表格行所需的 User 结构
  */
 function mapApiUserToFrontendUser(u: ApiUser): User {
-  const isDisabled = u.status === 'DISABLED'
-  const roleName = isDisabled ? '已注销' : (u.role || '个人用户')
+  const isDeleted = u.status === 'DELETED'
+  const isFrozen = u.status === 'FROZEN'
+
+  // userRole 映射为中文分类名
+  const roleMap: Record<string, string> = {
+    PERSONAL: '个人用户',
+    SHOP: '车行用户',
+    ADMIN: '系统管理员',
+    DEVELOPER: 'IT开发',
+  }
+  let categoryName: string
+  if (isDeleted) {
+    categoryName = '已注销'
+  } else if (isFrozen) {
+    categoryName = '已冻结'
+  } else {
+    categoryName = roleMap[u.userRole] || '个人用户'
+  }
+
   const depositStr = formatDeposit(0)
+  const provinceCity = [u.province, u.city].filter(Boolean).join(' ') || ''
 
   return {
     id: String(u.id),
@@ -58,22 +77,31 @@ function mapApiUserToFrontendUser(u: ApiUser): User {
           day: '2-digit',
         })
       : '',
-    category: roleName,
+    category: categoryName,
     phone: u.phone || '—',
     wechat: '—',
-    listing: { onSale: 0, offShelf: 0, wanted: 0 },
-    dealership: { name: '—', vehicles: '—' },
+    listing: { onSale: u.onSaleCount || 0, offShelf: 0, wanted: 0 },
+    dealership: {
+      name: u.shopName || '—',
+      vehicles: u.shopName ? '5D 合作车辆' : '—',
+    },
     deposit: { available: depositStr, total: depositStr },
-    transaction: { count: 0, total: '¥0' },
-    credit: { used: '0', total: '0' },
+    transaction: {
+      count: u.dealCount || 0,
+      total: u.dealCount ? `¥${u.dealCount}笔` : '¥0',
+    },
+    credit: {
+      used: u.creditScore ? String(u.creditScore) : '0',
+      total: u.creditGrade || '0',
+    },
     profile: {
-      dealershipName: '',
-      creditCode: '',
-      provinceCity: '',
-      idNumber: '',
-      businessLicenseUrl: '',
-      idFrontUrl: '',
-      idBackUrl: '',
+      dealershipName: u.shopName || '',
+      creditCode: u.creditCode || '',
+      provinceCity: provinceCity,
+      idNumber: u.idCardNumber || '',
+      businessLicenseUrl: u.businessLicenseUrl || '',
+      idFrontUrl: u.idCardFrontUrl || '',
+      idBackUrl: u.idCardBackUrl || '',
     },
   }
 }
@@ -141,18 +169,18 @@ export function useUsers() {
         params.keyword = q
       }
 
-      // 角色筛选映射：前端中文角色名 → 后端枚举值
-      // 'all' 不传 role 参数，表示不筛选
+      // 角色筛选映射：前端中文角色名 → 后端 userType 枚举值
+      // 'all' 不传 userType 参数，表示不筛选
       if (roleFilter.value !== 'all') {
         const roleMap: Record<string, string> = {
-          '个人用户': 'BUYER',
-          '车行用户': 'DEALER',
-          'IT开发': 'IT',
-          '系统管理员': 'ADMIN',
+          '个人用户': 'PERSONAL_USER',
+          '车行用户': 'SHOP_USER',
+          '系统管理员': 'ADMIN_USER',
+          '已注销': 'DELETED',
         }
-        const apiRole = roleMap[roleFilter.value]
-        if (apiRole) {
-          params.role = apiRole
+        const apiUserType = roleMap[roleFilter.value]
+        if (apiUserType) {
+          params.userType = apiUserType
         }
       }
 
@@ -268,9 +296,17 @@ export function useUsers() {
    */
   async function saveEdit(row: User) {
     try {
+      const [province, city] = (row.profile.provinceCity || '').split(/\s+/)
       await updateUserProfile(Number(row.id), {
         nickname: row.name,
         shopName: row.profile.dealershipName || undefined,
+        creditCode: row.profile.creditCode || undefined,
+        province: province || undefined,
+        city: city || undefined,
+        idCardNumber: row.profile.idNumber || undefined,
+        businessLicenseUrl: row.profile.businessLicenseUrl || undefined,
+        idCardFrontUrl: row.profile.idFrontUrl || undefined,
+        idCardBackUrl: row.profile.idBackUrl || undefined,
       })
       editingUserId.value = null
       editBackup.value = null
@@ -282,16 +318,17 @@ export function useUsers() {
   }
 
   /**
-   * 禁用用户：调用后端 API 将状态设为 DISABLED，成功后更新本地列表。
+   * 冻结用户：调用后端 API 将状态设为 FROZEN，成功后更新本地列表。
    * @param row 目标用户行数据
    */
   async function confirmDisable(row: User) {
     try {
-      await updateUserStatus(Number(row.id), 'DISABLED')
-      row.category = '已注销'
-      ElMessage.warning(`已禁用用户 ${row.name}`)
+      await updateUserStatus(Number(row.id), 'FROZEN')
+      row.category = '已冻结'
+      ElMessage.warning(`已冻结用户 ${row.name}`)
+      await loadUsers()
     } catch {
-      ElMessage.error(`禁用用户 ${row.name} 失败`)
+      ElMessage.error(`冻结用户 ${row.name} 失败`)
     }
   }
 
@@ -365,7 +402,8 @@ export function useUsers() {
 
   /**
    * 提交建档表单：校验通过后调用 createUser API 创建用户，
-   * 成功后刷新列表。
+   * 若首充保证金 > 0 则自动调用保证金入账接口，
+   * 成功后提示默认密码并刷新列表。
    */
   async function submitRegisterForm() {
     const valid = await registerFormRef.value?.validate().catch(() => false)
@@ -373,12 +411,24 @@ export function useUsers() {
 
     registerSubmitting.value = true
     try {
-      await createUser({
+      const result = await createUser({
         phone: registerForm.phone,
         nickname: registerForm.name,
         userRole: registerForm.category === '车行用户' ? 'SHOP' : 'PERSONAL',
       })
-      ElMessage.success(`已成功建档：${registerForm.name}`)
+
+      // 首充保证金 > 0 时，自动入账
+      if (registerForm.deposit > 0) {
+        const created = result as unknown as { id: number }
+        await createJournalEntry({
+          userId: created.id,
+          amount: registerForm.deposit,
+          type: 'CHARGE',
+          description: '开户首充保证金',
+        })
+      }
+
+      ElMessage.success(`用户创建成功，默认密码为 123456，请提醒用户及时修改。`)
       registerDialogVisible.value = false
       currentPage.value = 1
       await loadUsers()

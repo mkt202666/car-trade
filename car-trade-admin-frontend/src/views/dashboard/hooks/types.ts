@@ -60,3 +60,6 @@ export interface ChannelChartDatum {
   /** 扇区颜色配置 */
   itemStyle: { color: string }
 }
+
+/** 预警级别映射到 el-alert 组件的 type 属性 */
+export type WarningDisplayType = 'success' | 'info' | 'warning' | 'error'

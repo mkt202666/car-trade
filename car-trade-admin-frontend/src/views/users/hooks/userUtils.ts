@@ -50,6 +50,7 @@ export function categoryStatus(category: string) {
     车行用户: 'primary',
     IT开发: 'success',
     系统管理员: 'warning',
+    已冻结: 'danger',
     已注销: 'neutral',
   }
   return map[category] || 'neutral'

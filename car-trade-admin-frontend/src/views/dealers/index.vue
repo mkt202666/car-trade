@@ -20,6 +20,7 @@
           <el-select v-model="statusFilter" class="filter-select__input" placeholder="全部准入状态">
             <el-option label="全部准入状态" value="all" />
             <el-option label="正常营业中" value="active" />
+            <el-option label="已停业" value="inactive" />
             <el-option label="封禁挂起中" value="suspended" />
           </el-select>
         </div>
@@ -256,7 +257,13 @@
         </el-form-item>
 
         <el-form-item label="驻点地址" prop="address">
-          <el-input v-model="createForm.address" placeholder="请输入车行实体店面的详细经营地址" />
+          <div class="create-form__row">
+            <el-select v-model="createForm.province" placeholder="选择省份" clearable>
+              <el-option v-for="p in provinces" :key="p" :label="p" :value="p" />
+            </el-select>
+            <el-input v-model="createForm.city" placeholder="城市" />
+          </div>
+          <el-input v-model="createForm.address" placeholder="请输入车行实体店面的详细经营地址" style="margin-top: 8px" />
         </el-form-item>
 
         <el-form-item label="首期授信保证金 (元)" prop="initialCredit">
@@ -875,6 +882,12 @@ const {
     color: #059669;
     background: #ecfdf5;
     border: 1px solid #d1fae5;
+  }
+
+  &--inactive {
+    color: #d97706;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
   }
 
   &--suspended {

@@ -1,5 +1,5 @@
 /** 车行管理页状态与交互逻辑 */
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance } from 'element-plus'
 import { usePagination } from '../../../composables/usePagination'
@@ -33,6 +33,23 @@ export {
   memberAvatar,
   statusLabel,
 } from './dealerUtils'
+
+/**
+ * 将后端状态字符串映射为前端 Dealer 状态枚举。
+ * ACTIVE → 'active', INACTIVE → 'inactive', SUSPENDED → 'suspended'
+ */
+function mapBackendStatus(status: string | undefined): 'active' | 'inactive' | 'suspended' {
+  switch (status?.toUpperCase()) {
+    case 'ACTIVE':
+      return 'active'
+    case 'INACTIVE':
+      return 'inactive'
+    case 'SUSPENDED':
+      return 'suspended'
+    default:
+      return 'active'
+  }
+}
 
 /**
  * 车行列表、详情抽屉、新增车行与成员管理的 composable。
@@ -94,34 +111,41 @@ export function useDealers() {
   const dealers = ref<Dealer[]>([])
   const loading = ref(false)
 
-  /** 从 API 获取车行数据 */
+  /** 从 API 获取车行数据，支持服务端关键词/状态/省份筛选 */
   async function fetchDealers() {
     loading.value = true
     try {
+      const params: Record<string, unknown> = { page: 1, size: 100 }
+      const kw = keyword.value.trim()
+      if (kw) params.keyword = kw
+      if (statusFilter.value !== 'all') params.status = statusFilter.value.toUpperCase()
+      if (provinceFilter.value !== 'all') params.province = provinceFilter.value
+
       // The API interceptor unwraps ApiResponse, so res IS PageResult<Shop> directly
-      const res = (await getShops({ page: 1, size: 100 })) as unknown as {
+      const res = (await getShops(params)) as unknown as {
         list?: Shop[]
       }
       if (res?.list) {
         dealers.value = res.list.map((shop: Shop) => ({
+          numericId: shop.id,
           id: `S${String(shop.id).padStart(6, '0')}`,
           name: shop.shopName || '—',
           joinedAt: shop.createdAt?.split('T')[0]?.replace(/-/g, '/') || '—',
           adminName: shop.realName || '—',
           phone: shop.phone || '—',
-          province: '—',
-          city: '—',
-          address: '—',
-          creditCode: '未录入',
-          depositBalance: 0,
+          province: shop.province || '—',
+          city: shop.city || '—',
+          address: shop.address || '—',
+          creditCode: shop.creditCode || '未录入',
+          depositBalance: shop.depositBalance ?? 0,
           members: shop.memberCount || 1,
           membersList: [],
           monthlyOrders: 0,
           totalOrders: shop.dealCount || 0,
           vehicles: { onSale: shop.onSaleCount || 0, offShelf: 0 },
-          licenseUrl: '',
+          licenseUrl: shop.licenseUrl || '',
           credit: null,
-          status: (shop.status?.toLowerCase() === 'active' ? 'active' : 'suspended') as 'active' | 'suspended',
+          status: mapBackendStatus(shop.status),
         }))
       }
     } catch (e) {
@@ -136,21 +160,17 @@ export function useDealers() {
     fetchDealers()
   })
 
-  /** 经关键词、状态与省份筛选后的车行列表 */
-  const filteredDealers = computed(() => {
-    const kw = keyword.value.trim().toLowerCase()
-    return dealers.value.filter((d) => {
-      if (statusFilter.value !== 'all' && d.status !== statusFilter.value) return false
-      if (provinceFilter.value !== 'all' && d.province !== provinceFilter.value) return false
-      if (!kw) return true
-      return (
-        d.name.toLowerCase().includes(kw) ||
-        d.adminName.toLowerCase().includes(kw) ||
-        d.phone.includes(kw) ||
-        d.id.toLowerCase().includes(kw)
-      )
-    })
+  // Refetch from API when any filter changes (server-side filtering)
+  let filterDebounceTimer: ReturnType<typeof setTimeout> | null = null
+  watch([keyword, statusFilter, provinceFilter], () => {
+    if (filterDebounceTimer) clearTimeout(filterDebounceTimer)
+    filterDebounceTimer = setTimeout(() => {
+      fetchDealers()
+    }, 300)
   })
+
+  /** 筛选后的车行列表 — 服务端已过滤，直接透传 */
+  const filteredDealers = computed(() => dealers.value)
 
   /** 分页：当前页码、每页行数、切片数据、起止序号 */
   const { currentPage, pageSize, paginatedItems: paginatedDealers, pageRangeStart, pageRangeEnd } =
@@ -165,8 +185,8 @@ export function useDealers() {
    * @param dealer 当前选中的车行
    */
   async function fetchShopMembers(dealer: Dealer) {
-    const shopId = parseInt(dealer.id.replace(/^S/, ''), 10)
-    if (Number.isNaN(shopId)) return
+    const shopId = dealer.numericId
+    if (!shopId) return
 
     membersLoading.value = true
     try {
@@ -197,8 +217,8 @@ export function useDealers() {
    * @param dealer 当前列表中的车行（用于提取 shopId）
    */
   async function fetchDealerDetail(dealer: Dealer) {
-    const shopId = parseInt(dealer.id.replace(/^S/, ''), 10)
-    if (Number.isNaN(shopId)) return
+    const shopId = dealer.numericId
+    if (!shopId) return
 
     try {
       const res = (await getShop(shopId)) as unknown as Shop
@@ -208,10 +228,15 @@ export function useDealers() {
       selectedDealer.value.name = res.shopName || selectedDealer.value.name
       selectedDealer.value.adminName = res.realName || selectedDealer.value.adminName
       selectedDealer.value.phone = res.phone || selectedDealer.value.phone
+      selectedDealer.value.province = res.province || selectedDealer.value.province
+      selectedDealer.value.city = res.city || selectedDealer.value.city
+      selectedDealer.value.address = res.address || selectedDealer.value.address
+      selectedDealer.value.creditCode = res.creditCode || selectedDealer.value.creditCode
+      selectedDealer.value.depositBalance = res.depositBalance ?? selectedDealer.value.depositBalance
       selectedDealer.value.totalOrders = res.dealCount ?? selectedDealer.value.totalOrders
       selectedDealer.value.vehicles.onSale = res.onSaleCount ?? selectedDealer.value.vehicles.onSale
       selectedDealer.value.members = res.memberCount ?? selectedDealer.value.members
-      selectedDealer.value.status = (res.status?.toLowerCase() === 'active' ? 'active' : 'suspended') as 'active' | 'suspended'
+      selectedDealer.value.status = mapBackendStatus(res.status)
     } catch (e) {
       console.error('Failed to fetch dealer detail:', e)
       ElMessage.error('获取车行详情失败')
@@ -239,8 +264,8 @@ export function useDealers() {
       return
     }
 
-    const shopId = parseInt(selectedDealer.value.id.replace(/^S/, ''), 10)
-    if (Number.isNaN(shopId)) return
+    const shopId = selectedDealer.value.numericId
+    if (!shopId) return
 
     addMemberSubmitting.value = true
     try {
@@ -265,8 +290,8 @@ export function useDealers() {
    */
   async function handleChangeRole(member: ShopMember) {
     if (!selectedDealer.value) return
-    const shopId = parseInt(selectedDealer.value.id.replace(/^S/, ''), 10)
-    if (Number.isNaN(shopId)) return
+    const shopId = selectedDealer.value.numericId
+    if (!shopId) return
 
     const newRole = member.role === 'ADMIN' ? 'MEMBER' : 'ADMIN'
     try {
@@ -294,8 +319,8 @@ export function useDealers() {
       return
     }
 
-    const shopId = parseInt(selectedDealer.value.id.replace(/^S/, ''), 10)
-    if (Number.isNaN(shopId)) return
+    const shopId = selectedDealer.value.numericId
+    if (!shopId) return
 
     try {
       await removeShopMember(shopId, member.id)
@@ -328,6 +353,14 @@ export function useDealers() {
         shopName: createForm.name,
         contactName: createForm.adminName,
         phone: createForm.phone,
+        creditCode: createForm.creditCode || undefined,
+        province: createForm.province || undefined,
+        city: createForm.city || undefined,
+        address: createForm.address || undefined,
+        licenseUrl: createForm.licenseUrl || undefined,
+        idCardNumber: createForm.idNumber || undefined,
+        idCardImageUrl: createForm.idImageUrl || undefined,
+        storeImageUrl: createForm.storeImageUrl || undefined,
       })
       ElMessage.success(`已创建并提报审核：${createForm.name}`)
       createDialogVisible.value = false
@@ -371,7 +404,7 @@ export function useDealers() {
     adjustSubmitting.value = true
     try {
       await createJournalEntry({
-        userId: Number(adjustTarget.value.id),
+        userId: adjustTarget.value.numericId,
         amount: Math.abs(amount),
         type: amount > 0 ? 'CHARGE' : 'WITHDRAW',
         description: '车行保证金调整',
@@ -403,8 +436,7 @@ export function useDealers() {
     }
 
     try {
-      const shopId = parseInt(dealer.id.replace('S', ''), 10)
-      await updateShopStatus(shopId, 'SUSPENDED')
+      await updateShopStatus(dealer.numericId, 'SUSPENDED')
       dealer.status = 'suspended'
       ElMessage.success(`已停发：${dealer.name}`)
     } catch (e) {

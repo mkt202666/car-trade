@@ -6,17 +6,36 @@ export interface User {
   id: number
   phone: string
   nickname: string
-  avatar: string
-  role: string
+  realName: string
+  avatarUrl: string
+  shopName: string
+  shopLogo: string
+  shopDescription: string
+  creditGrade: string
+  creditScore: number
+  dealCount: number
+  onSaleCount: number
+  userRole: string
+  certificationStatus: string
   status: string
   createdAt: string
   updatedAt: string
+  memberExpireAt: string
+  // Profile fields
+  creditCode: string
+  province: string
+  city: string
+  idCardNumber: string
+  businessLicenseUrl: string
+  idCardFrontUrl: string
+  idCardBackUrl: string
 }
 
 export interface UserQuery extends PaginationQuery {
   keyword?: string
-  role?: string
+  userType?: string
   status?: string
+  certificationStatus?: string
 }
 
 export interface UserCreateDTO {
@@ -51,6 +70,13 @@ export interface UserProfileUpdateDTO {
   shopName?: string
   shopLogo?: string
   shopDescription?: string
+  creditCode?: string
+  province?: string
+  city?: string
+  idCardNumber?: string
+  businessLicenseUrl?: string
+  idCardFrontUrl?: string
+  idCardBackUrl?: string
 }
 
 /** 编辑用户资料 */

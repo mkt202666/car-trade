@@ -20,7 +20,9 @@ export interface DealerMember {
 
 /** 车行列表行数据，含经营指标与成员列表 */
 export interface Dealer {
-  /** 车行唯一标识，格式 DLR-xxxx */
+  /** 原始数字 ID（来自 API，用于调保等需要 numeric userId 的场景） */
+  numericId: number
+  /** 车行唯一标识，格式 S000001 */
   id: string
   /** 车行工商名称 */
   name: string
@@ -59,8 +61,8 @@ export interface Dealer {
   licenseUrl: string
   /** 金融授信信息，无授信时为 null */
   credit: DealerCredit | null
-  /** 准入状态：正常开业或封禁挂起 */
-  status: 'active' | 'suspended'
+  /** 准入状态：ACTIVE 正常开业 / INACTIVE 已停业 / SUSPENDED 封禁挂起 */
+  status: 'active' | 'inactive' | 'suspended'
 }
 
 /** 新增合作车行弹窗表单数据 */
@@ -81,7 +83,11 @@ export interface DealerCreateForm {
   creditCode: string
   /** 营业执照附件 URL */
   licenseUrl: string
-  /** 驻点详细经营地址 */
+  /** 驻点省份 */
+  province: string
+  /** 驻点城市 */
+  city: string
+  /** 实体店详细经营地址 */
   address: string
   /** 首期授信保证金金额（元） */
   initialCredit: number

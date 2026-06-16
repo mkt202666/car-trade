@@ -10,13 +10,51 @@ import {
 } from 'echarts/components'
 import { ElMessage } from 'element-plus'
 import { useTheme } from '../../../composables/useTheme'
-import { getDashboardKPI, getDashboardTrend, getDashboardWarnings } from '../../../api/dashboard'
-import type { DashboardKPI, DashboardTrend, DashboardWarning } from '../../../api/dashboard'
+import {
+  getDashboardKPI,
+  getDashboardTrend,
+  getDashboardWarnings,
+  getDashboardCarDistribution,
+  getDashboardCouponStats,
+  getDashboardApprovalQueue,
+} from '../../../api/dashboard'
+import type {
+  DashboardKPI,
+  DashboardTrend,
+  DashboardWarning,
+  DashboardCarDist,
+  DashboardCouponStats,
+  DashboardApproval,
+} from '../../../api/dashboard'
 import { buildChannelChartOption, buildTrendChartOption } from './chartUtils'
-import type { DashboardStat, CouponItem, ApprovalQueueItem } from './types'
+import type { DashboardStat, CouponItem, ApprovalQueueItem, WarningDisplayType } from './types'
 
-export type { ApprovalQueueItem, CouponItem, DashboardStat } from './types'
+export type { ApprovalQueueItem, CouponItem, DashboardStat, WarningDisplayType } from './types'
 export { buildChannelChartOption, buildTrendChartOption } from './chartUtils'
+
+/**
+ * 将后端预警级别映射到 el-alert 组件的 type 属性。
+ * 后端使用 HIGH / MEDIUM / LOW，前端 el-alert 需要 error / warning / info。
+ */
+function mapWarningLevel(level: string): WarningDisplayType {
+  switch (level) {
+    case 'HIGH': return 'error'
+    case 'MEDIUM': return 'warning'
+    case 'LOW': return 'info'
+    default: return 'info'
+  }
+}
+
+/**
+ * 将后端 DashboardApproval 映射到前端 ApprovalQueueItem 展示格式。
+ */
+function mapApprovalItem(item: DashboardApproval): ApprovalQueueItem {
+  const dt = item.createdAt ? new Date(item.createdAt) : new Date()
+  return {
+    title: item.title,
+    date: `${dt.getMonth() + 1}/${dt.getDate()}/${dt.getFullYear()}`,
+  }
+}
 
 /**
  * 聚合仪表盘页面所需数据与主题感知图表配置。
@@ -27,31 +65,40 @@ export function useDashboard() {
   const { theme } = useTheme()
 
   const kpi = ref<DashboardKPI>({
-    totalUsers: 0,
-    userGrowth: 0,
-    totalCars: 0,
-    carGrowth: 0,
-    totalOrders: 0,
-    orderGrowth: 0,
-    totalRevenue: 0,
-    revenueGrowth: 0,
-    pendingAudits: 0,
-    pendingDisputes: 0,
-    activeShops: 0,
-    todayVisits: 0,
+    userCount: 0,
+    shopCount: 0,
+    carCount: 0,
+    orderCount: 0,
+    tradeAmount: 0,
+    pendingReviewCount: 0,
+    pendingDisputeCount: 0,
+    todayNewUsers: 0,
+    todayNewCars: 0,
+    todayOrders: 0,
+    gmv: 0,
+    gmvTrend: '',
+    deposit: 0,
+    depositActive: 0,
+    pendingProcessed: 0,
   })
 
   const warnings = ref<DashboardWarning[]>([])
-  const trendData = ref<DashboardTrend | undefined>(undefined)
+  const trendData = ref<DashboardTrend[]>([])
+  const carDist = ref<DashboardCarDist[]>([])
+  const couponStats = ref<DashboardCouponStats | null>(null)
+  const approvalQueue = ref<ApprovalQueueItem[]>([])
   const loading = ref(false)
 
   async function fetchData() {
     loading.value = true
     try {
-      const [kpiRes, warningsRes, trendRes] = await Promise.allSettled([
+      const [kpiRes, warningsRes, trendRes, carDistRes, couponRes, approvalRes] = await Promise.allSettled([
         getDashboardKPI(),
         getDashboardWarnings(),
-        getDashboardTrend(7),
+        getDashboardTrend('WEEK'),
+        getDashboardCarDistribution(),
+        getDashboardCouponStats(),
+        getDashboardApprovalQueue(),
       ])
 
       // The API interceptor unwraps ApiResponse, returning inner data directly
@@ -68,9 +115,22 @@ export function useDashboard() {
       }
 
       if (trendRes.status === 'fulfilled' && trendRes.value) {
-        trendData.value = trendRes.value as unknown as DashboardTrend
+        trendData.value = trendRes.value as unknown as DashboardTrend[]
       } else if (trendRes.status === 'rejected') {
         ElMessage.error('获取趋势数据失败')
+      }
+
+      if (carDistRes.status === 'fulfilled' && carDistRes.value) {
+        carDist.value = carDistRes.value as unknown as DashboardCarDist[]
+      }
+
+      if (couponRes.status === 'fulfilled' && couponRes.value) {
+        couponStats.value = couponRes.value as unknown as DashboardCouponStats
+      }
+
+      if (approvalRes.status === 'fulfilled' && approvalRes.value) {
+        const items = approvalRes.value as unknown as DashboardApproval[]
+        approvalQueue.value = items.map(mapApprovalItem)
       }
     } catch (e) {
       console.error('Failed to fetch dashboard data:', e)
@@ -88,72 +148,87 @@ export function useDashboard() {
     buildTrendChartOption(theme.value === 'dark', trendData.value),
   )
   const channelChartOption = computed(() =>
-    buildChannelChartOption(theme.value === 'dark'),
+    buildChannelChartOption(theme.value === 'dark', carDist.value),
   )
 
   const stats = computed<DashboardStat[]>(() => [
     {
-      label: '注册用户',
-      value: kpi.value.totalUsers.toLocaleString(),
+      label: '用户总数',
+      value: kpi.value.userCount.toLocaleString(),
       featured: true,
       icon: 'user-check',
       iconBg: 'glass',
-      trend: '较上周同期',
-      trendPrefix: `+${kpi.value.userGrowth}%`,
+      trend: kpi.value.gmvTrend || '今日新增',
+      trendPrefix: kpi.value.todayNewUsers > 0 ? `+${kpi.value.todayNewUsers}` : undefined,
       trendVariant: 'up-arrow',
     },
     {
-      label: '上架车源',
-      value: kpi.value.totalCars.toLocaleString(),
+      label: '车源总数',
+      value: kpi.value.carCount.toLocaleString(),
       icon: 'car',
       iconBg: 'indigo',
-      trend: '较上周同期',
-      trendPrefix: `+${kpi.value.carGrowth}%`,
+      trend: '今日新增',
+      trendPrefix: kpi.value.todayNewCars > 0 ? `+${kpi.value.todayNewCars}` : undefined,
       trendVariant: 'split',
     },
     {
-      label: '成交订单',
-      value: kpi.value.totalOrders.toLocaleString(),
+      label: '订单总数',
+      value: kpi.value.orderCount.toLocaleString(),
       icon: 'shield-alert',
       iconBg: 'amber',
-      trend: '较上周同期',
-      trendPrefix: `+${kpi.value.orderGrowth}%`,
+      trend: '今日新增',
+      trendPrefix: kpi.value.todayOrders > 0 ? `+${kpi.value.todayOrders}` : undefined,
       trendVariant: 'pulse',
     },
     {
-      label: '交易流水',
-      value: `¥${(kpi.value.totalRevenue / 10000).toFixed(1)}万`,
+      label: '交易总额',
+      value: `¥${(kpi.value.tradeAmount / 10000).toFixed(1)}万`,
       icon: 'dollar',
       iconBg: 'rose',
-      trend: '较上周同期',
-      trendPrefix: `+${kpi.value.revenueGrowth}%`,
+      trend: '累计 GMV',
+      trendPrefix: undefined,
       trendVariant: 'emphasis',
     },
   ])
 
-  const coupons = ref<CouponItem[]>([])
-
-  /** 从 KPI 数据派生审批队列：待审核车行 + 待处理纠纷 */
-  const approvalQueue = computed<ApprovalQueueItem[]>(() => {
-    const items: ApprovalQueueItem[] = []
-    const today = new Date().toLocaleDateString()
-    if (kpi.value.pendingAudits > 0) {
-      items.push({ title: `待审核车行 (${kpi.value.pendingAudits})`, date: today })
-    }
-    if (kpi.value.pendingDisputes > 0) {
-      items.push({ title: `待处理纠纷 (${kpi.value.pendingDisputes})`, date: today })
-    }
-    // Always show at least placeholder items so the panel is never empty
-    if (items.length === 0) {
-      items.push(
-        { title: '待审核车行', date: today },
-        { title: '待处理纠纷', date: today },
-      )
-    }
-    return items
+  /** 从优惠券统计 API 数据派生展示列表 */
+  const coupons = computed<CouponItem[]>(() => {
+    if (!couponStats.value) return []
+    const cs = couponStats.value
+    return [
+      {
+        code: 'TOTAL',
+        name: '发放总量',
+        used: cs.totalCount,
+        status: '统计',
+        statusType: 'active' as const,
+      },
+      {
+        code: 'USED',
+        name: '已核销使用',
+        used: cs.usedCount,
+        status: '已使用',
+        statusType: 'active' as const,
+      },
+      {
+        code: 'REMAIN',
+        name: '剩余可用',
+        used: cs.remainCount,
+        status: cs.remainCount > 0 ? '可用' : '已耗尽',
+        statusType: (cs.remainCount > 0 ? 'active' : 'expired') as const,
+      },
+      {
+        code: 'RATE',
+        name: '核销率',
+        used: Math.round(cs.usageRate * 100),
+        status: `${(cs.usageRate * 100).toFixed(1)}%`,
+        statusType: 'active' as const,
+      },
+    ]
   })
 
   return {
+    kpi,
     stats,
     trendChartOption,
     channelChartOption,
@@ -161,5 +236,6 @@ export function useDashboard() {
     approvalQueue,
     warnings,
     loading,
+    mapWarningLevel,
   }
 }

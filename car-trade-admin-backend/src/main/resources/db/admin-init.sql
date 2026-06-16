@@ -203,6 +203,31 @@ INSERT INTO configs (key, content) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- =====================================================================
+-- Shared users table: add shop-related columns (idempotent)
+-- =====================================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS province VARCHAR(50);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(50);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS address VARCHAR(300);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS credit_code VARCHAR(50);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deposit_balance BIGINT DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS license_url VARCHAR(500);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS id_card_number VARCHAR(30);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS id_card_image_url VARCHAR(500);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS store_image_url VARCHAR(500);
+
+COMMENT ON COLUMN users.province IS '驻点省份';
+COMMENT ON COLUMN users.city IS '驻点城市';
+COMMENT ON COLUMN users.address IS '实体店详细经营地址';
+COMMENT ON COLUMN users.credit_code IS '统一社会信用代码';
+COMMENT ON COLUMN users.deposit_balance IS '保证金余额（元）';
+COMMENT ON COLUMN users.license_url IS '营业执照附件 URL';
+COMMENT ON COLUMN users.id_card_number IS '申请人身份证号';
+COMMENT ON COLUMN users.id_card_image_url IS '申请人身份证图片 URL';
+COMMENT ON COLUMN users.store_image_url IS '车行实体门店图片 URL';
+
+CREATE INDEX IF NOT EXISTS idx_users_province ON users (province);
+
+-- =====================================================================
 -- 6. admin_notifications  -- 运营端通知推送记录
 -- =====================================================================
 CREATE TABLE IF NOT EXISTS admin_notifications (
@@ -267,6 +292,77 @@ COMMENT ON COLUMN export_regions.status       IS '状态: ACTIVE / INACTIVE';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_export_regions_code ON export_regions (code) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_export_regions_group_key ON export_regions (group_key);
 CREATE INDEX IF NOT EXISTS idx_export_regions_status ON export_regions (status);
+
+-- =====================================================================
+-- 8. users 表补充档案字段（身份证/营业执照/省市等）
+-- =====================================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS credit_code VARCHAR(50);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS province VARCHAR(50);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(50);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS id_card_number VARCHAR(30);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS business_license_url VARCHAR(500);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS id_card_front_url VARCHAR(500);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS id_card_back_url VARCHAR(500);
+
+COMMENT ON COLUMN users.credit_code IS '统一社会信用代码';
+COMMENT ON COLUMN users.province IS '所在省';
+COMMENT ON COLUMN users.city IS '所在市';
+COMMENT ON COLUMN users.id_card_number IS '身份证号码';
+COMMENT ON COLUMN users.business_license_url IS '营业执照图片URL';
+COMMENT ON COLUMN users.id_card_front_url IS '身份证正面图片URL';
+COMMENT ON COLUMN users.id_card_back_url IS '身份证反面图片URL';
+
+-- =====================================================================
+-- 8. users table audit fields  -- ALTER shared users table for shop review
+-- =====================================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS business_license   VARCHAR(200);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS id_card_front_url  VARCHAR(500);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS id_card_back_url   VARCHAR(500);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS reject_reason      TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS reviewer_id        BIGINT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS reviewed_at        TIMESTAMP;
+
+COMMENT ON COLUMN users.business_license  IS '营业执照号或URL';
+COMMENT ON COLUMN users.id_card_front_url IS '身份证正面图片URL';
+COMMENT ON COLUMN users.id_card_back_url  IS '身份证反面图片URL';
+COMMENT ON COLUMN users.reject_reason     IS '最近一次审核拒绝原因';
+COMMENT ON COLUMN users.reviewer_id       IS '审核人ID (FK -> admin_users.id)';
+COMMENT ON COLUMN users.reviewed_at       IS '最近审核时间';
+
+-- =====================================================================
+-- 9. users 表补充遗漏字段（address/license_url/id_card_image_url/store_image_url/deposit_balance）
+-- =====================================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS address VARCHAR(200);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS license_url VARCHAR(500);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS id_card_image_url VARCHAR(500);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS store_image_url VARCHAR(500);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deposit_balance BIGINT DEFAULT 0;
+
+COMMENT ON COLUMN users.address IS '实体店详细经营地址';
+COMMENT ON COLUMN users.license_url IS '营业执照附件URL';
+COMMENT ON COLUMN users.id_card_image_url IS '申请人身份证图片URL';
+COMMENT ON COLUMN users.store_image_url IS '车行实体门店图片URL';
+COMMENT ON COLUMN users.deposit_balance IS '保证金余额（元）';
+
+-- =====================================================================
+-- 10. deposit_records 表补充遗漏字段（user_id/operator_id/status）
+-- =====================================================================
+ALTER TABLE deposit_records ADD COLUMN IF NOT EXISTS user_id BIGINT;
+ALTER TABLE deposit_records ADD COLUMN IF NOT EXISTS operator_id BIGINT;
+ALTER TABLE deposit_records ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'SUCCESS';
+
+COMMENT ON COLUMN deposit_records.user_id IS '关联用户ID (FK -> users.id)';
+COMMENT ON COLUMN deposit_records.operator_id IS '操作人ID (FK -> admin_users.id)';
+COMMENT ON COLUMN deposit_records.status IS '流水状态: PENDING / SUCCESS / FAILED';
+
+CREATE INDEX IF NOT EXISTS idx_deposit_records_user_id ON deposit_records(user_id);
+CREATE INDEX IF NOT EXISTS idx_deposit_records_operator_id ON deposit_records(operator_id);
+
+-- =====================================================================
+-- 11. coupons 表补充 updated_at 字段
+-- =====================================================================
+ALTER TABLE coupons ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+COMMENT ON COLUMN coupons.updated_at IS '更新时间';
 
 -- =====================================================================
 -- End of script

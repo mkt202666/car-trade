@@ -9,8 +9,9 @@ import com.pancosky.cartradeadmin.dto.ShopQueryDTO;
 import com.pancosky.cartradeadmin.entity.AppUser;
 import com.pancosky.cartradeadmin.event.AdminEvent;
 import com.pancosky.cartradeadmin.event.AdminEventPublisher;
-import com.pancosky.cartradeadmin.event.MobileEventPublisher;
 import com.pancosky.cartradeadmin.event.MobileNotification;
+import com.pancosky.cartradeadmin.entity.AdminUser;
+import com.pancosky.cartradeadmin.mapper.AdminUserMapper;
 import com.pancosky.cartradeadmin.mapper.AppUserMapper;
 import com.pancosky.cartradeadmin.service.AdminNotificationService;
 import com.pancosky.cartradeadmin.vo.ShopReviewVO;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,9 @@ public class AdminShopReviewService {
     private AppUserMapper appUserMapper;
 
     @Autowired
+    private AdminUserMapper adminUserMapper;
+
+    @Autowired
     private AdminEventPublisher adminEventPublisher;
 
     @Autowired
@@ -43,11 +48,21 @@ public class AdminShopReviewService {
                 .isNotNull(AppUser::getShopName)
                 .ne(AppUser::getShopName, "");
 
+        // Filter by status: only apply filter when a specific status is given.
+        // "ALL", null, or empty → return all statuses.
         String status = query.getStatus();
-        if (status == null || status.isEmpty() || "PENDING".equals(status)) {
-            wrapper.eq(AppUser::getCertificationStatus, "PENDING");
+        if (status != null && !status.isEmpty() && !"ALL".equalsIgnoreCase(status)) {
+            wrapper.eq(AppUser::getCertificationStatus, status.toUpperCase());
         }
-        // "ALL" 查全部，不加 certificationStatus 过滤
+
+        // Keyword search
+        String keyword = query.getKeyword();
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.and(w -> w
+                    .like(AppUser::getShopName, keyword)
+                    .or().like(AppUser::getRealName, keyword)
+                    .or().like(AppUser::getPhone, keyword));
+        }
 
         wrapper.orderByAsc(AppUser::getCreatedAt);
 
@@ -64,6 +79,8 @@ public class AdminShopReviewService {
         }
 
         user.setCertificationStatus("CERTIFIED");
+        user.setReviewedAt(LocalDateTime.now());
+        user.setRejectReason(null); // clear any previous rejection reason
         appUserMapper.updateById(user);
 
         // 发布 Redis 事件
@@ -88,6 +105,8 @@ public class AdminShopReviewService {
         }
 
         user.setCertificationStatus("REJECTED");
+        user.setRejectReason(reason);
+        user.setReviewedAt(LocalDateTime.now());
         appUserMapper.updateById(user);
 
         // 发布 Redis 事件
@@ -140,17 +159,34 @@ public class AdminShopReviewService {
         vo.setId(user.getId());
         vo.setShopName(user.getShopName());
         vo.setRealName(user.getRealName());
-        vo.setPhone(maskPhone(user.getPhone()));
+        vo.setPhone(user.getPhone()); // admin sees full phone, no masking
         vo.setAvatarUrl(user.getAvatarUrl());
         vo.setCreatedAt(user.getCreatedAt());
         vo.setCertificationStatus(user.getCertificationStatus());
-        return vo;
-    }
 
-    private String maskPhone(String phone) {
-        if (phone == null || phone.length() < 7) {
-            return phone;
+        // Aliased fields for frontend compatibility
+        vo.setApplicantName(user.getRealName());
+        vo.setApplicantPhone(user.getPhone());
+        vo.setStatus(user.getCertificationStatus());
+
+        // New audit-related fields
+        vo.setBusinessLicense(user.getBusinessLicense());
+        vo.setIdCardFront(user.getIdCardFrontUrl());
+        vo.setIdCardBack(user.getIdCardBackUrl());
+        vo.setLicenseImage(user.getBusinessLicenseUrl());
+        vo.setIdCardNumber(user.getIdCardNumber());
+        vo.setRejectReason(user.getRejectReason());
+        vo.setReviewerId(user.getReviewerId());
+        vo.setReviewedAt(user.getReviewedAt());
+
+        // Look up reviewer name from admin_users
+        if (user.getReviewerId() != null) {
+            AdminUser reviewer = adminUserMapper.selectById(user.getReviewerId());
+            if (reviewer != null) {
+                vo.setReviewerName(reviewer.getNickname());
+            }
         }
-        return phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
+
+        return vo;
     }
 }

@@ -24,5 +24,11 @@ public class ShopDetailVO {
     private String certificationStatus;
     private String status;
     private LocalDateTime createdAt;
+    private String province;
+    private String city;
+    private String address;
+    private String creditCode;
+    private Long depositBalance;
+    private String licenseUrl;
     private List<ShopMemberVO> members;
 }

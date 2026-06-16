@@ -273,6 +273,27 @@ public class AdminUserService {
         if (dto.getShopDescription() != null) {
             user.setShopDescription(dto.getShopDescription());
         }
+        if (dto.getCreditCode() != null) {
+            user.setCreditCode(dto.getCreditCode());
+        }
+        if (dto.getProvince() != null) {
+            user.setProvince(dto.getProvince());
+        }
+        if (dto.getCity() != null) {
+            user.setCity(dto.getCity());
+        }
+        if (dto.getIdCardNumber() != null) {
+            user.setIdCardNumber(dto.getIdCardNumber());
+        }
+        if (dto.getBusinessLicenseUrl() != null) {
+            user.setBusinessLicenseUrl(dto.getBusinessLicenseUrl());
+        }
+        if (dto.getIdCardFrontUrl() != null) {
+            user.setIdCardFrontUrl(dto.getIdCardFrontUrl());
+        }
+        if (dto.getIdCardBackUrl() != null) {
+            user.setIdCardBackUrl(dto.getIdCardBackUrl());
+        }
 
         appUserMapper.updateById(user);
         log.info("管理员更新用户资料成功, userId={}", id);
@@ -294,6 +315,13 @@ public class AdminUserService {
         vo.setDealCount(user.getDealCount());
         vo.setOnSaleCount(user.getOnSaleCount());
         vo.setCreatedAt(user.getCreatedAt());
+        vo.setCreditCode(user.getCreditCode());
+        vo.setProvince(user.getProvince());
+        vo.setCity(user.getCity());
+        vo.setIdCardNumber(user.getIdCardNumber());
+        vo.setBusinessLicenseUrl(user.getBusinessLicenseUrl());
+        vo.setIdCardFrontUrl(user.getIdCardFrontUrl());
+        vo.setIdCardBackUrl(user.getIdCardBackUrl());
         
         // M1 新增字段
         vo.setMemberExpireAt(user.getMemberExpireAt());

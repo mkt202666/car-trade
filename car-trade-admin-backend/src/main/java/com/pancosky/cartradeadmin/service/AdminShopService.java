@@ -53,11 +53,20 @@ public class AdminShopService {
         user.setPhone(dto.getPhone());
         user.setNickname(dto.getContactName() != null && !dto.getContactName().isEmpty()
                 ? dto.getContactName() : dto.getShopName());
+        user.setCreditCode(dto.getCreditCode());
+        user.setProvince(dto.getProvince());
+        user.setCity(dto.getCity());
+        user.setAddress(dto.getAddress());
+        user.setLicenseUrl(dto.getLicenseUrl());
+        user.setIdCardNumber(dto.getIdCardNumber());
+        user.setIdCardImageUrl(dto.getIdCardImageUrl());
+        user.setStoreImageUrl(dto.getStoreImageUrl());
         user.setUserRole("SHOP");
         user.setCertificationStatus("PENDING");
         user.setStatus("ACTIVE");
         user.setCreditScore(0);
         user.setDealCount(0);
+        user.setDepositBalance(0L);
         user.setPassword(passwordEncoder.encode("123456"));
 
         appUserMapper.insert(user);
@@ -66,37 +75,14 @@ public class AdminShopService {
     }
 
     public PageResult<ShopVO> getShopList(ShopQueryDTO query) {
-        LambdaQueryWrapper<AppUser> wrapper = new LambdaQueryWrapper<AppUser>()
-                .isNull(AppUser::getDeletedAt)
-                .isNotNull(AppUser::getShopName)
-                .ne(AppUser::getShopName, "");
-
-        if (query.getKeyword() != null && !query.getKeyword().isEmpty()) {
-            wrapper.like(AppUser::getShopName, query.getKeyword());
-        }
-        if (query.getStatus() != null && !query.getStatus().isEmpty()) {
-            wrapper.eq(AppUser::getStatus, query.getStatus());
-        }
+        LambdaQueryWrapper<AppUser> wrapper = buildShopQueryWrapper(query);
 
         wrapper.orderByDesc(AppUser::getCreatedAt);
 
         Page<AppUser> page = appUserMapper.selectPage(new Page<>(query.getPage(), query.getSize()), wrapper);
 
         List<ShopVO> voList = page.getRecords().stream().map(user -> {
-            ShopVO vo = new ShopVO();
-            vo.setId(user.getId());
-            vo.setShopName(user.getShopName());
-            vo.setRealName(user.getRealName());
-            vo.setPhone(maskPhone(user.getPhone()));
-            vo.setNickname(user.getNickname());
-            vo.setAvatarUrl(user.getAvatarUrl());
-            vo.setCreditGrade(user.getCreditGrade());
-            vo.setCreditScore(user.getCreditScore());
-            vo.setDealCount(user.getDealCount());
-            vo.setOnSaleCount(user.getOnSaleCount());
-            vo.setStatus(user.getStatus());
-            vo.setCertificationStatus(user.getCertificationStatus());
-            vo.setCreatedAt(user.getCreatedAt());
+            ShopVO vo = populateShopVO(user);
 
             // 统计成员数
             Long memberCount = appShopMemberMapper.selectCount(
@@ -110,37 +96,14 @@ public class AdminShopService {
     }
 
     public List<ShopVO> getShopExportList(ShopQueryDTO query) {
-        LambdaQueryWrapper<AppUser> wrapper = new LambdaQueryWrapper<AppUser>()
-                .isNull(AppUser::getDeletedAt)
-                .isNotNull(AppUser::getShopName)
-                .ne(AppUser::getShopName, "");
-
-        if (query.getKeyword() != null && !query.getKeyword().isEmpty()) {
-            wrapper.like(AppUser::getShopName, query.getKeyword());
-        }
-        if (query.getStatus() != null && !query.getStatus().isEmpty()) {
-            wrapper.eq(AppUser::getStatus, query.getStatus());
-        }
+        LambdaQueryWrapper<AppUser> wrapper = buildShopQueryWrapper(query);
 
         wrapper.orderByDesc(AppUser::getCreatedAt);
 
         List<AppUser> users = appUserMapper.selectList(wrapper);
 
         return users.stream().map(user -> {
-            ShopVO vo = new ShopVO();
-            vo.setId(user.getId());
-            vo.setShopName(user.getShopName());
-            vo.setRealName(user.getRealName());
-            vo.setPhone(maskPhone(user.getPhone()));
-            vo.setNickname(user.getNickname());
-            vo.setAvatarUrl(user.getAvatarUrl());
-            vo.setCreditGrade(user.getCreditGrade());
-            vo.setCreditScore(user.getCreditScore());
-            vo.setDealCount(user.getDealCount());
-            vo.setOnSaleCount(user.getOnSaleCount());
-            vo.setStatus(user.getStatus());
-            vo.setCertificationStatus(user.getCertificationStatus());
-            vo.setCreatedAt(user.getCreatedAt());
+            ShopVO vo = populateShopVO(user);
 
             Long memberCount = appShopMemberMapper.selectCount(
                     new LambdaQueryWrapper<AppShopMember>().eq(AppShopMember::getShopUserId, user.getId()));
@@ -148,6 +111,53 @@ public class AdminShopService {
 
             return vo;
         }).collect(Collectors.toList());
+    }
+
+    private LambdaQueryWrapper<AppUser> buildShopQueryWrapper(ShopQueryDTO query) {
+        LambdaQueryWrapper<AppUser> wrapper = new LambdaQueryWrapper<AppUser>()
+                .isNull(AppUser::getDeletedAt)
+                .isNotNull(AppUser::getShopName)
+                .ne(AppUser::getShopName, "");
+
+        if (query.getKeyword() != null && !query.getKeyword().isEmpty()) {
+            wrapper.and(w -> w
+                    .like(AppUser::getShopName, query.getKeyword())
+                    .or().like(AppUser::getRealName, query.getKeyword())
+                    .or().like(AppUser::getPhone, query.getKeyword())
+                    .or().like(AppUser::getNickname, query.getKeyword()));
+        }
+        if (query.getStatus() != null && !query.getStatus().isEmpty()) {
+            wrapper.eq(AppUser::getStatus, query.getStatus());
+        }
+        if (query.getProvince() != null && !query.getProvince().isEmpty()) {
+            wrapper.eq(AppUser::getProvince, query.getProvince());
+        }
+
+        return wrapper;
+    }
+
+    private ShopVO populateShopVO(AppUser user) {
+        ShopVO vo = new ShopVO();
+        vo.setId(user.getId());
+        vo.setShopName(user.getShopName());
+        vo.setRealName(user.getRealName());
+        vo.setPhone(maskPhone(user.getPhone()));
+        vo.setNickname(user.getNickname());
+        vo.setAvatarUrl(user.getAvatarUrl());
+        vo.setCreditGrade(user.getCreditGrade());
+        vo.setCreditScore(user.getCreditScore());
+        vo.setDealCount(user.getDealCount());
+        vo.setOnSaleCount(user.getOnSaleCount());
+        vo.setStatus(user.getStatus());
+        vo.setCertificationStatus(user.getCertificationStatus());
+        vo.setCreatedAt(user.getCreatedAt());
+        vo.setProvince(user.getProvince());
+        vo.setCity(user.getCity());
+        vo.setAddress(user.getAddress());
+        vo.setCreditCode(user.getCreditCode());
+        vo.setDepositBalance(user.getDepositBalance());
+        vo.setLicenseUrl(user.getLicenseUrl());
+        return vo;
     }
 
     public ShopDetailVO getShopDetail(Long id) {
@@ -174,6 +184,12 @@ public class AdminShopService {
         vo.setCertificationStatus(user.getCertificationStatus());
         vo.setStatus(user.getStatus());
         vo.setCreatedAt(user.getCreatedAt());
+        vo.setProvince(user.getProvince());
+        vo.setCity(user.getCity());
+        vo.setAddress(user.getAddress());
+        vo.setCreditCode(user.getCreditCode());
+        vo.setDepositBalance(user.getDepositBalance());
+        vo.setLicenseUrl(user.getLicenseUrl());
 
         // 查询成员列表
         List<ShopMemberVO> members = appShopMemberMapper.selectMembersByShopUserId(id);

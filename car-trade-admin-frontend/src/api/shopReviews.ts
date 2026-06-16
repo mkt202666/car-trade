@@ -17,6 +17,10 @@ export interface ShopReview {
   reviewerName: string
   reviewedAt: string
   createdAt: string
+  /** 营业执照图片URL (distinct from businessLicense which is the number) */
+  licenseImage: string
+  /** 申请人身份证号码 */
+  idCardNumber: string
 }
 
 export interface ShopReviewQuery extends PaginationQuery {

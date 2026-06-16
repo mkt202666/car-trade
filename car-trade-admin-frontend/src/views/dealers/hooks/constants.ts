@@ -2,8 +2,18 @@
 import type { FormRules } from 'element-plus'
 import type { Dealer, DealerCreateForm, DealerMember } from './types'
 
-/** 省份筛选下拉选项，与种子数据中的驻点省份对应 */
-export const provinces = ['天津市', '江苏省', '安徽省', '浙江省']
+/** 省份筛选下拉选项（覆盖主要业务省份） */
+export const provinces = [
+  '北京市', '天津市', '上海市', '重庆市',
+  '河北省', '山西省', '辽宁省', '吉林省', '黑龙江省',
+  '江苏省', '浙江省', '安徽省', '福建省', '江西省', '山东省',
+  '河南省', '湖北省', '湖南省', '广东省', '海南省',
+  '四川省', '贵州省', '云南省', '陕西省', '甘肃省',
+  '内蒙古自治区', '广西壮族自治区', '西藏自治区',
+  '宁夏回族自治区', '新疆维吾尔自治区',
+]
+
+/** @deprecated 种子数据仅供样式参考，页面数据已从 API 获取 */
 
 /** DLR-5001 旗下成员列表，作为种子数据子集复用 */
 const dlr5001Members: DealerMember[] = [
@@ -19,6 +29,7 @@ const dlr5001Members: DealerMember[] = [
 /** 车行列表演示种子数据，初始化本地 dealers 列表 */
 export const SEED_DEALERS: Dealer[] = [
   {
+    numericId: 5001,
     id: 'DLR-5001',
     name: '天津5D好车',
     joinedAt: '2024/3/12',
@@ -39,6 +50,7 @@ export const SEED_DEALERS: Dealer[] = [
     status: 'active',
   },
   {
+    numericId: 5002,
     id: 'DLR-5002',
     name: '苏南宏大好车商行',
     joinedAt: '2025/8/20',
@@ -63,6 +75,7 @@ export const SEED_DEALERS: Dealer[] = [
     status: 'active',
   },
   {
+    numericId: 5003,
     id: 'DLR-5003',
     name: '合肥五达二手车行',
     joinedAt: '2025/10/12',
@@ -86,6 +99,7 @@ export const SEED_DEALERS: Dealer[] = [
     status: 'active',
   },
   {
+    numericId: 5004,
     id: 'DLR-5004',
     name: '杭州法拍资产处置点',
     joinedAt: '2026/1/5',
@@ -109,6 +123,7 @@ export const SEED_DEALERS: Dealer[] = [
     status: 'active',
   },
   {
+    numericId: 5005,
     id: 'DLR-5005',
     name: '本地个人车主盟会',
     joinedAt: '2026/2/14',
@@ -157,6 +172,8 @@ export function createEmptyDealerForm(): DealerCreateForm {
     storeImageUrl: '',
     creditCode: '',
     licenseUrl: '',
+    province: '',
+    city: '',
     address: '',
     initialCredit: 50000,
   }

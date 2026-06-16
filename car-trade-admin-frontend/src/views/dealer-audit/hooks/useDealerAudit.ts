@@ -1,5 +1,5 @@
 /** 车行注册审核 composable — 调用后端 API */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   auditCodeSuffix,
@@ -24,7 +24,7 @@ export { NEW_DEALER_TYPE } from './constants'
 
 /** Map backend status string to frontend AuditStatus */
 function mapStatus(raw: string): AuditStatus {
-  if (raw === 'APPROVED' || raw === 'approved') return 'approved'
+  if (raw === 'CERTIFIED' || raw === 'certified' || raw === 'APPROVED' || raw === 'approved') return 'approved'
   if (raw === 'REJECTED' || raw === 'rejected') return 'rejected'
   return 'pending'
 }
@@ -41,10 +41,10 @@ function toAuditItem(r: ShopReview): AuditItem {
     status,
     submittedAt: (r.createdAt || '').slice(0, 10),
     applicant: r.applicantName
-      ? { name: r.applicantName, idNumber: '', idCardImage: r.idCardFront || '' }
+      ? { name: r.applicantName, idNumber: r.idCardNumber || '', idCardImage: r.idCardFront || '' }
       : undefined,
     creditCode: r.businessLicense || undefined,
-    licenseImage: r.idCardFront || undefined,
+    licenseImage: r.licenseImage || r.idCardFront || undefined,
     storefrontImage: r.idCardBack || undefined,
     auditNote: status === 'rejected' ? r.rejectReason || undefined : undefined,
   }
@@ -88,11 +88,26 @@ export function useDealerAudit() {
     () => selectedAudit.value?.type === NEW_DEALER_TYPE && !!selectedAudit.value.applicant,
   )
 
+  /** Map frontend AuditStatus to backend certificationStatus value */
+  function toBackendStatus(frontendStatus: 'all' | AuditStatus): string | undefined {
+    switch (frontendStatus) {
+      case 'pending': return 'PENDING'
+      case 'approved': return 'CERTIFIED'
+      case 'rejected': return 'REJECTED'
+      default: return undefined // 'all' → no filter, backend returns all
+    }
+  }
+
   async function fetchAudits() {
     loading.value = true
     try {
+      const backendStatus = toBackendStatus(statusFilter.value)
+      const params: Record<string, unknown> = { page: 1, size: 200 }
+      if (backendStatus) params.status = backendStatus
+      if (keyword.value.trim()) params.keyword = keyword.value.trim()
+
       // The API interceptor unwraps ApiResponse, so res IS PageResult<ShopReview> directly
-      const res = (await getShopReviews({ page: 1, size: 200 })) as unknown as {
+      const res = (await getShopReviews(params)) as unknown as {
         list?: ShopReview[]
       }
       audits.value = (res.list || []).map(toAuditItem)
@@ -165,6 +180,12 @@ export function useDealerAudit() {
   }
 
   onMounted(fetchAudits)
+
+  // Re-fetch from API when status filter changes
+  watch(statusFilter, fetchAudits)
+
+  // Re-fetch when keyword changes (debounced via user typing pause)
+  watch(keyword, fetchAudits)
 
   return {
     keyword,

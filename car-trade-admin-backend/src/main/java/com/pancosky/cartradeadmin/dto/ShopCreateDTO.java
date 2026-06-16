@@ -17,4 +17,20 @@ public class ShopCreateDTO {
     private String phone;
 
     private String contactName;
+
+    private String creditCode;
+
+    private String province;
+
+    private String city;
+
+    private String address;
+
+    private String licenseUrl;
+
+    private String idCardNumber;
+
+    private String idCardImageUrl;
+
+    private String storeImageUrl;
 }
