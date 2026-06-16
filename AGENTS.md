@@ -279,9 +279,9 @@ If you add a public endpoint, update BOTH files. They must stay in sync.
 
 The `notification_settings JSONB` column is stored and passed as a raw JSON String (not deserialized to a Map). The `GET/PUT /api/v1/messages/notification-settings` endpoint returns/accepts the raw JSON string. Don't try to deserialize it to a typed object.
 
-### Cities data has quality issues
+### Cities data is idempotent-safe
 
-`data-cities.sql` has duplicate entries — hot cities (武汉/广州/深圳/成都/重庆) appear twice. City code "ZHUHai" has inconsistent casing. "XI'AN" vs "XIAN" same city different codes. Don't assume uniqueness when querying city data.
+`data-cities.sql` uses `WHERE NOT EXISTS (SELECT 1 FROM cities WHERE code = 'xxx')` on every INSERT — each row is uniquely identified by its administrative division code (`code` field). Re-running the script is safe; no duplicate entries will be inserted. Hot cities (武汉/广州/深圳/成都/重庆) each appear exactly once.
 
 ### SMS endpoint requires auth
 

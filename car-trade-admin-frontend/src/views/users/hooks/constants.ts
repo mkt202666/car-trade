@@ -9,7 +9,10 @@ export const imageFields: { key: keyof UserProfile; label: string }[] = [
   { key: 'idBackUrl', label: '身份证反面' },
 ]
 
-/** 用户列表演示种子数据，初始化本地 users 列表 */
+/**
+ * @deprecated 用户列表已从后端 API 加载，此种子数据仅保留作回退参考。
+ * 用户列表演示种子数据，初始化本地 users 列表
+ */
 export const SEED_USERS: User[] = [
   {
     id: 'USR-3001',

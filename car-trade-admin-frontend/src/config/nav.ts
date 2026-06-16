@@ -17,4 +17,6 @@ export const navItems: NavItem[] = [
   { path: '/export-config', label: '出口配置', icon: 'export' },
   { path: '/models', label: '车型库', icon: 'model' },
   { path: '/resources', label: '资源管理', icon: 'resource' },
+  { path: '/disputes', label: '纠纷管理', icon: 'dispute' },
+  { path: '/notifications', label: '通知管理', icon: 'notification' },
 ]

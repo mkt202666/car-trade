@@ -74,15 +74,15 @@
             size="large"
             @submit.prevent="handleSubmit"
           >
-            <el-form-item prop="email">
+            <el-form-item prop="username">
               <el-input
-                v-model="form.email"
-                placeholder="运维邮箱"
+                v-model="form.username"
+                placeholder="用户名"
                 autocomplete="username"
                 clearable
               >
                 <template #prefix>
-                  <el-icon><Message /></el-icon>
+                  <el-icon><User /></el-icon>
                 </template>
               </el-input>
             </el-form-item>
@@ -123,7 +123,7 @@
 
           <footer class="login-card__footer">
             <el-icon><Cpu /></el-icon>
-            <span>演示账号 {{ DEMO_ACCOUNT.email }} · 密码 {{ DEMO_ACCOUNT.password }}</span>
+            <span>演示账号 {{ DEMO_ACCOUNT.username }} · 密码 {{ DEMO_ACCOUNT.password }}</span>
           </footer>
         </div>
 
@@ -136,7 +136,7 @@
 
 <script setup lang="ts">
 
-import { Cpu, Lock, MagicStick, Message } from '@element-plus/icons-vue'
+import { Cpu, Lock, MagicStick, User } from '@element-plus/icons-vue'
 import { AI_FEATURES, DEMO_ACCOUNT } from './hooks/constants'
 import { useLogin } from './hooks/useLogin'
 

@@ -1,12 +1,11 @@
 /** 用户管理页状态与交互逻辑 */
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
 import {
   createEmptyRegisterForm,
   imageFields,
   registerRules,
-  SEED_USERS,
 } from './constants'
 import {
   categoryStatus,
@@ -15,10 +14,18 @@ import {
   generateUserId as computeUserId,
   parseMoneyStr,
 } from './userUtils'
+import {
+  getUsers as fetchUsersApi,
+  updateUserStatus,
+  createUser,
+  updateUserProfile,
+  type User as ApiUser,
+} from '../../../api/users'
+import { createJournalEntry } from '../../../api/deposits'
 import type { User, UserProfile, UserRegisterForm } from './types'
 
 export type { User, UserProfile, UserRegisterForm } from './types'
-export { createEmptyRegisterForm, imageFields, registerRules, SEED_USERS } from './constants'
+export { createEmptyRegisterForm, imageFields, registerRules } from './constants'
 export {
   categoryStatus,
   formatCurrency,
@@ -26,6 +33,50 @@ export {
   generateUserId,
   parseMoneyStr,
 } from './userUtils'
+
+/**
+ * 将后端 ApiUser 映射为前端 User 类型。
+ * 后端字段与前端展示模型差异较大，此处做统一适配：
+ * - nickname → name, role → category, createdAt → registerAt
+ * - 聚合指标（listing/dealership/deposit/transaction/credit/profile）后端暂未返回，填充默认值
+ * - status=DISABLED 映射为 category='已注销'
+ * @param u 后端返回的用户对象
+ * @returns 前端表格行所需的 User 结构
+ */
+function mapApiUserToFrontendUser(u: ApiUser): User {
+  const isDisabled = u.status === 'DISABLED'
+  const roleName = isDisabled ? '已注销' : (u.role || '个人用户')
+  const depositStr = formatDeposit(0)
+
+  return {
+    id: String(u.id),
+    name: u.nickname || u.phone || `用户${u.id}`,
+    registerAt: u.createdAt
+      ? new Date(u.createdAt).toLocaleDateString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        })
+      : '',
+    category: roleName,
+    phone: u.phone || '—',
+    wechat: '—',
+    listing: { onSale: 0, offShelf: 0, wanted: 0 },
+    dealership: { name: '—', vehicles: '—' },
+    deposit: { available: depositStr, total: depositStr },
+    transaction: { count: 0, total: '¥0' },
+    credit: { used: '0', total: '0' },
+    profile: {
+      dealershipName: '',
+      creditCode: '',
+      provinceCity: '',
+      idNumber: '',
+      businessLicenseUrl: '',
+      idFrontUrl: '',
+      idBackUrl: '',
+    },
+  }
+}
 
 /**
  * 用户列表、档案编辑、手动建档与保证金调配的 composable。
@@ -39,6 +90,10 @@ export function useUsers() {
   const roleFilter = ref('all')
   /** 表格分页当前页码 */
   const currentPage = ref(1)
+  /** 服务端返回的总记录数，驱动分页组件 total */
+  const totalUsers = ref(0)
+  /** 列表加载中状态 */
+  const loading = ref(false)
   /** 表格展开行 key 列表，手风琴模式仅保留一行 */
   const expandedKeys = ref<string[]>([])
   /** 当前正在编辑档案的用户 ID，null 表示非编辑态 */
@@ -65,23 +120,85 @@ export function useUsers() {
   /** 建档弹窗表单数据 */
   const registerForm = reactive<UserRegisterForm>(createEmptyRegisterForm())
 
-  /** 用户列表数据源，由 SEED_USERS 初始化 */
-  const users = ref<User[]>([...SEED_USERS])
+  /** 用户列表数据源，由后端 API 加载 */
+  const users = ref<User[]>([])
 
-  /** 经关键词与角色筛选后的用户列表，绑定 el-table :data */
-  const filteredUsers = computed(() => {
-    const q = keyword.value.trim().toLowerCase()
-    return users.value.filter((user) => {
-      const matchRole = roleFilter.value === 'all' || user.category === roleFilter.value
-      if (!matchRole) return false
-      if (!q) return true
-      return (
-        user.id.toLowerCase().includes(q) ||
-        user.name.toLowerCase().includes(q) ||
-        user.phone.includes(q)
-      )
-    })
+  /**
+   * 从后端加载用户分页列表。
+   * 将 keyword 和 roleFilter 映射为后端查询参数，
+   * 并将返回的 ApiUser 数组转换为前端 User 类型。
+   */
+  async function loadUsers() {
+    loading.value = true
+    try {
+      const params: Record<string, unknown> = {
+        page: currentPage.value,
+        size: 10,
+      }
+
+      const q = keyword.value.trim()
+      if (q) {
+        params.keyword = q
+      }
+
+      // 角色筛选映射：前端中文角色名 → 后端枚举值
+      // 'all' 不传 role 参数，表示不筛选
+      if (roleFilter.value !== 'all') {
+        const roleMap: Record<string, string> = {
+          '个人用户': 'BUYER',
+          '车行用户': 'DEALER',
+          'IT开发': 'IT',
+          '系统管理员': 'ADMIN',
+        }
+        const apiRole = roleMap[roleFilter.value]
+        if (apiRole) {
+          params.role = apiRole
+        }
+      }
+
+      const result = await fetchUsersApi(params)
+      // 拦截器已解包 ApiResponse，此处 result 实际为 PageResult<ApiUser>
+      const pageResult = result as unknown as {
+        list: ApiUser[]
+        total: number
+        page: number
+        size: number
+      }
+      users.value = (pageResult.list || []).map(mapApiUserToFrontendUser)
+      totalUsers.value = pageResult.total || 0
+    } catch {
+      ElMessage.error('加载用户列表失败，请稍后重试')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /** 组件挂载时加载首页用户数据 */
+  onMounted(() => {
+    loadUsers()
   })
+
+  /** 搜索关键词或角色筛选变化时，重置到第一页并重新加载 */
+  let searchTimer: ReturnType<typeof setTimeout> | null = null
+  watch([keyword, roleFilter], () => {
+    currentPage.value = 1
+    // 防抖 300ms，避免快速输入时频繁请求
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => {
+      loadUsers()
+    }, 300)
+  })
+
+  /** 页码变化时重新加载对应页数据 */
+  watch(currentPage, () => {
+    loadUsers()
+  })
+
+  /**
+   * 经关键词与角色筛选后的用户列表，绑定 el-table :data。
+   * 服务端已做分页与筛选，此处直接返回当前页数据。
+   */
+  const filteredUsers = computed(() => users.value)
 
   /**
    * 判断指定用户是否处于档案编辑态。
@@ -144,22 +261,38 @@ export function useUsers() {
   }
 
   /**
-   * 保存档案编辑（本地 mock，直接提交 row.profile 变更）。
+   * 保存档案编辑，调用后端 PUT /users/{id}/profile 提交变更。
+   * 将行内可编辑字段映射为 UserProfileUpdateDTO 后提交，
+   * 成功后清除编辑态并刷新列表。
    * @param row 已编辑的用户行数据
    */
-  function saveEdit(row: User) {
-    editingUserId.value = null
-    editBackup.value = null
-    ElMessage.success(`已保存 ${row.name} 的档案资料`)
+  async function saveEdit(row: User) {
+    try {
+      await updateUserProfile(Number(row.id), {
+        nickname: row.name,
+        shopName: row.profile.dealershipName || undefined,
+      })
+      editingUserId.value = null
+      editBackup.value = null
+      ElMessage.success(`已保存 ${row.name} 的档案资料`)
+      await loadUsers()
+    } catch {
+      ElMessage.error('保存档案失败，请重试')
+    }
   }
 
   /**
-   * 禁用用户：将角色标记为「已注销」。
+   * 禁用用户：调用后端 API 将状态设为 DISABLED，成功后更新本地列表。
    * @param row 目标用户行数据
    */
-  function confirmDisable(row: User) {
-    row.category = '已注销'
-    ElMessage.warning(`已禁用用户 ${row.name}`)
+  async function confirmDisable(row: User) {
+    try {
+      await updateUserStatus(Number(row.id), 'DISABLED')
+      row.category = '已注销'
+      ElMessage.warning(`已禁用用户 ${row.name}`)
+    } catch {
+      ElMessage.error(`禁用用户 ${row.name} 失败`)
+    }
   }
 
   /** 调保弹窗：当前目标用户可用保证金余额（元） */
@@ -191,7 +324,9 @@ export function useUsers() {
     adjustAmount.value = ''
   }
 
-  /** 提交保证金调配：校验额度后更新可用/总保证金并关闭弹窗 */
+  /**
+   * 提交保证金调配，调用后端 deposits/journal 接口完成 CHARGE 或 WITHDRAW 过账。
+   */
   async function submitAdjustForm() {
     const delta = Number.parseFloat(adjustAmount.value)
     if (!adjustTarget.value || Number.isNaN(delta) || delta === 0) {
@@ -200,16 +335,21 @@ export function useUsers() {
     }
 
     adjustSubmitting.value = true
-    await new Promise((resolve) => setTimeout(resolve, 400))
-
-    const newBalance = adjustAfterBalance.value
-    const depositStr = formatDeposit(newBalance)
-    adjustTarget.value.deposit.available = depositStr
-    adjustTarget.value.deposit.total = depositStr
-
-    adjustSubmitting.value = false
-    adjustDialogVisible.value = false
-    ElMessage.success(`已为 ${adjustTarget.value.name} 完成调配过账`)
+    try {
+      await createJournalEntry({
+        userId: Number(adjustTarget.value.id),
+        amount: Math.abs(delta),
+        type: delta > 0 ? 'CHARGE' : 'WITHDRAW',
+        description: '管理员手动调整',
+      })
+      ElMessage.success(`已为 ${adjustTarget.value.name} 完成调配过账`)
+      adjustDialogVisible.value = false
+      await loadUsers()
+    } catch {
+      ElMessage.error('保证金调配失败')
+    } finally {
+      adjustSubmitting.value = false
+    }
   }
 
   /** 打开手动建档弹窗 */
@@ -223,46 +363,30 @@ export function useUsers() {
     registerFormRef.value?.clearValidate()
   }
 
-  /** 提交建档表单：校验通过后生成新用户并插入列表头部 */
+  /**
+   * 提交建档表单：校验通过后调用 createUser API 创建用户，
+   * 成功后刷新列表。
+   */
   async function submitRegisterForm() {
     const valid = await registerFormRef.value?.validate().catch(() => false)
     if (!valid) return
 
     registerSubmitting.value = true
-    await new Promise((resolve) => setTimeout(resolve, 400))
-
-    const depositStr = formatDeposit(registerForm.deposit)
-    const today = new Date()
-    const registerAt = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`
-    const isDealer = registerForm.category === '车行用户'
-
-    users.value.unshift({
-      id: computeUserId(users.value),
-      name: registerForm.name,
-      registerAt,
-      category: registerForm.category,
-      phone: registerForm.phone,
-      wechat: registerForm.wechat || '—',
-      listing: { onSale: 0, offShelf: 0, wanted: 0 },
-      dealership: { name: isDealer ? registerForm.name : '—', vehicles: '—' },
-      deposit: { available: depositStr, total: depositStr },
-      transaction: { count: 0, total: '¥0' },
-      credit: { used: '0', total: isDealer ? '50.0W' : '10.0W' },
-      profile: {
-        dealershipName: isDealer ? registerForm.name : '',
-        creditCode: '',
-        provinceCity: '',
-        idNumber: '',
-        businessLicenseUrl: '',
-        idFrontUrl: '',
-        idBackUrl: '',
-      },
-    })
-
-    registerSubmitting.value = false
-    registerDialogVisible.value = false
-    currentPage.value = 1
-    ElMessage.success(`已成功建档：${registerForm.name}`)
+    try {
+      await createUser({
+        phone: registerForm.phone,
+        nickname: registerForm.name,
+        userRole: registerForm.category === '车行用户' ? 'SHOP' : 'PERSONAL',
+      })
+      ElMessage.success(`已成功建档：${registerForm.name}`)
+      registerDialogVisible.value = false
+      currentPage.value = 1
+      await loadUsers()
+    } catch (err) {
+      ElMessage.error(err instanceof Error ? err.message : '创建失败')
+    } finally {
+      registerSubmitting.value = false
+    }
   }
 
   return {
@@ -270,6 +394,8 @@ export function useUsers() {
     keyword,
     roleFilter,
     currentPage,
+    totalUsers,
+    loading,
     expandedKeys,
     editingUserId,
     editBackup,
@@ -304,5 +430,6 @@ export function useUsers() {
     resetRegisterForm,
     submitAdjustForm,
     submitRegisterForm,
+    loadUsers,
   }
 }

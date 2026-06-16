@@ -1,6 +1,24 @@
 /** 仪表盘 mock 数据与图表常量 */
 import type { ApprovalQueueItem, ChannelChartDatum, CouponItem, DashboardStat } from './types'
 
+/** 生成近 7 日的 MM-DD 日期标签 */
+function last7Days(): string[] {
+  const result: string[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    result.push(`${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)
+  }
+  return result
+}
+
+/** 生成 N 天前的 M/D/YYYY 格式日期 */
+function daysAgo(n: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`
+}
+
 /** 顶部四格统计指标 mock 数据，绑定 stats-grid 区域的 DashboardStatCard 列表 */
 export const DASHBOARD_STATS: DashboardStat[] = [
   {
@@ -40,7 +58,7 @@ export const DASHBOARD_STATS: DashboardStat[] = [
 ]
 
 /** 交易趋势折线图 X 轴日期标签（近 7 日） */
-export const TREND_CHART_X_AXIS_DATA = ['05-28', '05-29', '05-30', '05-31', '06-01', '06-02', '06-03']
+export const TREND_CHART_X_AXIS_DATA = last7Days()
 
 /** 交易趋势折线图 Y 轴每日成交金额序列（单位：CNY） */
 export const TREND_CHART_SERIES_DATA = [120000, 185000, 95000, 210000, 168000, 245000, 928500]
@@ -63,7 +81,7 @@ export const COUPONS: CouponItem[] = [
 
 /** 待处理资质注册队列 mock 列表，绑定 bottom-row 右侧审批队列面板 */
 export const APPROVAL_QUEUE: ApprovalQueueItem[] = [
-  { title: '南京腾达二手名车汇新车行创建申请', date: '6/4/2026' },
-  { title: '成都捷诚二手车交易网区域代理商合伙人', date: '6/3/2026' },
-  { title: '杭州星驰高端车行自营直销商户', date: '5/28/2026' },
+  { title: '南京腾达二手名车汇新车行创建申请', date: daysAgo(0) },
+  { title: '成都捷诚二手车交易网区域代理商合伙人', date: daysAgo(1) },
+  { title: '杭州星驰高端车行自营直销商户', date: daysAgo(7) },
 ]

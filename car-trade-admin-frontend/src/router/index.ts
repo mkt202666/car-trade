@@ -82,6 +82,18 @@ const router = createRouter({
           component: () => import('../views/resources/index.vue'),
           meta: { title: '资源管理' },
         },
+        {
+          path: 'disputes',
+          name: 'disputes',
+          component: () => import('../views/disputes/index.vue'),
+          meta: { title: '纠纷管理' },
+        },
+        {
+          path: 'notifications',
+          name: 'notifications',
+          component: () => import('../views/notifications/index.vue'),
+          meta: { title: '通知管理' },
+        },
       ],
     },
   ],

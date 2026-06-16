@@ -18,6 +18,8 @@ export interface ExportRegion {
   code: string
   /** 地区中文名称，如「俄罗斯」 */
   name: string
+  /** 国旗 emoji，如 🇷🇺 */
+  flag?: string
   /** 所属分组中文名，如「独联体」「非洲」 */
   group: string
   /** 分组键，用于 Tag 配色与逻辑分组 */

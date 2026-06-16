@@ -3,15 +3,19 @@
   <div class="page models-page">
     <PageHeader title="车型库维护" subtitle="维护3级车型字典与挂架关联数据">
       <template #actions>
+        <el-button @click="handleDownloadTemplate">
+          <el-icon class="btn-icon"><Download /></el-icon>
+          下载模板
+        </el-button>
         <el-upload
           :show-file-list="false"
-          accept=".xlsx,.csv"
+          accept=".xlsx,.xls"
           :auto-upload="false"
           @change="handleUpload"
         >
-          <el-button type="success">
-            <el-icon class="btn-icon"><Upload /></el-icon>
-            上传附件维护
+          <el-button type="success" :loading="importing">
+            <el-icon v-if="!importing" class="btn-icon"><Upload /></el-icon>
+            {{ importing ? '导入中...' : 'Excel 批量导入' }}
           </el-button>
         </el-upload>
         <el-button type="primary" @click="handleCreate">
@@ -470,7 +474,7 @@
  * 分页列表、行内编辑出厂参数、展开查看详细配置、启用/停用切换；
  * 可通过弹窗新增车型或上传附件批量维护（上传待接入）。逻辑由 useModels 提供。
  */
-import { ArrowDown, ArrowUp, CircleCheck, CircleClose, Delete, DocumentChecked, EditPen, Plus, Upload } from '@element-plus/icons-vue'
+import { ArrowDown, ArrowUp, CircleCheck, CircleClose, Delete, DocumentChecked, Download, EditPen, Plus, Upload } from '@element-plus/icons-vue'
 import PageHeader from '../../components/PageHeader.vue'
 import { useModels, type VehicleModel } from './hooks/useModels'
 
@@ -529,6 +533,8 @@ const {
   buildModelFromForm,
   nextModelId,
   handleUpload,
+  importing,
+  handleDownloadTemplate,
   saveEdit,
   submitForm,
   handleDelete,

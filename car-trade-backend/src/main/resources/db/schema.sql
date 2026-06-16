@@ -35,6 +35,10 @@ ALTER TABLE contracts ADD COLUMN IF NOT EXISTS seller_signature_url VARCHAR(500)
 COMMENT ON COLUMN contracts.buyer_signature_url IS '买家手写签名图片URL';
 COMMENT ON COLUMN contracts.seller_signature_url IS '卖家手写签名图片URL';
 
+-- ----- 车源表补充推荐字段 -----
+ALTER TABLE car_sources ADD COLUMN IF NOT EXISTS recommended BOOLEAN DEFAULT FALSE;
+COMMENT ON COLUMN car_sources.recommended IS '是否推荐车源';
+
 
 -- ----- 品牌 -----
 INSERT INTO brands (id, name, logo_url, first_letter, sort_order, status)

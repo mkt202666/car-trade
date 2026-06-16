@@ -1,9 +1,17 @@
-/** 出口配置 composable */
+/** 出口配置 composable — 使用后端 API */
 
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, UploadFile } from 'element-plus'
-import { constraintFields, constraintOperators, formRules, SEED_REGIONS } from './constants'
+import {
+  getExportRegions,
+  createExportRegion,
+  updateExportRegion,
+  deleteExportRegion,
+  type ExportRegionVO,
+  type ExportRegionDTO,
+} from '../../../api/exportRegions'
+import { constraintFields, constraintOperators, formRules } from './constants'
 import {
   countryFlag,
   createEmptyForm,
@@ -21,7 +29,6 @@ export {
   constraintFields,
   constraintOperators,
   formRules,
-  SEED_REGIONS,
 } from './constants'
 export {
   countryFlag,
@@ -33,6 +40,51 @@ export {
   parseRequirements,
   resolveGroupKey,
 } from './exportConfigUtils'
+
+/** 将后端 VO 映射为前端 ExportRegion 类型 */
+function mapVoToRegion(vo: ExportRegionVO): ExportRegion {
+  let constraints: ExportRegion['constraints'] = []
+  try {
+    constraints = JSON.parse(vo.constraints || '[]')
+  } catch {
+    constraints = []
+  }
+
+  let requirements: string[] = []
+  try {
+    requirements = JSON.parse(vo.requirements || '[]')
+  } catch {
+    requirements = []
+  }
+
+  return {
+    id: String(vo.id),
+    code: vo.code,
+    name: vo.name,
+    flag: vo.flag,
+    group: vo.group,
+    groupKey: vo.groupKey as ExportRegion['groupKey'],
+    icon: vo.icon,
+    constraints,
+    requirements,
+    status: vo.status as 'ACTIVE' | 'INACTIVE',
+  }
+}
+
+/** 将表单数据序列化为后端 DTO */
+function buildDtoFromPayload(payload: ExportRegion): ExportRegionDTO {
+  return {
+    code: payload.code,
+    name: payload.name,
+    flag: payload.flag,
+    group: payload.group,
+    groupKey: payload.groupKey,
+    icon: payload.icon,
+    constraints: JSON.stringify(payload.constraints),
+    requirements: JSON.stringify(payload.requirements),
+    status: payload.status,
+  }
+}
 
 /** 管理出口地区的增删改与约束条件配置 */
 export function useExportConfig() {
@@ -46,12 +98,31 @@ export function useExportConfig() {
   const editingId = ref<string | null>(null)
   /** 表单提交中的 loading 状态 */
   const submitting = ref(false)
+  /** 列表数据加载中状态 */
+  const loading = ref(false)
 
   /** 地区编辑表单数据 */
   const form = reactive(createEmptyForm())
 
   /** 出口地区列表数据 */
-  const regions = ref<ExportRegion[]>([...SEED_REGIONS])
+  const regions = ref<ExportRegion[]>([])
+
+  /** 从后端加载出口地区列表 */
+  async function fetchRegions() {
+    loading.value = true
+    try {
+      const data = (await getExportRegions()) as unknown as ExportRegionVO[]
+      regions.value = data.map(mapVoToRegion)
+    } catch {
+      ElMessage.error('加载出口地区配置失败')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  onMounted(() => {
+    fetchRegions()
+  })
 
   /**
    * 用已有地区数据填充编辑表单
@@ -142,7 +213,7 @@ export function useExportConfig() {
     const code = form.code.trim().toUpperCase()
     const icon = form.icon.trim() || countryFlag(code)
     return {
-      id: editingId.value ?? `region-${Date.now()}`,
+      id: editingId.value ?? `region-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       code,
       name: form.name.trim(),
       group: form.group.trim(),
@@ -158,7 +229,7 @@ export function useExportConfig() {
     }
   }
 
-  /** 校验表单与约束后提交，新建插入或更新已有地区 */
+  /** 校验表单与约束后提交，调用后端 API 新建或更新 */
   async function submitForm() {
     const valid = await formRef.value?.validate().catch(() => false)
     if (!valid || !validateConstraints()) return
@@ -174,15 +245,21 @@ export function useExportConfig() {
 
     submitting.value = true
     try {
+      const dto = buildDtoFromPayload(payload)
+
       if (dialogMode.value === 'create') {
-        regions.value.unshift(payload)
+        await createExportRegion(dto)
         ElMessage.success('地区配置已新增')
       } else {
-        const index = regions.value.findIndex((item) => item.id === payload.id)
-        if (index !== -1) regions.value[index] = payload
+        const numericId = Number(editingId.value)
+        await updateExportRegion(numericId, dto)
         ElMessage.success('地区配置已更新')
       }
+
       dialogVisible.value = false
+      await fetchRegions()
+    } catch {
+      ElMessage.error(dialogMode.value === 'create' ? '新增失败' : '更新失败')
     } finally {
       submitting.value = false
     }
@@ -199,10 +276,11 @@ export function useExportConfig() {
         cancelButtonText: '取消',
         type: 'warning',
       })
-      regions.value = regions.value.filter((item) => item.id !== region.id)
+      await deleteExportRegion(Number(region.id))
       ElMessage.success('已删除')
+      await fetchRegions()
     } catch {
-      // cancelled
+      // cancelled or failed
     }
   }
 
@@ -214,6 +292,7 @@ export function useExportConfig() {
     dialogMode,
     editingId,
     submitting,
+    loading,
     form,
     formRules,
     regions,
@@ -236,5 +315,6 @@ export function useExportConfig() {
     buildRegionPayload,
     submitForm,
     handleDelete,
+    fetchRegions,
   }
 }

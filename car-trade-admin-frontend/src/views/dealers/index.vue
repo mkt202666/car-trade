@@ -322,6 +322,51 @@
       </template>
     </el-dialog>
 
+    <el-dialog
+      v-model="addMemberDialogVisible"
+      width="420px"
+      class="adjust-dialog"
+      :show-close="true"
+      align-center
+      destroy-on-close
+    >
+      <template #header>
+        <div class="adjust-dialog__header">
+          <h2 class="adjust-dialog__title">添加车行成员</h2>
+          <p v-if="selectedDealer" class="adjust-dialog__subject">
+            所属车行: {{ selectedDealer.name }}
+          </p>
+        </div>
+      </template>
+
+      <div class="add-member-form">
+        <div class="add-member-form__field">
+          <label class="add-member-form__label">成员手机号 <span class="add-member-form__required">*</span></label>
+          <el-input v-model="addMemberPhone" placeholder="请输入成员注册手机号" maxlength="11" />
+        </div>
+        <div class="add-member-form__field">
+          <label class="add-member-form__label">成员昵称</label>
+          <el-input v-model="addMemberNickname" placeholder="可选，留空使用注册昵称" />
+        </div>
+        <div class="add-member-form__field">
+          <label class="add-member-form__label">成员角色</label>
+          <el-select v-model="addMemberRole" style="width: 100%">
+            <el-option label="普通成员" value="MEMBER" />
+            <el-option label="管理员" value="ADMIN" />
+          </el-select>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="adjust-dialog__footer">
+          <el-button @click="addMemberDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="addMemberSubmitting" @click="submitAddMember">
+            确认添加
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <el-drawer
       v-model="drawerVisible"
       direction="rtl"
@@ -390,19 +435,22 @@
             <div class="dealer-members__head">
               <div class="dealer-members__title-row">
                 <h3 class="dealer-members__title">旗下成员 / 子账号</h3>
-                <span class="dealer-members__badge">{{ drawerMembers.length }} 人</span>
+                <span class="dealer-members__badge">{{ shopMembers.length }} 人</span>
               </div>
               <button type="button" class="dealer-members__add" @click="handleAddMember">＋ 添加成员</button>
             </div>
-            <div class="dealer-members__list">
-              <div v-for="member in drawerMembers" :key="member.userId" class="dealer-member">
+            <div v-loading="membersLoading" class="dealer-members__list">
+              <div v-for="member in shopMembers" :key="member.id" class="dealer-member">
                 <div class="dealer-member__info">
-                  <div class="dealer-member__avatar">{{ memberAvatar(member.name) }}</div>
+                  <div class="dealer-member__avatar">{{ memberAvatar(member.nickname || member.realName || '?') }}</div>
                   <div>
-                    <div class="dealer-member__name">{{ member.name }}</div>
+                    <div class="dealer-member__name">
+                      {{ member.nickname || member.realName || '未设置' }}
+                      <el-tag v-if="member.role === 'ADMIN'" size="small" type="warning" class="dealer-member__role-tag">管理员</el-tag>
+                    </div>
                     <div class="dealer-member__meta">
-                      {{ member.phone }}
-                      <span class="dealer-member__uid">(userId: {{ member.userId }})</span>
+                      {{ member.phone || '—' }}
+                      <span class="dealer-member__uid">(userId: {{ member.memberUserId }})</span>
                     </div>
                   </div>
                 </div>
@@ -410,9 +458,9 @@
                   <button
                     type="button"
                     class="dealer-member__btn dealer-member__btn--admin"
-                    @click="handleSetAdmin(member)"
+                    @click="handleChangeRole(member)"
                   >
-                    设为管理员
+                    {{ member.role === 'ADMIN' ? '取消管理员' : '设为管理员' }}
                   </button>
                   <button
                     type="button"
@@ -422,6 +470,9 @@
                     移除
                   </button>
                 </div>
+              </div>
+              <div v-if="!membersLoading && shopMembers.length === 0" class="dealer-members__empty">
+                暂无成员数据
               </div>
             </div>
           </div>
@@ -461,6 +512,13 @@ const {
   adjustSubmitting,
   adjustTarget,
   adjustAmount,
+  addMemberDialogVisible,
+  addMemberSubmitting,
+  addMemberPhone,
+  addMemberNickname,
+  addMemberRole,
+  shopMembers,
+  membersLoading,
   drawerVisible,
   selectedDealer,
   drawerMembers,
@@ -477,7 +535,8 @@ const {
   formatDeposit,
   memberAvatar,
   handleAddMember,
-  handleSetAdmin,
+  submitAddMember,
+  handleChangeRole,
   openCreateDialog,
   resetCreateForm,
   formatCredit,
@@ -1225,6 +1284,12 @@ const {
     margin-left: 4px;
   }
 
+  &__role-tag {
+    margin-left: 6px;
+    font-size: 9px;
+    vertical-align: middle;
+  }
+
   &__actions {
     display: flex;
     align-items: center;
@@ -1261,6 +1326,35 @@ const {
         background: #ffe4e6;
       }
     }
+  }
+}
+
+.dealer-members__empty {
+  text-align: center;
+  padding: 24px 0;
+  font-size: 12px;
+  color: var(--text-muted, #9ca3af);
+}
+
+.add-member-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary, #4b5563);
+  }
+
+  &__required {
+    color: #e11d48;
   }
 }
 

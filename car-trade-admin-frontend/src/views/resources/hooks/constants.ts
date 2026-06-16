@@ -1,7 +1,7 @@
-/** 资源管理 Tab、表单规则与 mock 数据 */
+/** 资源管理 Tab、表单规则与配置常量 */
 
 import type { FormRules } from 'element-plus'
-import type { AdItem, TextTabKey } from './types'
+import type { TextTabKey } from './types'
 
 /** 协议类文本 Tab 配置列表，name 对应 TextTabKey，label 为页面展示标题 */
 export const TEXT_TABS: { name: TextTabKey; label: string }[] = [
@@ -11,23 +11,13 @@ export const TEXT_TABS: { name: TextTabKey; label: string }[] = [
   { name: 'contract', label: '在线交易标准合同' },
 ]
 
-/** Banner 广告位初始 mock 数据，页面加载时填充 banners 列表 */
-export const SEED_BANNERS: AdItem[] = [
-  {
-    id: 'b1',
-    title: '5D好车春季大促首发',
-    link: '/promotions/spring',
-    image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=800',
-    active: true,
-  },
-  {
-    id: 'b2',
-    title: '诚信商户招募计划开启',
-    link: '/merchant-apply',
-    image: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&q=80&w=800',
-    active: true,
-  },
-]
+/** 前端 TextTabKey 到后端 resource config key 的映射 */
+export const CONFIG_KEY_MAP: Record<TextTabKey, string> = {
+  'trade-rules': 'trade_rules',
+  'user-agreement': 'user_agreement',
+  privacy: 'privacy_policy',
+  contract: 'contract_template',
+}
 
 /** 各协议文本 Tab 的初始内容，key 为 TextTabKey，值为空字符串待编辑 */
 export const INITIAL_TEXT_CONTENTS: Record<TextTabKey, string> = {

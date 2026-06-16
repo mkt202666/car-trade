@@ -267,7 +267,9 @@ const { theme, isActive } = useNav()
 .nav-icon[data-icon='deposit'],
 .nav-icon[data-icon='export'],
 .nav-icon[data-icon='model'],
-.nav-icon[data-icon='resource'] {
+.nav-icon[data-icon='resource'],
+.nav-icon[data-icon='dispute'],
+.nav-icon[data-icon='notification'] {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 12h16M4 18h16'/%3E%3C/svg%3E");
 }
 
@@ -283,7 +285,9 @@ const { theme, isActive } = useNav()
 .sidebar--light .nav-item.active .nav-icon[data-icon='deposit'],
 .sidebar--light .nav-item.active .nav-icon[data-icon='export'],
 .sidebar--light .nav-item.active .nav-icon[data-icon='model'],
-.sidebar--light .nav-item.active .nav-icon[data-icon='resource'] {
+.sidebar--light .nav-item.active .nav-icon[data-icon='resource'],
+.sidebar--light .nav-item.active .nav-icon[data-icon='dispute'],
+.sidebar--light .nav-item.active .nav-icon[data-icon='notification'] {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234c3aed'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 12h16M4 18h16'/%3E%3C/svg%3E");
 }
 
@@ -299,7 +303,9 @@ const { theme, isActive } = useNav()
 .sidebar--dark .nav-item.active .nav-icon[data-icon='deposit'],
 .sidebar--dark .nav-item.active .nav-icon[data-icon='export'],
 .sidebar--dark .nav-item.active .nav-icon[data-icon='model'],
-.sidebar--dark .nav-item.active .nav-icon[data-icon='resource'] {
+.sidebar--dark .nav-item.active .nav-icon[data-icon='resource'],
+.sidebar--dark .nav-item.active .nav-icon[data-icon='dispute'],
+.sidebar--dark .nav-item.active .nav-icon[data-icon='notification'] {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238b7cf6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 12h16M4 18h16'/%3E%3C/svg%3E");
 }
 

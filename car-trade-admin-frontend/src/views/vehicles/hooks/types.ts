@@ -85,6 +85,8 @@ export interface Vehicle {
   guidePrice: string
   /** 当前上架流转状态 */
   status: VehicleStatus
+  /** 是否推荐车源 */
+  recommended?: boolean
   /** 车况详情与出厂参数 */
   detail: VehicleDetail
 }

@@ -193,6 +193,7 @@ CREATE TABLE car_sources (
     auction_end_time TIMESTAMP,
     view_count      BIGINT DEFAULT 0,
     favorite_count  INTEGER DEFAULT 0,
+    recommended     BOOLEAN DEFAULT FALSE,
     status          VARCHAR(20) DEFAULT 'ACTIVE',
     published_at    TIMESTAMP,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -1092,19 +1093,22 @@ COMMENT ON COLUMN cities.level IS '层级: PROVINCE-省份, CITY-城市, DISTRIC
 
 -- 34. 出口地区配置表
 CREATE TABLE IF NOT EXISTS export_regions (
-    id              SERIAL PRIMARY KEY,
-    name            VARCHAR(50) NOT NULL,
-    code            VARCHAR(10) NOT NULL UNIQUE,
-    flag            VARCHAR(10),
-    region_group    VARCHAR(50),
-    constraints     TEXT,
-    requirements    TEXT,
-    status          VARCHAR(20) DEFAULT 'ACTIVE',
+    id           BIGSERIAL PRIMARY KEY,
+    code         VARCHAR(10)  NOT NULL,
+    name         VARCHAR(100) NOT NULL,
+    flag         VARCHAR(10),
+    region_group VARCHAR(50)  NOT NULL,
+    group_key    VARCHAR(20)  NOT NULL,
+    icon         TEXT,
+    constraints  JSONB        NOT NULL DEFAULT '[]'::jsonb,
+    requirements JSONB        NOT NULL DEFAULT '[]'::jsonb,
+    status       VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',
     sort_order      INTEGER DEFAULT 999,
-    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted_at      TIMESTAMP
+    created_at   TIMESTAMP    NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMP    NOT NULL DEFAULT NOW(),
+    deleted_at   TIMESTAMP
 );
+
 CREATE INDEX IF NOT EXISTS idx_export_regions_code ON export_regions(code);
 CREATE INDEX IF NOT EXISTS idx_export_regions_status ON export_regions(status);
 CREATE INDEX IF NOT EXISTS idx_export_regions_sort_order ON export_regions(sort_order);
@@ -1117,4 +1121,7 @@ COMMENT ON COLUMN export_regions.constraints IS '参数约束条件(JSON数组)'
 COMMENT ON COLUMN export_regions.requirements IS '出口要求描述';
 COMMENT ON COLUMN export_regions.status IS '状态: ACTIVE-启用, INACTIVE-禁用';
 COMMENT ON COLUMN export_regions.sort_order IS '排序号';
+COMMENT ON COLUMN export_regions.group_key    IS '分组标识: asia / europe / americas / africa / oceania';
+COMMENT ON COLUMN export_regions.icon         IS '地区图标 (emoji 或图片URL)';
+
 

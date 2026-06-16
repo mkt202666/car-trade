@@ -34,6 +34,7 @@
         style="width: 100%"
         class="users-table"
         :row-class-name="rowClassName"
+        v-loading="loading"
         @row-click="handleRowClick"
       >
         <el-table-column type="expand" width="48">
@@ -235,7 +236,7 @@
         <el-pagination
           v-model:current-page="currentPage"
           :page-size="10"
-          :total="filteredUsers.length"
+          :total="totalUsers"
           layout="total, prev, pager, next"
           background
         />
@@ -365,6 +366,8 @@ const {
   keyword,
   roleFilter,
   currentPage,
+  totalUsers,
+  loading,
   expandedKeys,
   editingUserId,
   editBackup,

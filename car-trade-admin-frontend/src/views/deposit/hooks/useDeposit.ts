@@ -1,24 +1,25 @@
 /** 保证金现金流 composable */
 
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
+import { usePagination } from '../../../composables/usePagination'
+import { getDepositAccounts, getDepositRecords, getDepositSummary, createJournalEntry } from '../../../api/deposits'
+import { downloadFile } from '../../../utils/request'
+import type { DepositAccount as APIAccount, DepositRecord } from '../../../api/deposits'
 import { flowTypeTag, formatAccountLabel, formatAmountValue } from './depositUtils'
 import {
   BuildingIcon,
   CreditCardIcon,
   DEFAULT_MANUAL_FORM,
   manualRules,
-  SEED_DEPOSIT_ACCOUNTS,
-  SEED_FLOWS,
   ShieldCheckIcon,
   subjectLabelMap,
   subjectOptions,
   subjectSignMap,
   subjectToFlowType,
-  summaryStats,
 } from './constants'
-import type { SubjectKey } from './types'
+import type { DepositAccount, DepositFlow, FlowTypeKey, SubjectKey } from './types'
 
 export type { DepositAccount, DepositFlow, FlowTypeKey, SubjectKey } from './types'
 export { flowTypeTag, formatAccountLabel, formatAmountValue } from './depositUtils'
@@ -27,166 +28,181 @@ export {
   CreditCardIcon,
   DEFAULT_MANUAL_FORM,
   manualRules,
-  SEED_DEPOSIT_ACCOUNTS,
-  SEED_FLOWS,
   ShieldCheckIcon,
   subjectLabelMap,
   subjectOptions,
   subjectSignMap,
   subjectToFlowType,
-  summaryStats,
 } from './constants'
 
 /** 管理流水筛选分页与人工调配记账 */
 export function useDeposit() {
-  /** 搜索关键词，匹配流水 ID、客户姓名或客户 ID */
   const keyword = ref('')
-  /** 流水类型筛选，all 表示不过滤 */
   const typeFilter = ref('all')
-  /** 当前页码，从 1 开始 */
-  const currentPage = ref(1)
-  /** 每页显示条数 */
-  const pageSize = ref(10)
+  const loading = ref(false)
 
-  /** 保证金流水列表数据 */
-  const flows = ref([...SEED_FLOWS])
-  /** 保证金核算主体账户列表，供人工记账选择 */
-  const depositAccounts = ref([...SEED_DEPOSIT_ACCOUNTS])
+  const flows = ref<DepositFlow[]>([])
+  const depositAccounts = ref<DepositAccount[]>([])
+  const summary = ref({ totalBalance: 0, totalFrozen: 0, totalAccounts: 0, todayIncome: 0, todayWithdraw: 0 })
 
-  /** 人工记账弹窗可见性 */
-  const manualDialogVisible = ref(false)
-  /** 人工记账提交中的 loading 状态 */
-  const manualSubmitting = ref(false)
-  /** 人工记账表单实例引用，用于校验与重置 */
-  const manualFormRef = ref<FormInstance>()
-  /** 人工记账表单数据 */
-  const manualForm = reactive({ ...DEFAULT_MANUAL_FORM })
+  async function fetchData() {
+    loading.value = true
+    try {
+      const [accountsRes, recordsRes, summaryRes] = await Promise.allSettled([
+        getDepositAccounts({ page: 1, size: 100 }),
+        getDepositRecords({ page: 1, size: 100 }),
+        getDepositSummary(),
+      ])
 
-  /** 经关键词与类型筛选后的流水列表 */
+      if (accountsRes.status === 'fulfilled' && accountsRes.value?.data?.list) {
+        depositAccounts.value = accountsRes.value.data.list.map((a: APIAccount) => ({
+          id: `USR-${a.id}`,
+          name: a.userName || '—',
+          available: a.balance || 0,
+        }))
+      }
+
+      if (recordsRes.status === 'fulfilled' && recordsRes.value?.data?.list) {
+        flows.value = recordsRes.value.data.list.map((r: DepositRecord) => ({
+          id: `TX-${r.id}`,
+          time: r.createdAt || '—',
+          customerName: r.userName || '—',
+          customerId: `USR-${r.userId}`,
+          typeKey: (r.type?.toLowerCase() || 'recharge') as FlowTypeKey,
+          typeLabel: r.type === 'INCOME' ? '入账' : r.type === 'FREEZE' ? '冻结' : r.type === 'RELEASE' ? '解冻' : '退款',
+          amountSign: r.amount >= 0 ? '+' as const : '-' as const,
+          amountValue: Math.abs(r.amount).toLocaleString(),
+          balance: r.balance?.toLocaleString() || '0',
+          note: r.description || '',
+        }))
+      }
+
+      if (summaryRes.status === 'fulfilled' && summaryRes.value?.data) {
+        summary.value = summaryRes.value.data
+      }
+    } catch (e) {
+      console.error('Failed to fetch deposit data:', e)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  onMounted(() => {
+    fetchData()
+  })
+
+  const summaryStats = computed(() => [
+    { label: '总余额', value: summary.value.totalBalance, color: '#409eff', icon: ShieldCheckIcon, iconBg: 'amber' },
+    { label: '总冻结', value: summary.value.totalFrozen, color: '#e6a23c', icon: CreditCardIcon, iconBg: 'emerald' },
+    { label: '账户数', value: summary.value.totalAccounts, color: '#67c23a', icon: BuildingIcon, iconBg: 'indigo' },
+    { label: '今日收入', value: summary.value.todayIncome, color: '#f56c6c', icon: CreditCardIcon, iconBg: 'blue' },
+  ])
+
   const filteredFlows = computed(() => {
     const q = keyword.value.trim().toLowerCase()
-    return flows.value.filter((flow) => {
-      const matchType = typeFilter.value === 'all' || flow.typeKey === typeFilter.value
-      const matchKeyword =
-        !q ||
-        flow.id.toLowerCase().includes(q) ||
-        flow.customerName.toLowerCase().includes(q) ||
-        flow.customerId.toLowerCase().includes(q)
-      return matchType && matchKeyword
+    return flows.value.filter((f) => {
+      if (typeFilter.value !== 'all' && f.typeKey !== typeFilter.value) return false
+      if (!q) return true
+      return (
+        f.id.toLowerCase().includes(q)
+        || f.customerName.toLowerCase().includes(q)
+        || f.customerId.toLowerCase().includes(q)
+      )
     })
   })
 
-  /** 当前页展示的流水切片 */
-  const paginatedFlows = computed(() => {
-    const start = (currentPage.value - 1) * pageSize.value
-    return filteredFlows.value.slice(start, start + pageSize.value)
+  const { currentPage, pageSize, paginatedItems, pageRangeStart, pageRangeEnd } = usePagination({
+    source: filteredFlows,
+    defaultPageSize: 20,
+    resetOn: [keyword, typeFilter],
   })
 
-  /** 分页信息起始序号（无数据时为 0） */
-  const pageRangeStart = computed(() =>
-    filteredFlows.value.length === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1,
-  )
+  const manualDialogVisible = ref(false)
+  const manualSubmitting = ref(false)
+  const manualFormRef = ref<FormInstance>()
+  const manualForm = reactive({ ...DEFAULT_MANUAL_FORM })
 
-  /** 分页信息结束序号 */
-  const pageRangeEnd = computed(() =>
-    Math.min(currentPage.value * pageSize.value, filteredFlows.value.length),
-  )
-
-  watch([keyword, typeFilter, pageSize], () => {
-    currentPage.value = 1
-  })
-
-  /**
-   * 根据 ID 查找核算主体账户
-   * @param id - 用户/主体 ID
-   * @returns 匹配的账户对象，未找到时 undefined
-   */
-  function findAccount(id: string) {
-    return depositAccounts.value.find((a) => a.id === id)
-  }
-
-  /** 打开人工记账弹窗 */
   function openManualDialog() {
     manualDialogVisible.value = true
   }
 
-  /** 重置人工记账表单至默认值并清除校验提示 */
   function resetManualForm() {
-    manualForm.customerId = DEFAULT_MANUAL_FORM.customerId
-    manualForm.subjectKey = DEFAULT_MANUAL_FORM.subjectKey
-    manualForm.amount = DEFAULT_MANUAL_FORM.amount
-    manualForm.note = DEFAULT_MANUAL_FORM.note
-    manualFormRef.value?.clearValidate()
+    Object.assign(manualForm, DEFAULT_MANUAL_FORM)
+    manualFormRef.value?.resetFields()
   }
 
-  /** 校验并提交人工记账，更新账户余额并在流水列表头部插入新记录 */
   async function submitManualForm() {
-    if (!manualFormRef.value) return
-    const valid = await manualFormRef.value.validate().catch(() => false)
+    const valid = await manualFormRef.value?.validate().catch(() => false)
     if (!valid) return
 
     manualSubmitting.value = true
-    await new Promise((r) => setTimeout(r, 400))
-
-    const subjectKey = manualForm.subjectKey as SubjectKey
-    const typeKey = subjectToFlowType[subjectKey]
-    const sign = subjectSignMap[subjectKey]
-    const amountAbs = Number(manualForm.amount)
-    const signedAmount = sign === '+' ? amountAbs : -amountAbs
-    const account = findAccount(manualForm.customerId)
-    const customerName = account?.name ?? '未知主体'
-    const prevBalance = account?.available ?? 0
-    const newBalance = Math.max(0, prevBalance + signedAmount)
-
-    if (account) {
-      account.available = newBalance
+    try {
+      const amount = subjectSignMap[manualForm.subjectKey as SubjectKey] === '-' ? -Number(manualForm.amount) : Number(manualForm.amount)
+      await createJournalEntry({
+        userId: parseInt(manualForm.customerId.replace('USR-', ''), 10) || 0,
+        amount,
+        type: manualForm.subjectKey,
+        description: manualForm.note,
+      })
+      ElMessage.success('人工记账成功')
+      manualDialogVisible.value = false
+      await fetchData()
+    } catch (e) {
+      console.error('Failed to submit journal entry:', e)
+    } finally {
+      manualSubmitting.value = false
     }
+  }
 
-    flows.value.unshift({
-      id: `TX-${Date.now().toString().slice(-4)}`,
-      time: new Date().toLocaleString('zh-CN', { hour12: false }),
-      customerName,
-      customerId: manualForm.customerId,
-      typeKey,
-      typeLabel: subjectLabelMap[subjectKey],
-      amountSign: sign,
-      amountValue: formatAmountValue(amountAbs),
-      balance: formatAmountValue(newBalance),
-      note: manualForm.note,
-    })
+  function findAccount(id: string) {
+    return depositAccounts.value.find((a) => a.id === id)
+  }
 
-    manualSubmitting.value = false
-    manualDialogVisible.value = false
-    ElMessage.success('人工调配记账已提交')
+  function formatAmountValue(value: number) {
+    return value.toLocaleString()
+  }
+
+  /** 导出当前筛选条件下的保证金流水为 Excel */
+  function handleExport() {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+    const params = new URLSearchParams()
+    if (keyword.value.trim()) params.set('keyword', keyword.value.trim())
+    if (typeFilter.value !== 'all') params.set('type', typeFilter.value)
+    const qs = params.toString()
+    const date = new Date().toISOString().slice(0, 10)
+    downloadFile(`${baseUrl}/deposits/records/export${qs ? `?${qs}` : ''}`, `保证金流水_${date}.xlsx`)
   }
 
   return {
-    ShieldCheckIcon,
-    CreditCardIcon,
-    BuildingIcon,
-    summaryStats,
     keyword,
     typeFilter,
-    currentPage,
-    pageSize,
+    loading,
     flows,
     depositAccounts,
-    subjectOptions,
+    summaryStats,
+    filteredFlows,
+    currentPage,
+    pageSize,
+    paginatedFlows: paginatedItems,
+    pageRangeStart,
+    pageRangeEnd,
     manualDialogVisible,
     manualSubmitting,
     manualFormRef,
     manualForm,
-    manualRules,
-    filteredFlows,
-    paginatedFlows,
-    pageRangeStart,
-    pageRangeEnd,
-    flowTypeTag,
-    formatAccountLabel,
-    formatAmountValue,
-    findAccount,
     openManualDialog,
     resetManualForm,
     submitManualForm,
+    fetchData,
+    findAccount,
+    formatAmountValue,
+    handleExport,
+    ShieldCheckIcon,
+    CreditCardIcon,
+    BuildingIcon,
+    subjectOptions,
+    manualRules,
+    flowTypeTag,
+    formatAccountLabel,
   }
 }

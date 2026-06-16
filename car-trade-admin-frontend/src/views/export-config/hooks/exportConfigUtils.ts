@@ -45,7 +45,7 @@ export function isImageIcon(icon: string) {
  * @returns 自定义 icon 或根据 code 生成的国旗 Emoji
  */
 export function displayIcon(row: ExportRegion) {
-  return row.icon || countryFlag(row.code)
+  return row.icon || row.flag || countryFlag(row.code)
 }
 
 /**

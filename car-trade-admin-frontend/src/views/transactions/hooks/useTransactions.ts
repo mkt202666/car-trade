@@ -1,62 +1,76 @@
 /** 交易管理页面 composable */
-import { computed, ref, watch } from 'vue'
-import { CITY_MAP, PROVINCES, TRANSACTION_ORDERS } from './constants'
+import { computed, onMounted, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { usePagination } from '../../../composables/usePagination'
+import { getOrders, confirmOrder, cancelOrder } from '../../../api/orders'
+import { downloadFile } from '../../../utils/request'
+import type { Order } from '../../../api/orders'
+import { CITY_MAP, PROVINCES } from './constants'
 import { orderStatus } from './transactionUtils'
-import type { TransactionOrder } from './types'
+import type { TransactionOrder, OrderStatusKey } from './types'
 
 export type { OrderStatusKey, TransactionOrder } from './types'
 export { orderStatus } from './transactionUtils'
-export { PROVINCES, TRANSACTION_ORDERS } from './constants'
+export { PROVINCES } from './constants'
 
 /**
  * 管理交易列表的筛选、分页与详情抽屉状态。
- * 在 index.vue 中解构后绑定筛选栏、订单卡片列表与 TransactionOrderDrawer。
- * @returns 筛选 ref、分页计算属性、抽屉状态及 openOrderDetail 方法
  */
 export function useTransactions() {
-  /** 关键词搜索：匹配订单号、品牌、车型、买卖双方 */
   const keyword = ref('')
-  /** 履约状态筛选，'all' 表示不限 */
   const statusFilter = ref('all')
-  /** 买家省份筛选，'all' 表示不限 */
   const provinceFilter = ref('all')
-  /** 买家城市筛选，'all' 表示不限；省份为 all 时禁用 */
   const cityFilter = ref('all')
-  /** 存证日期范围，格式 [起始, 截止] YYYY-MM-DD */
   const dateRange = ref<[string, string] | null>(null)
-  /** 当前页码，从 1 开始 */
-  const currentPage = ref(1)
-  /** 每页条数 */
-  const pageSize = ref(20)
-  /** 详情抽屉是否可见 */
   const drawerVisible = ref(false)
-  /** 当前打开详情的订单 ID，抽屉关闭后置 null */
   const selectedOrderId = ref<string | null>(null)
+  const loading = ref(false)
+  const orders = ref<TransactionOrder[]>([])
 
-  /** 全量交易订单 mock 数据（静态引用，不参与响应式更新） */
-  const orders: TransactionOrder[] = TRANSACTION_ORDERS
+  async function fetchOrders() {
+    loading.value = true
+    try {
+      const res = await getOrders({ page: 1, size: 100 })
+      if (res?.data?.list) {
+        orders.value = res.data.list.map((order: Order) => ({
+          id: order.id || '—',
+          brand: order.carTitle?.split(' ')[0] || '—',
+          model: order.carTitle || '—',
+          location: '—',
+          province: '—',
+          city: '—',
+          buyer: order.buyerName || '—',
+          seller: order.sellerName || '—',
+          statusKey: (order.status?.toLowerCase() || 'submitted') as OrderStatusKey,
+          statusLabel: order.status === 'COMPLETED' ? '交易完成' : order.status === 'PENDING_CONFIRM' ? '待确认' : order.status === 'IN_TRANSIT' ? '运输中' : order.status === 'DISPUTE' ? '争议中' : order.status === 'CANCELLED' ? '已取消' : order.status || '—',
+          amount: order.totalPrice ? `¥${order.totalPrice.toLocaleString()}` : '¥0',
+          evidenceDate: order.createdAt?.split('T')[0] || '',
+        }))
+      }
+    } catch (e) {
+      console.error('Failed to fetch orders:', e)
+    } finally {
+      loading.value = false
+    }
+  }
 
-  /** 当前省份下可选城市列表；省份为 all 时返回空数组 */
+  onMounted(() => {
+    fetchOrders()
+  })
+
   const availableCities = computed(() => {
     if (provinceFilter.value === 'all') return []
     return CITY_MAP[provinceFilter.value] ?? []
   })
 
-  /** 省份变更时重置城市筛选，避免残留无效城市 */
   watch(provinceFilter, () => {
     cityFilter.value = 'all'
   })
 
-  /** 任一筛选条件变化时重置到第一页 */
-  watch([keyword, statusFilter, provinceFilter, cityFilter, dateRange], () => {
-    currentPage.value = 1
-  })
-
-  /** 经关键词、状态、地域、日期筛选后的订单列表 */
   const filteredOrders = computed(() => {
     const q = keyword.value.trim().toLowerCase()
 
-    return orders.filter((order) => {
+    return orders.value.filter((order) => {
       if (statusFilter.value !== 'all' && order.statusKey !== statusFilter.value) return false
       if (provinceFilter.value !== 'all' && order.province !== provinceFilter.value) return false
       if (cityFilter.value !== 'all' && order.city !== cityFilter.value) return false
@@ -78,30 +92,67 @@ export function useTransactions() {
     })
   })
 
-  /** 当前页展示的订单切片 */
-  const paginatedOrders = computed(() => {
-    const start = (currentPage.value - 1) * pageSize.value
-    return filteredOrders.value.slice(start, start + pageSize.value)
-  })
+  const { currentPage, pageSize, paginatedItems: paginatedOrders, pageRangeStart, pageRangeEnd } =
+    usePagination({
+      source: filteredOrders,
+      defaultPageSize: 20,
+      resetOn: [keyword, statusFilter, provinceFilter, cityFilter, dateRange],
+    })
 
-  /** 分页展示区间起始序号（无数据时为 0） */
-  const pageRangeStart = computed(() => {
-    if (filteredOrders.value.length === 0) return 0
-    return (currentPage.value - 1) * pageSize.value + 1
-  })
-
-  /** 分页展示区间结束序号 */
-  const pageRangeEnd = computed(() => {
-    return Math.min(currentPage.value * pageSize.value, filteredOrders.value.length)
-  })
-
-  /**
-   * 打开指定订单的全景详情抽屉。
-   * @param order 被点击的交易订单行数据
-   */
   function openOrderDetail(order: TransactionOrder) {
     selectedOrderId.value = order.id
     drawerVisible.value = true
+  }
+
+  /**
+   * 确认订单 — 调用 PUT /orders/{id}/confirm
+   * 成功后刷新列表并弹出成功提示。
+   */
+  async function handleConfirmOrder(orderId: string) {
+    try {
+      await confirmOrder(orderId)
+      ElMessage.success(`订单 ${orderId} 已确认`)
+      await fetchOrders()
+    } catch (e) {
+      console.error('Failed to confirm order:', e)
+    }
+  }
+
+  /**
+   * 管理员强制取消订单 — 调用 PUT /orders/{id}/cancel
+   * @param orderId 订单 ID
+   * @param reason 取消原因（运营干预备注）
+   */
+  async function handleCancelOrder(orderId: string, reason: string) {
+    if (!reason.trim()) {
+      ElMessage.warning('请输入取消原因')
+      return
+    }
+    try {
+      await cancelOrder(orderId, reason)
+      ElMessage.success(`订单 ${orderId} 已取消`)
+      await fetchOrders()
+    } catch (e) {
+      console.error('Failed to cancel order:', e)
+    }
+  }
+
+  /** 导出当前筛选条件下的交易列表为 Excel */
+  function handleExport() {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+    const params = new URLSearchParams()
+    if (keyword.value.trim()) params.set('keyword', keyword.value.trim())
+    if (statusFilter.value !== 'all') params.set('status', statusFilter.value)
+    if (provinceFilter.value !== 'all') params.set('province', provinceFilter.value)
+    if (cityFilter.value !== 'all') params.set('city', cityFilter.value)
+    if (dateRange.value) {
+      const [start, end] = dateRange.value
+      if (start) params.set('startDate', start)
+      if (end) params.set('endDate', end)
+    }
+    const qs = params.toString()
+    const date = new Date().toISOString().slice(0, 10)
+    downloadFile(`${baseUrl}/orders/export${qs ? `?${qs}` : ''}`, `交易列表_${date}.xlsx`)
   }
 
   return {
@@ -122,5 +173,10 @@ export function useTransactions() {
     pageRangeEnd,
     orderStatus,
     openOrderDetail,
+    handleConfirmOrder,
+    handleCancelOrder,
+    handleExport,
+    loading,
+    fetchOrders,
   }
 }

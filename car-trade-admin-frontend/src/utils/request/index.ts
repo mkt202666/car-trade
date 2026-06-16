@@ -7,7 +7,7 @@ import { ElMessage } from 'element-plus'
 import type { ApiResponse, RequestConfig } from './types'
 
 const TOKEN_KEY = 'token'
-const SUCCESS_CODE = 0
+const SUCCESS_CODE = 200
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 30_000
 
@@ -72,6 +72,11 @@ service.interceptors.response.use(
 
     if (status === 401) {
       localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem('goodcar-admin-user')
+      localStorage.removeItem('refreshToken')
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login'
+      }
     }
 
     if (!config?.silent) {
@@ -140,6 +145,38 @@ export function del<T = unknown>(
     url,
     params,
   })
+}
+
+/** Trigger browser file download from API endpoint */
+export async function downloadFile(url: string, filename: string) {
+  const token = localStorage.getItem('token') || ''
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!response.ok) throw new Error('导出失败')
+  const blob = await response.blob()
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(link.href)
+}
+
+/** Upload a file and return the URL */
+export async function uploadImage(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const token = localStorage.getItem('token') || ''
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+  const response = await fetch(`${baseUrl}/uploads/image`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  })
+  if (!response.ok) throw new Error('上传失败')
+  const data = await response.json()
+  if (data.code !== 200) throw new Error(data.message || '上传失败')
+  return data.data.url
 }
 
 export { service as axiosInstance }

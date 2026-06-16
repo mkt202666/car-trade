@@ -16,15 +16,15 @@ export function useLogin() {
   const aiTagline = ref<string>(AI_TAGLINES[0])
 
   const form = reactive<LoginForm>({
-    email: '',
+    username: '',
     password: '',
     remember: true,
   })
 
   const rules: FormRules<LoginForm> = {
-    email: [
-      { required: true, message: '请输入运维邮箱', trigger: 'blur' },
-      { type: 'email', message: '邮箱格式不正确', trigger: 'blur' },
+    username: [
+      { required: true, message: '请输入用户名', trigger: 'blur' },
+      { min: 2, message: '用户名至少 2 个字符', trigger: 'blur' },
     ],
     password: [
       { required: true, message: '请输入密码', trigger: 'blur' },
@@ -51,9 +51,8 @@ export function useLogin() {
     if (!valid) return
 
     loading.value = true
-    await new Promise((resolve) => setTimeout(resolve, 680))
 
-    const success = login(form.email, form.password)
+    const success = await login(form.username, form.password)
     loading.value = false
 
     if (!success) {
@@ -67,7 +66,7 @@ export function useLogin() {
   }
 
   function fillDemoAccount() {
-    form.email = DEMO_ACCOUNT.email
+    form.username = DEMO_ACCOUNT.username
     form.password = DEMO_ACCOUNT.password
   }
 
