@@ -25,6 +25,18 @@ CREATE TABLE users (
     shop_name       VARCHAR(100),
     shop_logo       VARCHAR(500),
     shop_description TEXT,
+    credit_code     VARCHAR(50),
+    province        VARCHAR(50),
+    city            VARCHAR(50),
+    address         VARCHAR(200),
+    id_card_number  VARCHAR(30),
+    business_license_url VARCHAR(500),
+    license_url     VARCHAR(500),
+    id_card_front_url VARCHAR(500),
+    id_card_back_url VARCHAR(500),
+    id_card_image_url VARCHAR(500),
+    store_image_url VARCHAR(500),
+    deposit_balance BIGINT DEFAULT 0,
     credit_grade    VARCHAR(10) DEFAULT 'C',
     credit_score    INTEGER DEFAULT 60,
     deal_count      INTEGER DEFAULT 0,
@@ -38,6 +50,10 @@ CREATE TABLE users (
     member_expire_at TIMESTAMP,
     certification_status VARCHAR(20) DEFAULT 'UNCERTIFIED',
     status          VARCHAR(20) DEFAULT 'ACTIVE',
+    business_license VARCHAR(200),
+    reject_reason   TEXT,
+    reviewer_id     BIGINT,
+    reviewed_at     TIMESTAMP,
     login_fail_count INTEGER DEFAULT 0,
     locked_until    TIMESTAMP,
     notification_settings JSONB DEFAULT '{"system":true,"auto_promotion":true,"order":true,"contract":true,"deposit":true,"shop":true}',
@@ -59,6 +75,18 @@ COMMENT ON COLUMN users.avatar_url IS '头像地址';
 COMMENT ON COLUMN users.shop_name IS '车行名称';
 COMMENT ON COLUMN users.shop_logo IS '车行Logo地址';
 COMMENT ON COLUMN users.shop_description IS '车行简介';
+COMMENT ON COLUMN users.credit_code IS '统一社会信用代码';
+COMMENT ON COLUMN users.province IS '所在省';
+COMMENT ON COLUMN users.city IS '所在市';
+COMMENT ON COLUMN users.address IS '实体店详细经营地址';
+COMMENT ON COLUMN users.id_card_number IS '身份证号码';
+COMMENT ON COLUMN users.business_license_url IS '营业执照图片URL';
+COMMENT ON COLUMN users.license_url IS '营业执照附件URL';
+COMMENT ON COLUMN users.id_card_front_url IS '身份证正面图片URL';
+COMMENT ON COLUMN users.id_card_back_url IS '身份证反面图片URL';
+COMMENT ON COLUMN users.id_card_image_url IS '申请人身份证图片URL';
+COMMENT ON COLUMN users.store_image_url IS '车行实体门店图片URL';
+COMMENT ON COLUMN users.deposit_balance IS '保证金余额（元）';
 COMMENT ON COLUMN users.credit_grade IS '信用等级: S-极佳, A-优秀, B-良好, C-一般, D-较差';
 COMMENT ON COLUMN users.credit_score IS '信用分数';
 COMMENT ON COLUMN users.notification_settings IS '通知订阅设置 JSON: {"system":bool,"auto_promotion":bool,"order":bool,"contract":bool,"deposit":bool,"shop":bool}';
@@ -72,7 +100,11 @@ COMMENT ON COLUMN users.follower_count IS '累计粉丝数';
 COMMENT ON COLUMN users.follower_count_today IS '今日新增粉丝数';
 COMMENT ON COLUMN users.member_expire_at IS '会员到期时间';
 COMMENT ON COLUMN users.certification_status IS '认证状态: UNCERTIFIED-未认证, PENDING-审核中, CERTIFIED-已认证, REJECTED-已拒绝';
-COMMENT ON COLUMN users.status IS '账号状态: ACTIVE-正常, DISABLE-禁用';
+COMMENT ON COLUMN users.status IS '账号状态: ACTIVE-正常, FROZEN-冻结, DELETED-注销, SUSPENDED-暂停, INACTIVE-停业';
+COMMENT ON COLUMN users.business_license IS '营业执照号';
+COMMENT ON COLUMN users.reject_reason IS '最近一次审核拒绝原因';
+COMMENT ON COLUMN users.reviewer_id IS '审核人ID (FK -> admin_users.id)';
+COMMENT ON COLUMN users.reviewed_at IS '最近审核时间';
 COMMENT ON COLUMN users.created_at IS '创建时间';
 COMMENT ON COLUMN users.updated_at IS '更新时间';
 COMMENT ON COLUMN users.deleted_at IS '删除时间，软删除';
@@ -571,18 +603,26 @@ COMMENT ON COLUMN deposit_accounts.updated_at IS '更新时间';
 CREATE TABLE deposit_records (
     id              BIGSERIAL PRIMARY KEY,
     account_id      BIGINT NOT NULL REFERENCES deposit_accounts(id),
+    user_id         BIGINT,
     order_id        VARCHAR(32),
     type            VARCHAR(20) NOT NULL,
     amount          DECIMAL(10,2) NOT NULL,
     balance_after   DECIMAL(10,2),
     remark          VARCHAR(200),
+    operator_id     BIGINT,
+    status          VARCHAR(20) DEFAULT 'SUCCESS',
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_deposit_records_account_id ON deposit_records(account_id);
+CREATE INDEX idx_deposit_records_user_id ON deposit_records(user_id);
+CREATE INDEX idx_deposit_records_operator_id ON deposit_records(operator_id);
 CREATE INDEX idx_deposit_records_created_at ON deposit_records(created_at DESC);
 COMMENT ON TABLE deposit_records IS '保证金流水表';
 COMMENT ON COLUMN deposit_records.id IS '主键ID';
+COMMENT ON COLUMN deposit_records.user_id IS '关联用户ID (FK -> users.id)';
+COMMENT ON COLUMN deposit_records.operator_id IS '操作人ID (FK -> admin_users.id)';
+COMMENT ON COLUMN deposit_records.status IS '流水状态: PENDING / SUCCESS / FAILED';
 COMMENT ON COLUMN deposit_records.account_id IS '关联保证金账户ID';
 COMMENT ON COLUMN deposit_records.order_id IS '关联订单编号';
 COMMENT ON COLUMN deposit_records.type IS '类型: RECHARGE-充值, WITHDRAW-提现, PAY-支付, REFUND-退款, FREEZE-冻结, UNFREEZE-解冻';
@@ -747,7 +787,8 @@ CREATE TABLE coupons (
     start_at        TIMESTAMP,
     end_at          TIMESTAMP,
     status          VARCHAR(20) DEFAULT 'ACTIVE',
-    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_coupons_status ON coupons(status);
@@ -763,6 +804,7 @@ COMMENT ON COLUMN coupons.start_at IS '生效开始时间';
 COMMENT ON COLUMN coupons.end_at IS '失效结束时间';
 COMMENT ON COLUMN coupons.status IS '状态: ACTIVE-正常, DISABLE-下架';
 COMMENT ON COLUMN coupons.created_at IS '创建时间';
+COMMENT ON COLUMN coupons.updated_at IS '更新时间';
 
 -- ----------------------------------------------------------
 -- 表23: 用户优惠券表
