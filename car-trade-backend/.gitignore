@@ -63,7 +63,6 @@ $RECYCLE.BIN/
 .env.local
 .env.*.local
 application-local.properties
-application-test.properties
 
 # ========== 测试覆盖率 ==========
 .coverage

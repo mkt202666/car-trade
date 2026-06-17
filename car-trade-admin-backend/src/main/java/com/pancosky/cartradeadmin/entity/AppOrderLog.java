@@ -24,6 +24,7 @@ public class AppOrderLog {
 
     private String action;
 
+    @TableField("remark")
     private String detail;
 
     @TableField(fill = FieldFill.INSERT)

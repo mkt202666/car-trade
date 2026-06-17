@@ -18,10 +18,12 @@ public class AppCoupon {
     @TableId(type = IdType.AUTO)
     private Long id;
 
+    @TableField("name")
     private String title;
 
     private Integer totalCount;
 
+    @TableField("remain_count")
     private Integer usedCount;
 
     private String status;
