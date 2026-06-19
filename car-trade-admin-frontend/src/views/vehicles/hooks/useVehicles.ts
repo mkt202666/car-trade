@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { usePagination } from '../../../composables/usePagination'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getCars, updateCarStatus, recommendCar } from '../../../api/cars'
+import { getCars, updateCarStatus, recommendCar, deleteCar } from '../../../api/cars'
 import { downloadFile } from '../../../utils/request'
 import type { Car } from '../../../api/cars'
 import { provinces } from './constants'
@@ -24,6 +24,18 @@ export {
   statusLabel,
   vehicleStatus,
 } from './vehicleUtils'
+
+/** 后端车源状态 → 前端 VehicleStatus 映射 */
+function mapBackendStatus(backendStatus: string): VehicleStatus {
+  const map: Record<string, VehicleStatus> = {
+    ON_SALE: 'listed',
+    OFFLINE: 'disapproved',
+    SOLD: 'sold',
+    PENDING: 'pending_review',
+    VIOLATE: 'disapproved',
+  }
+  return map[backendStatus] || 'listed'
+}
 
 /** 管理车源列表筛选、分页、详情弹窗与下架/删除操作 */
 export function useVehicles() {
@@ -48,12 +60,12 @@ export function useVehicles() {
   async function fetchVehicles() {
     loading.value = true
     try {
-      const res = await getCars({ page: 1, size: 100 })
-      if (res?.data?.list) {
-        vehicles.value = res.data.list.map((car: Car) => ({
+      const res = await getCars({ page: 1, size: 100 }) as unknown as { list: Car[]; total: number }
+      if (res?.list) {
+        vehicles.value = res.list.map((car: Car) => ({
           id: `CAR-${car.id}`,
-          brand: `品牌${car.brandId || ''}`,
-          model: car.title || '—',
+          brand: car.brandName || `品牌${car.brandId || ''}`,
+          model: car.seriesName ? `${car.seriesName}${car.year ? ` ${car.year}款` : ''}` : (car.title || '—'),
           energyType: car.energyType === 'PURE_ELECTRIC' ? '纯电' : car.energyType === 'HYBRID' ? '混动' : '燃油',
           registerDate: car.createdAt?.split('T')[0] || '—',
           mileage: car.mileage ? `${(car.mileage / 10000).toFixed(1)}w 公里` : '—',
@@ -63,7 +75,7 @@ export function useVehicles() {
           seller: { name: car.sellerName || '—', nickname: car.sellerName || '—', type: '个人车商' },
           price: car.price ? (car.price / 10000).toFixed(1) : '0',
           guidePrice: car.price ? (car.price / 10000).toFixed(1) : '0',
-          status: (car.status?.toLowerCase() || 'listed') as VehicleStatus,
+          status: mapBackendStatus(car.status || 'ON_SALE'),
           detail: {
             description: car.title || '',
             mileageKm: car.mileage ? `${car.mileage}公里` : '—',
@@ -167,11 +179,42 @@ export function useVehicles() {
     }
 
     try {
-      await updateCarStatus(numericId, 'OFF_SHELF')
+      await updateCarStatus(numericId, 'OFFLINE')
       vehicle.status = 'disapproved'
       ElMessage.success('车源已下架')
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '下架失败，请稍后重试'
+      ElMessage.error(msg)
+    }
+  }
+
+  /**
+   * 上架已下架的车源，弹出确认框后调用 API 将状态改为 ON_SALE，成功后更新本地状态
+   * @param vehicle - 待上架的车源
+   */
+  async function handleRelist(vehicle: Vehicle) {
+    try {
+      await ElMessageBox.confirm(`确定重新上架车源 ${vehicle.id}？`, '上架确认', {
+        confirmButtonText: '确认上架',
+        cancelButtonText: '取消',
+        type: 'info',
+      })
+    } catch {
+      return
+    }
+
+    const numericId = extractNumericId(vehicle.id)
+    if (numericId === null) {
+      ElMessage.error(`无效的车源 ID：${vehicle.id}`)
+      return
+    }
+
+    try {
+      await updateCarStatus(numericId, 'ON_SALE')
+      vehicle.status = 'listed'
+      ElMessage.success('车源已上架')
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '上架失败，请稍后重试'
       ElMessage.error(msg)
     }
   }
@@ -188,7 +231,7 @@ export function useVehicles() {
     }
 
     try {
-      await updateCarStatus(numericId, 'DELETED')
+      await deleteCar(numericId)
       vehicles.value = vehicles.value.filter((v) => v.id !== vehicle.id)
       ElMessage.success('车源已删除')
     } catch (e: unknown) {
@@ -256,6 +299,7 @@ export function useVehicles() {
     statusLabel,
     vehicleStatus,
     handleDelist,
+    handleRelist,
     handleDelete,
     handleRecommend,
     handleExport,

@@ -22,8 +22,8 @@ export interface DepositRecord {
   userName: string
   type: string
   amount: number
-  balance: number
-  description: string
+  balanceAfter: number
+  remark: string
   createdAt: string
 }
 
@@ -44,7 +44,7 @@ export interface JournalEntryDTO {
   userId: number
   amount: number
   type: string
-  description: string
+  remark: string
 }
 
 export function getDepositAccounts(params?: PaginationQuery) {
@@ -60,5 +60,5 @@ export function getDepositSummary() {
 }
 
 export function createJournalEntry(data: JournalEntryDTO) {
-  return post<ApiResponse<void>>('/deposits/journal', data)
+  return post<ApiResponse<void>>('/deposits/records/manual', data)
 }

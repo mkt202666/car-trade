@@ -118,7 +118,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="160" fixed="right" align="right">
+        <el-table-column label="操作" width="200" fixed="right" align="right">
           <template #default="{ row }">
             <div class="table-actions" @click.stop>
               <el-button
@@ -129,6 +129,15 @@
               >
                 <el-icon><Bottom /></el-icon>
                 下架
+              </el-button>
+              <el-button
+                v-if="row.status === 'disapproved'"
+                size="small"
+                class="action-btn action-btn--green"
+                @click="handleRelist(row as Vehicle)"
+              >
+                <el-icon><Top /></el-icon>
+                上架
               </el-button>
               <el-button size="small" class="action-btn action-btn--blue">
                 <el-icon><Share /></el-icon>
@@ -349,6 +358,7 @@ const {
   statusLabel,
   vehicleStatus,
   handleDelist,
+  handleRelist,
   handleDelete,
 } = useVehicles()
 

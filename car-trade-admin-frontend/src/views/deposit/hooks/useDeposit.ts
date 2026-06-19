@@ -17,6 +17,7 @@ import {
   subjectLabelMap,
   subjectOptions,
   subjectSignMap,
+  subjectToBackendType,
   subjectToFlowType,
 } from './constants'
 import type { DepositAccount, DepositFlow, FlowTypeKey, SubjectKey } from './types'
@@ -68,12 +69,21 @@ export function useDeposit() {
           time: r.createdAt || '—',
           customerName: r.userName || '—',
           customerId: `USR-${r.userId}`,
-          typeKey: (r.type?.toLowerCase() || 'recharge') as FlowTypeKey,
-          typeLabel: r.type === 'INCOME' ? '入账' : r.type === 'FREEZE' ? '冻结' : r.type === 'RELEASE' ? '解冻' : '退款',
+          typeKey: (r.type?.toLowerCase() === 'charge' || r.type?.toLowerCase() === 'manual' ? 'recharge'
+            : r.type?.toLowerCase() === 'freeze' ? 'freeze'
+            : r.type?.toLowerCase() === 'unfreeze' ? 'release'
+            : 'refund') as FlowTypeKey,
+          typeLabel: r.type === 'CHARGE' || r.type === 'MANUAL' ? '充值'
+            : r.type === 'FREEZE' ? '冻结'
+            : r.type === 'UNFREEZE' ? '解冻'
+            : r.type === 'REFUND' ? '退款'
+            : r.type === 'WITHDRAW' ? '提现'
+            : r.type === 'DEDUCT' ? '扣除'
+            : '其他',
           amountSign: r.amount >= 0 ? '+' as const : '-' as const,
           amountValue: Math.abs(r.amount).toLocaleString(),
-          balance: r.balance?.toLocaleString() || '0',
-          note: r.description || '',
+          balance: r.balanceAfter?.toLocaleString() || '0',
+          note: r.remark || '',
         }))
       }
 
@@ -137,18 +147,20 @@ export function useDeposit() {
 
     manualSubmitting.value = true
     try {
-      const amount = subjectSignMap[manualForm.subjectKey as SubjectKey] === '-' ? -Number(manualForm.amount) : Number(manualForm.amount)
+      const amount = Math.abs(Number(manualForm.amount))
+      const backendType = subjectToBackendType[manualForm.subjectKey as SubjectKey]
       await createJournalEntry({
         userId: parseInt(manualForm.customerId.replace('USR-', ''), 10) || 0,
         amount,
-        type: manualForm.subjectKey,
-        description: manualForm.note,
+        type: backendType,
+        remark: manualForm.note,
       })
       ElMessage.success('人工记账成功')
       manualDialogVisible.value = false
       await fetchData()
     } catch (e) {
       console.error('Failed to submit journal entry:', e)
+      ElMessage.error('记账失败，请检查输入后重试')
     } finally {
       manualSubmitting.value = false
     }

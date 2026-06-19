@@ -75,7 +75,9 @@ service.interceptors.response.use(
       localStorage.removeItem('goodcar-admin-user')
       localStorage.removeItem('refreshToken')
       if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login'
+        import('../../router').then(({ default: router }) => {
+          router.replace('/login')
+        })
       }
     }
 

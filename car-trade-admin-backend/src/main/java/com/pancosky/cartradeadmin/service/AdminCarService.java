@@ -12,11 +12,17 @@ import com.pancosky.cartradeadmin.entity.AppCarImage;
 import com.pancosky.cartradeadmin.entity.AppCarInspection;
 import com.pancosky.cartradeadmin.entity.AppCarSource;
 import com.pancosky.cartradeadmin.entity.AppUser;
+import com.pancosky.cartradeadmin.entity.AdminCarBrand;
+import com.pancosky.cartradeadmin.entity.AdminCarSeries;
+import com.pancosky.cartradeadmin.entity.AdminCarModel;
 import com.pancosky.cartradeadmin.event.MobileNotification;
 import com.pancosky.cartradeadmin.mapper.AppCarImageMapper;
 import com.pancosky.cartradeadmin.mapper.AppCarInspectionMapper;
 import com.pancosky.cartradeadmin.mapper.AppCarSourceMapper;
 import com.pancosky.cartradeadmin.mapper.AppUserMapper;
+import com.pancosky.cartradeadmin.mapper.AdminCarBrandMapper;
+import com.pancosky.cartradeadmin.mapper.AdminCarSeriesMapper;
+import com.pancosky.cartradeadmin.mapper.AdminCarModelMapper;
 import com.pancosky.cartradeadmin.vo.CarDetailVO;
 import com.pancosky.cartradeadmin.vo.CarVO;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +53,15 @@ public class AdminCarService {
 
     @Autowired
     private AppCarInspectionMapper appCarInspectionMapper;
+
+    @Autowired
+    private AdminCarBrandMapper adminCarBrandMapper;
+
+    @Autowired
+    private AdminCarSeriesMapper adminCarSeriesMapper;
+
+    @Autowired
+    private AdminCarModelMapper adminCarModelMapper;
 
     public PageResult<CarVO> getCarList(CarQueryDTO query) {
         LambdaQueryWrapper<AppCarSource> wrapper = new LambdaQueryWrapper<AppCarSource>();
@@ -85,12 +100,31 @@ public class AdminCarService {
                 : appUserMapper.selectBatchIds(sellerIds).stream()
                         .collect(Collectors.toMap(AppUser::getId, u -> u));
 
+        // 批量查询品牌、车系、车型名称，避免 N+1
+        List<Integer> brandIds = page.getRecords().stream()
+                .map(AppCarSource::getBrandId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        List<Integer> seriesIds = page.getRecords().stream()
+                .map(AppCarSource::getSeriesId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        List<Integer> modelIds = page.getRecords().stream()
+                .map(AppCarSource::getModelId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+
+        Map<Integer, String> brandNameMap = brandIds.isEmpty() ? Collections.emptyMap()
+                : adminCarBrandMapper.selectBatchIds(brandIds).stream()
+                        .collect(Collectors.toMap(AdminCarBrand::getId, AdminCarBrand::getName));
+        Map<Integer, String> seriesNameMap = seriesIds.isEmpty() ? Collections.emptyMap()
+                : adminCarSeriesMapper.selectBatchIds(seriesIds).stream()
+                        .collect(Collectors.toMap(AdminCarSeries::getId, AdminCarSeries::getName));
+        Map<Integer, String> modelNameMap = modelIds.isEmpty() ? Collections.emptyMap()
+                : adminCarModelMapper.selectBatchIds(modelIds).stream()
+                        .collect(Collectors.toMap(AdminCarModel::getId, AdminCarModel::getName));
+
         List<CarVO> voList = page.getRecords().stream().map(car -> {
             CarVO vo = new CarVO();
             vo.setId(car.getId());
             vo.setTitle(car.getTitle());
             vo.setBrandId(car.getBrandId());
             vo.setSeriesId(car.getSeriesId());
+            vo.setModelId(car.getModelId());
             vo.setCityName(car.getCityName());
             vo.setEnergyType(car.getEnergyType());
             vo.setPrice(car.getPrice());
@@ -99,6 +133,11 @@ public class AdminCarService {
             vo.setStatus(car.getStatus());
             vo.setViewCount(car.getViewCount());
             vo.setCreatedAt(car.getCreatedAt());
+
+            // 填充品牌/车系/车型名称
+            if (car.getBrandId() != null) vo.setBrandName(brandNameMap.get(car.getBrandId()));
+            if (car.getSeriesId() != null) vo.setSeriesName(seriesNameMap.get(car.getSeriesId()));
+            if (car.getModelId() != null) vo.setModelName(modelNameMap.get(car.getModelId()));
 
             AppUser seller = sellerMap.get(car.getUserId());
             if (seller != null) {
@@ -148,12 +187,31 @@ public class AdminCarService {
                 : appUserMapper.selectBatchIds(sellerIds).stream()
                         .collect(Collectors.toMap(AppUser::getId, u -> u));
 
+        // 批量查询品牌、车系、车型名称，避免 N+1
+        List<Integer> exportBrandIds = cars.stream()
+                .map(AppCarSource::getBrandId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        List<Integer> exportSeriesIds = cars.stream()
+                .map(AppCarSource::getSeriesId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        List<Integer> exportModelIds = cars.stream()
+                .map(AppCarSource::getModelId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+
+        Map<Integer, String> exportBrandNameMap = exportBrandIds.isEmpty() ? Collections.emptyMap()
+                : adminCarBrandMapper.selectBatchIds(exportBrandIds).stream()
+                        .collect(Collectors.toMap(AdminCarBrand::getId, AdminCarBrand::getName));
+        Map<Integer, String> exportSeriesNameMap = exportSeriesIds.isEmpty() ? Collections.emptyMap()
+                : adminCarSeriesMapper.selectBatchIds(exportSeriesIds).stream()
+                        .collect(Collectors.toMap(AdminCarSeries::getId, AdminCarSeries::getName));
+        Map<Integer, String> exportModelNameMap = exportModelIds.isEmpty() ? Collections.emptyMap()
+                : adminCarModelMapper.selectBatchIds(exportModelIds).stream()
+                        .collect(Collectors.toMap(AdminCarModel::getId, AdminCarModel::getName));
+
         return cars.stream().map(car -> {
             CarVO vo = new CarVO();
             vo.setId(car.getId());
             vo.setTitle(car.getTitle());
             vo.setBrandId(car.getBrandId());
             vo.setSeriesId(car.getSeriesId());
+            vo.setModelId(car.getModelId());
             vo.setCityName(car.getCityName());
             vo.setEnergyType(car.getEnergyType());
             vo.setPrice(car.getPrice());
@@ -162,6 +220,11 @@ public class AdminCarService {
             vo.setStatus(car.getStatus());
             vo.setViewCount(car.getViewCount());
             vo.setCreatedAt(car.getCreatedAt());
+
+            // 填充品牌/车系/车型名称
+            if (car.getBrandId() != null) vo.setBrandName(exportBrandNameMap.get(car.getBrandId()));
+            if (car.getSeriesId() != null) vo.setSeriesName(exportSeriesNameMap.get(car.getSeriesId()));
+            if (car.getModelId() != null) vo.setModelName(exportModelNameMap.get(car.getModelId()));
 
             AppUser seller = sellerMap.get(car.getUserId());
             if (seller != null) {
@@ -184,6 +247,7 @@ public class AdminCarService {
         vo.setTitle(car.getTitle());
         vo.setBrandId(car.getBrandId());
         vo.setSeriesId(car.getSeriesId());
+        vo.setModelId(car.getModelId());
         vo.setCityName(car.getCityName());
         vo.setEnergyType(car.getEnergyType());
         vo.setPrice(car.getPrice());
@@ -192,6 +256,20 @@ public class AdminCarService {
         vo.setStatus(car.getStatus());
         vo.setViewCount(car.getViewCount());
         vo.setCreatedAt(car.getCreatedAt());
+
+        // 填充品牌/车系/车型名称
+        if (car.getBrandId() != null) {
+            AdminCarBrand brand = adminCarBrandMapper.selectById(car.getBrandId());
+            if (brand != null) vo.setBrandName(brand.getName());
+        }
+        if (car.getSeriesId() != null) {
+            AdminCarSeries series = adminCarSeriesMapper.selectById(car.getSeriesId());
+            if (series != null) vo.setSeriesName(series.getName());
+        }
+        if (car.getModelId() != null) {
+            AdminCarModel model = adminCarModelMapper.selectById(car.getModelId());
+            if (model != null) vo.setModelName(model.getName());
+        }
 
         // 查询卖家信息
         if (car.getUserId() != null) {

@@ -171,6 +171,14 @@ export const subjectSignMap: Record<SubjectKey, '+' | '-'> = {
   refund_deposit: '-',
 }
 
+/** 前端 subjectKey → 后端 DepositManualDTO.type 枚举映射 */
+export const subjectToBackendType: Record<SubjectKey, string> = {
+  pay_deposit: 'CHARGE',
+  lock_deposit: 'FREEZE',
+  release_deposit: 'UNFREEZE',
+  refund_deposit: 'REFUND',
+}
+
 /** 人工记账表单默认值，弹窗打开或重置时使用 */
 export const DEFAULT_MANUAL_FORM = {
   customerId: 'USR-3001',

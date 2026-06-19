@@ -10,7 +10,11 @@ public class CarVO {
     private Long id;
     private String title;
     private Integer brandId;
+    private String brandName;
     private Integer seriesId;
+    private String seriesName;
+    private Integer modelId;
+    private String modelName;
     private String cityName;
     private String energyType;
     private BigDecimal price;

@@ -2,7 +2,7 @@ import { Connection, Cpu, TrendCharts } from '@element-plus/icons-vue'
 import type { Component } from 'vue'
 
 export const DEMO_ACCOUNT = {
-  username: 'admin',
+  username: 'yuan2026@5d.com',
   password: 'admin123',
 } as const
 

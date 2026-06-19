@@ -1,12 +1,16 @@
 /** Cars (Vehicles) API */
-import { get, put } from '../utils/request'
+import { get, put, del } from '../utils/request'
 import type { ApiResponse, PageResult, PaginationQuery } from './types'
 
 export interface Car {
   id: number
   title: string
   brandId: number
+  brandName: string
   seriesId: number
+  seriesName: string
+  modelId: number
+  modelName: string
   cityName: string
   energyType: string
   price: number
@@ -41,4 +45,8 @@ export function updateCarStatus(id: number, status: string) {
 
 export function recommendCar(id: number, recommended: boolean) {
   return put<ApiResponse<void>>(`/cars/${id}/recommend`, { recommended })
+}
+
+export function deleteCar(id: number) {
+  return del<ApiResponse<void>>(`/cars/${id}`)
 }
