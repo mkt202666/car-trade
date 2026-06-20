@@ -11,7 +11,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("export_templates")
+@TableName("tc_export_templates")
 public class ExportTemplate {
 
     @TableId(type = IdType.AUTO)

@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("car_images")
+@TableName("tc_car_images")
 public class CarImage {
 
     /** 图片ID（主键） */

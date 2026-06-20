@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  * 求购意向表
  */
 @Data
-@TableName("purchase_demands")
+@TableName("tc_purchase_demands")
 public class PurchaseDemand {
 
     @TableId(type = IdType.AUTO)

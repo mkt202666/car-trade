@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  * 关联：外键 auctionId → auctions；userId → users；(auctionId, userId) 唯一。
  */
 @Data
-@TableName("auction_watches")
+@TableName("tc_auction_watches")
 public class AuctionWatch {
 
     /** 记录ID（主键，使用 MyBatis-Plus 雪花算法） */

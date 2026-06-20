@@ -13,12 +13,12 @@ import java.util.Map;
 public interface AppUserMapper extends BaseMapper<AppUser> {
 
     @Select("SELECT DATE(created_at) as date, COUNT(*) as count " +
-            "FROM users WHERE created_at >= #{startDate}::timestamp AND deleted_at IS NULL " +
+            "FROM tc_users WHERE created_at >= #{startDate}::timestamp AND deleted_at IS NULL " +
             "GROUP BY DATE(created_at) ORDER BY date")
     List<Map<String, Object>> selectDailyNewUsers(@Param("startDate") String startDate);
 
-    @Select("SELECT u.*, (SELECT COUNT(*) FROM shop_members sm WHERE sm.shop_user_id = u.id) AS memberCount " +
-            "FROM users u " +
+    @Select("SELECT u.*, (SELECT COUNT(*) FROM tc_shop_members sm WHERE sm.shop_user_id = u.id) AS memberCount " +
+            "FROM tc_users u " +
             "WHERE u.deleted_at IS NULL " +
             "AND (#{keyword} IS NULL OR #{keyword} = '' OR u.shop_name LIKE CONCAT('%',#{keyword},'%')) " +
             "AND (#{status} IS NULL OR #{status} = '' OR u.status = #{status}) " +
@@ -30,7 +30,7 @@ public interface AppUserMapper extends BaseMapper<AppUser> {
                                               @Param("offset") long offset,
                                               @Param("size") long size);
 
-    @Select("SELECT COUNT(*) FROM users u " +
+    @Select("SELECT COUNT(*) FROM tc_users u " +
             "WHERE u.deleted_at IS NULL " +
             "AND (#{keyword} IS NULL OR #{keyword} = '' OR u.shop_name LIKE CONCAT('%',#{keyword},'%')) " +
             "AND (#{status} IS NULL OR #{status} = '' OR u.status = #{status}) " +

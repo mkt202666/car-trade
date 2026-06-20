@@ -11,7 +11,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("admin_users")
+@TableName("tc_admin_users")
 public class AdminUser {
 
     @TableId(type = IdType.AUTO)

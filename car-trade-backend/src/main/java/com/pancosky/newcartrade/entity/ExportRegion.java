@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  * 描述：管理可出口的国家/地区及其约束条件和要求
  */
 @Data
-@TableName("export_regions")
+@TableName("tc_export_regions")
 public class ExportRegion implements Serializable {
 
     private static final long serialVersionUID = 1L;

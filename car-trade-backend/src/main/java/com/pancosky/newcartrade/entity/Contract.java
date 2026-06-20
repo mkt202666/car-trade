@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("contracts")
+@TableName("tc_contracts")
 public class Contract {
 
     /** 合同ID（主键） */

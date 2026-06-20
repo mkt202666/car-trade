@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("models")
+@TableName("tc_models")
 public class Model {
 
     /** 车型ID（主键） */

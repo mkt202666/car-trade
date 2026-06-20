@@ -79,7 +79,7 @@
               <span class="queue-title">{{ item.title }}</span>
               <span class="queue-date">| {{ item.date }}</span>
             </div>
-            <el-button plain size="small">前往处理</el-button>
+            <el-button plain size="small" @click="goToApproval(item)">前往处理</el-button>
           </li>
         </ul>
       </el-card>
@@ -123,10 +123,12 @@
  * 资质审批队列及资金预警信息；数据与图表配置由 useDashboard 提供。
  */
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Clock } from '@element-plus/icons-vue'
 import VChart from 'vue-echarts'
 import DashboardStatCard from './components/DashboardStatCard.vue'
 import { useDashboard } from './hooks/useDashboard'
+import type { ApprovalQueueItem } from './hooks/types'
 
 const {
   kpi,
@@ -140,6 +142,22 @@ const {
 } = useDashboard()
 
 const syncTime = computed(() => new Date().toLocaleString())
+
+const router = useRouter()
+
+/** 根据审批项类型跳转到对应处理页面 */
+function goToApproval(item: ApprovalQueueItem) {
+  switch (item.type) {
+    case 'SHOP_REVIEW':
+      router.push('/dealer-audit')
+      break
+    case 'DISPUTE':
+      router.push('/disputes')
+      break
+    default:
+      router.push('/dealer-audit')
+  }
+}
 
 </script>
 

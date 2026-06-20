@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("orders")
+@TableName("tc_orders")
 public class AppOrder {
 
     @TableId(type = IdType.ASSIGN_ID)

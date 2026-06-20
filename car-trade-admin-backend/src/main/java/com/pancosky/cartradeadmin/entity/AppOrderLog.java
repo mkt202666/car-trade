@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("order_logs")
+@TableName("tc_order_logs")
 public class AppOrderLog {
 
     @TableId(type = IdType.AUTO)

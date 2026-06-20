@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("configs")
+@TableName("tc_configs")
 public class Config {
 
     /** 配置键（如 trade-rules, user-agreement, privacy-policy, contract-template） */

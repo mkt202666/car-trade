@@ -107,7 +107,7 @@ export async function importCarModels(file: File): Promise<CarModelImportResult>
   const formData = new FormData()
   formData.append('file', file)
   const token = localStorage.getItem('token') || ''
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1/admin'
   const response = await fetch(`${baseUrl}/car-library/import`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
@@ -121,7 +121,7 @@ export async function importCarModels(file: File): Promise<CarModelImportResult>
 
 /** 下载车型导入模板 */
 export function downloadImportTemplate() {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1/admin'
   const token = localStorage.getItem('token') || ''
   const url = `${baseUrl}/car-library/import-template`
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })

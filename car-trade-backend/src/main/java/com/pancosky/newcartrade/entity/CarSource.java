@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("car_sources")
+@TableName("tc_car_sources")
 public class CarSource {
 
     /** 车源ID（主键，与订单、拍卖、图片表等关联） */

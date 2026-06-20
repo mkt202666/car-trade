@@ -14,7 +14,7 @@ public interface AppOrderMapper extends BaseMapper<AppOrder> {
 
     @Select("SELECT DATE(created_at) as date, COUNT(*) as order_count, " +
             "COALESCE(SUM(total_price), 0) as trade_amount " +
-            "FROM orders WHERE created_at >= #{startDate}::timestamp " +
+            "FROM tc_orders WHERE created_at >= #{startDate}::timestamp " +
             "AND status = 'COMPLETED' " +
             "GROUP BY DATE(created_at) ORDER BY date")
     List<Map<String, Object>> selectDailyTrend(@Param("startDate") String startDate);

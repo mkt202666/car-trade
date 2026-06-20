@@ -6,8 +6,10 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+import com.pancosky.cartradeadmin.handler.JsonbStringTypeHandler;
+
 @Data
-@TableName("export_regions")
+@TableName(value = "tc_export_regions", autoResultMap = true)
 public class ExportRegion {
 
     @TableId(type = IdType.AUTO)
@@ -27,8 +29,10 @@ public class ExportRegion {
 
     private String icon;
 
+    @TableField(typeHandler = JsonbStringTypeHandler.class)
     private String constraints;
 
+    @TableField(typeHandler = JsonbStringTypeHandler.class)
     private String requirements;
 
     private String status;

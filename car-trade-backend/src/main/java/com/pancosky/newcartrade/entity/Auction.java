@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * 注意：使用 @Version 实现 MyBatis-Plus 乐观锁，避免并发出价导致的价格错乱。
  */
 @Data
-@TableName("auctions")
+@TableName("tc_auctions")
 public class Auction {
 
     /** 拍卖ID（主键，使用 MyBatis-Plus 雪花算法自动生成） */

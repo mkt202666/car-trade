@@ -55,16 +55,20 @@ export function useDeposit() {
         getDepositSummary(),
       ])
 
-      if (accountsRes.status === 'fulfilled' && accountsRes.value?.data?.list) {
-        depositAccounts.value = accountsRes.value.data.list.map((a: APIAccount) => ({
-          id: `USR-${a.id}`,
+      // Axios 拦截器已解包 ApiResponse.data，运行时值即为 PageResult / DepositSummary
+      const accounts = (accountsRes as any)?.value
+      if (accountsRes.status === 'fulfilled' && accounts?.list) {
+        depositAccounts.value = accounts.list.map((a: APIAccount) => ({
+          id: `USR-${a.userId}`,
           name: a.userName || '—',
+          role: a.userRole === 'SHOP' ? '车行用户' : a.userRole === 'PERSONAL' ? '个人用户' : a.userRole || undefined,
           available: a.balance || 0,
         }))
       }
 
-      if (recordsRes.status === 'fulfilled' && recordsRes.value?.data?.list) {
-        flows.value = recordsRes.value.data.list.map((r: DepositRecord) => ({
+      const records = (recordsRes as any)?.value
+      if (recordsRes.status === 'fulfilled' && records?.list) {
+        flows.value = records.list.map((r: DepositRecord) => ({
           id: `TX-${r.id}`,
           time: r.createdAt || '—',
           customerName: r.userName || '—',
@@ -87,8 +91,9 @@ export function useDeposit() {
         }))
       }
 
-      if (summaryRes.status === 'fulfilled' && summaryRes.value?.data) {
-        summary.value = summaryRes.value.data
+      const summaryData = (summaryRes as any)?.value
+      if (summaryRes.status === 'fulfilled' && summaryData) {
+        summary.value = summaryData
       }
     } catch (e) {
       console.error('Failed to fetch deposit data:', e)
@@ -176,7 +181,7 @@ export function useDeposit() {
 
   /** 导出当前筛选条件下的保证金流水为 Excel */
   function handleExport() {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1/admin'
     const params = new URLSearchParams()
     if (keyword.value.trim()) params.set('keyword', keyword.value.trim())
     if (typeFilter.value !== 'all') params.set('type', typeFilter.value)

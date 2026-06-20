@@ -11,7 +11,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("banners")
+@TableName("tc_banners")
 public class Banner {
 
     @TableId(type = IdType.AUTO)

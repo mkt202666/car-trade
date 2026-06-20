@@ -407,7 +407,7 @@ export function useDealers() {
         userId: adjustTarget.value.numericId,
         amount: Math.abs(amount),
         type: amount > 0 ? 'CHARGE' : 'WITHDRAW',
-        description: '车行保证金调整',
+        remark: '车行保证金调整',
       })
       ElMessage.success(`已对 ${adjustTarget.value.name} 完成调配过账`)
       adjustDialogVisible.value = false
@@ -447,7 +447,7 @@ export function useDealers() {
 
   /** 导出当前筛选条件下的车行列表为 Excel */
   function handleExport() {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1/admin'
     const params = new URLSearchParams()
     if (keyword.value.trim()) params.set('keyword', keyword.value.trim())
     if (statusFilter.value !== 'all') params.set('status', statusFilter.value)

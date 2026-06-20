@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("chat_conversation_members")
+@TableName("tc_chat_conversation_members")
 public class ChatConversationMember {
 
     /** 记录ID（主键，PostgreSQL BIGSERIAL 自增） */

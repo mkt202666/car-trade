@@ -265,7 +265,7 @@ export function useVehicles() {
 
   /** 导出当前筛选条件下的车辆列表为 Excel */
   function handleExport() {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1/admin'
     const params = new URLSearchParams()
     if (keyword.value.trim()) params.set('keyword', keyword.value.trim())
     if (statusFilter.value !== 'all') params.set('status', statusFilter.value)

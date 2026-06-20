@@ -88,6 +88,7 @@ public class AdminDepositService {
                 if (user != null) {
                     vo.setUserName(user.getNickname());
                     vo.setUserPhone(maskPhone(user.getPhone()));
+                    vo.setUserRole(user.getUserRole());
                 }
             }
 
@@ -182,11 +183,18 @@ public class AdminDepositService {
     public void manualAdjust(DepositManualDTO dto, Long operatorId) {
         Long userId = dto.getUserId();
 
-        // 查找账户
+        // 查找账户，不存在则自动创建
         AppDepositAccount account = appDepositAccountMapper.selectOne(
                 new LambdaQueryWrapper<AppDepositAccount>().eq(AppDepositAccount::getUserId, userId));
         if (account == null) {
-            throw new BusinessException(404, "保证金账户不存在");
+            account = new AppDepositAccount();
+            account.setUserId(userId);
+            account.setBalance(BigDecimal.ZERO);
+            account.setFrozenAmount(BigDecimal.ZERO);
+            account.setTotalDeposit(BigDecimal.ZERO);
+            account.setStatus("ACTIVE");
+            appDepositAccountMapper.insert(account);
+            log.info("Auto-created deposit account for user {}", userId);
         }
 
         BigDecimal amount = dto.getAmount();
@@ -263,23 +271,41 @@ public class AdminDepositService {
 
         BigDecimal totalBalance = BigDecimal.ZERO;
         BigDecimal totalFrozen = BigDecimal.ZERO;
-        BigDecimal totalDeposit = BigDecimal.ZERO;
-        long activeAccounts = 0;
+        int totalAccounts = accounts.size();
 
         for (AppDepositAccount account : accounts) {
             totalBalance = totalBalance.add(account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO);
             totalFrozen = totalFrozen.add(account.getFrozenAmount() != null ? account.getFrozenAmount() : BigDecimal.ZERO);
-            totalDeposit = totalDeposit.add(account.getTotalDeposit() != null ? account.getTotalDeposit() : BigDecimal.ZERO);
-            if ("ACTIVE".equals(account.getStatus())) {
-                activeAccounts++;
+        }
+
+        // 统计今日收入/支出
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDateTime todayStart = today.atStartOfDay();
+        java.time.LocalDateTime todayEnd = today.plusDays(1).atStartOfDay();
+
+        List<AppDepositRecord> todayRecords = appDepositRecordMapper.selectList(
+                new LambdaQueryWrapper<AppDepositRecord>()
+                        .ge(AppDepositRecord::getCreatedAt, todayStart)
+                        .lt(AppDepositRecord::getCreatedAt, todayEnd));
+
+        BigDecimal todayIncome = BigDecimal.ZERO;
+        BigDecimal todayWithdraw = BigDecimal.ZERO;
+        for (AppDepositRecord record : todayRecords) {
+            if (record.getAmount() != null) {
+                if (record.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                    todayIncome = todayIncome.add(record.getAmount());
+                } else {
+                    todayWithdraw = todayWithdraw.add(record.getAmount().abs());
+                }
             }
         }
 
         Map<String, Object> summary = new HashMap<>();
         summary.put("totalBalance", totalBalance);
         summary.put("totalFrozen", totalFrozen);
-        summary.put("totalDeposit", totalDeposit);
-        summary.put("activeAccounts", activeAccounts);
+        summary.put("totalAccounts", totalAccounts);
+        summary.put("todayIncome", todayIncome);
+        summary.put("todayWithdraw", todayWithdraw);
         return summary;
     }
 

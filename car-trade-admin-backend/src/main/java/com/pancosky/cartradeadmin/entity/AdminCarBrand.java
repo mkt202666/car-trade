@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("brands")
+@TableName("tc_brands")
 public class AdminCarBrand {
 
     @TableId(type = IdType.AUTO)

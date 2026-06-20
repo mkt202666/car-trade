@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("browsing_history")
+@TableName("tc_browsing_history")
 public class BrowsingHistory {
 
     /** 主键ID（全局唯一，用于业务表关联） */

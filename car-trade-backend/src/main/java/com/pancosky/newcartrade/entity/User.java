@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("users")
+@TableName("tc_users")
 public class User {
 
     /** 主键ID（全局唯一，用于所有业务表关联） */

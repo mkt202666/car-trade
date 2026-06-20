@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("coupons")
+@TableName("tc_coupons")
 public class Coupon {
 
     /** 优惠券ID（主键） */

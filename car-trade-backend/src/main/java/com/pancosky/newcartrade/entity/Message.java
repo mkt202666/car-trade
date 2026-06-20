@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("messages")
+@TableName("tc_messages")
 public class Message {
 
     /** 消息ID（主键，PostgreSQL BIGSERIAL 自增） */

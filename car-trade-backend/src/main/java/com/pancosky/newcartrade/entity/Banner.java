@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("banners")
+@TableName("tc_banners")
 public class Banner {
 
     @TableId

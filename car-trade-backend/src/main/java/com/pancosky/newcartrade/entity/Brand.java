@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("brands")
+@TableName("tc_brands")
 public class Brand {
 
     /** 品牌ID（主键，整型，便于前端做硬编码映射） */

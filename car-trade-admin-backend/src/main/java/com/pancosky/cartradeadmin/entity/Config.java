@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("configs")
+@TableName("tc_configs")
 public class Config {
 
     /**

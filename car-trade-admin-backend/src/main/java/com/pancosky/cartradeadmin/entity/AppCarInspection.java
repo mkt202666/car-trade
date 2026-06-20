@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("car_inspections")
+@TableName("tc_car_inspections")
 public class AppCarInspection {
 
     @TableId(type = IdType.AUTO)

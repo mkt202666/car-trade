@@ -45,6 +45,10 @@ export interface CouponItem {
 
 /** 资质审批队列项，供底部「资质注册处理队列」面板渲染 */
 export interface ApprovalQueueItem {
+  /** 审批类型：SHOP_REVIEW=车行认证审核, DISPUTE=争议处理 */
+  type: string
+  /** 关联记录 ID，用于跳转详情页 */
+  id: unknown
   /** 申请主体名称（车行或合伙人） */
   title: string
   /** 提交日期，格式为 M/D/YYYY */

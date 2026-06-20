@@ -19,8 +19,8 @@
 
     <select id="searchExportCars" resultMap="carDetailMap">
         SELECT cs.*
-        FROM car_sources cs
-        INNER JOIN car_tags ct ON cs.id = ct.car_id
+        FROM tc_car_sources cs
+        INNER JOIN tc_car_tags ct ON cs.id = ct.car_id
         WHERE ct.tag_type = 'EXPORT'
           AND ct.tag_value = #{countryCode}
           AND cs.status = 'ACTIVE'

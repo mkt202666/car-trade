@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("deposit_accounts")
+@TableName("tc_deposit_accounts")
 public class AppDepositAccount {
 
     @TableId(type = IdType.AUTO)

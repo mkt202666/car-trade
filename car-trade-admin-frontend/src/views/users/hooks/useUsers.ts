@@ -377,7 +377,7 @@ export function useUsers() {
         userId: Number(adjustTarget.value.id),
         amount: Math.abs(delta),
         type: delta > 0 ? 'CHARGE' : 'WITHDRAW',
-        description: '管理员手动调整',
+        remark: '管理员手动调整',
       })
       ElMessage.success(`已为 ${adjustTarget.value.name} 完成调配过账`)
       adjustDialogVisible.value = false
@@ -424,7 +424,7 @@ export function useUsers() {
           userId: created.id,
           amount: registerForm.deposit,
           type: 'CHARGE',
-          description: '开户首充保证金',
+          remark: '开户首充保证金',
         })
       }
 

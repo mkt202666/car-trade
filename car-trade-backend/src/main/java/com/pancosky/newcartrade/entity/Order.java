@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("orders")
+@TableName("tc_orders")
 public class Order {
 
     /** 订单ID（主键，业务订单号，格式如 ORD20250101123456789） */

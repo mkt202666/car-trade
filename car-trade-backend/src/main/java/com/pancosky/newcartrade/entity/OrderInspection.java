@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("order_inspections")
+@TableName("tc_order_inspections")
 public class OrderInspection {
 
     /** 主键ID（全局唯一，用于业务表关联） */

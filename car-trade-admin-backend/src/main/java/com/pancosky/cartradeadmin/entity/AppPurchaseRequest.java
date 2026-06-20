@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("purchase_demands")
+@TableName("tc_purchase_demands")
 public class AppPurchaseRequest {
 
     @TableId(type = IdType.AUTO)

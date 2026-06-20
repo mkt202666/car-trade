@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("credit_accounts")
+@TableName("tc_credit_accounts")
 public class CreditAccount {
 
     /** 信用账户ID（主键） */

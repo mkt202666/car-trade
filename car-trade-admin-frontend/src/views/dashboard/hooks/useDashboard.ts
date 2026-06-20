@@ -51,6 +51,8 @@ function mapWarningLevel(level: string): WarningDisplayType {
 function mapApprovalItem(item: DashboardApproval): ApprovalQueueItem {
   const dt = item.createdAt ? new Date(item.createdAt) : new Date()
   return {
+    type: item.type,
+    id: item.id,
     title: item.title,
     date: `${dt.getMonth() + 1}/${dt.getDate()}/${dt.getFullYear()}`,
   }
@@ -215,7 +217,7 @@ export function useDashboard() {
         name: '剩余可用',
         used: cs.remainCount,
         status: cs.remainCount > 0 ? '可用' : '已耗尽',
-        statusType: (cs.remainCount > 0 ? 'active' : 'expired') as const,
+        statusType: (cs.remainCount > 0 ? 'active' : 'expired') as 'active' | 'expired',
       },
       {
         code: 'RATE',

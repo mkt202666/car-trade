@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("car_tags")
+@TableName("tc_car_tags")
 public class CarTag {
 
     /** 标签记录ID（主键） */

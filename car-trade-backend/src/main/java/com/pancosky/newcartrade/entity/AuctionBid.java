@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 关联：外键 auctionId → auctions；bidderId → users。
  */
 @Data
-@TableName("auction_bids")
+@TableName("tc_auction_bids")
 public class AuctionBid {
 
     /** 出价记录ID（主键，使用 MyBatis-Plus 雪花算法） */

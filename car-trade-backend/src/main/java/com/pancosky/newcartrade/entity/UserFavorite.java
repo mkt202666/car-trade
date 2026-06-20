@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("user_favorites")
+@TableName("tc_user_favorites")
 public class UserFavorite {
 
     /** 记录ID（主键） */

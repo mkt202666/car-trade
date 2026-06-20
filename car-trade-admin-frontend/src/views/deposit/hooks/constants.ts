@@ -181,7 +181,7 @@ export const subjectToBackendType: Record<SubjectKey, string> = {
 
 /** 人工记账表单默认值，弹窗打开或重置时使用 */
 export const DEFAULT_MANUAL_FORM = {
-  customerId: 'USR-3001',
+  customerId: '',
   subjectKey: 'pay_deposit' as SubjectKey,
   amount: '10000',
   note: '',

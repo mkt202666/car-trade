@@ -8,7 +8,7 @@ import type { ApiResponse, RequestConfig } from './types'
 
 const TOKEN_KEY = 'token'
 const SUCCESS_CODE = 200
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1/admin'
 const TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 30_000
 
 interface RequestOptions {
@@ -169,7 +169,7 @@ export async function uploadImage(file: File): Promise<string> {
   const formData = new FormData()
   formData.append('file', file)
   const token = localStorage.getItem('token') || ''
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1/admin'
   const response = await fetch(`${baseUrl}/uploads/image`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },

@@ -10,6 +10,7 @@ public class DepositAccountVO {
     private Long userId;
     private String userName;
     private String userPhone;
+    private String userRole;
     private BigDecimal balance;
     private BigDecimal frozenAmount;
     private BigDecimal totalDeposit;

@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("deposit_accounts")
+@TableName("tc_deposit_accounts")
 public class DepositAccount {
 
     /** 保证金账户ID（主键） */

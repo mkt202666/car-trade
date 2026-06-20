@@ -9,13 +9,13 @@ import java.util.List;
 
 public interface CarMapper extends BaseMapper<CarSource> {
 
-    @Update("UPDATE car_sources SET view_count = view_count + 1 WHERE id = #{carId}")
+    @Update("UPDATE tc_car_sources SET view_count = view_count + 1 WHERE id = #{carId}")
     void incrementViewCount(@Param("carId") Long carId);
 
-    @Update("UPDATE car_sources SET favorite_count = favorite_count + 1 WHERE id = #{carId}")
+    @Update("UPDATE tc_car_sources SET favorite_count = favorite_count + 1 WHERE id = #{carId}")
     void incrementFavoriteCount(@Param("carId") Long carId);
 
-    @Update("UPDATE car_sources SET favorite_count = favorite_count - 1 WHERE id = #{carId}")
+    @Update("UPDATE tc_car_sources SET favorite_count = favorite_count - 1 WHERE id = #{carId}")
     void decrementFavoriteCount(@Param("carId") Long carId);
 
     List<CarSource> searchExportCars(@Param("countryCode") String countryCode);

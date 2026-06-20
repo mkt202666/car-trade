@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("member_plans")
+@TableName("tc_member_plans")
 public class MemberPlan {
 
     /** 套餐ID（主键） */

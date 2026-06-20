@@ -6,10 +6,11 @@ export interface DepositAccount {
   id: number
   userId: number
   userName: string
+  userPhone: string
+  userRole: string
   balance: number
   frozenAmount: number
-  totalIncome: number
-  totalWithdraw: number
+  totalDeposit: number
   status: string
   createdAt: string
   updatedAt: string

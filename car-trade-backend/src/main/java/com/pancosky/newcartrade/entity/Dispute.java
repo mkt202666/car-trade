@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@TableName("disputes")
+@TableName("tc_disputes")
 public class Dispute {
 
     /** 纠纷ID（主键） */
