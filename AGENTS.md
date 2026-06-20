@@ -66,6 +66,7 @@ Controller → Service → Manager → Mapper
 ### Key conventions
 
 - **Soft delete**: `deletedAt` field (TIMESTAMP, NULL = not deleted)
+- **Table naming**: All tables use `tc_` prefix (e.g. `tc_users`, `tc_orders`, `tc_car_sources`). Entity `@TableName` must match
 - **Auto-fill**: `createdAt`/`updatedAt` via `MetaObjectHandler` — do NOT set manually
 - **Enums**: Implement `IEnum<Integer>` — stored as integers, not strings
 - **Unified response**: All endpoints return `ApiResponse<T>`
@@ -105,7 +106,7 @@ Four levels via `@RequiresAuth` annotation: `PUBLIC`, `PROTECTED`, `CERTIFIED`, 
 - `app.demo-mode=true` in local profile — allows auto-register on login + resets mismatched passwords
 - `security.login-lock.enabled=false` in local profile — disables account lockout for debugging
 - RocketMQ beans (`MessageConsumer`, `MessageProducer`) use `@ConditionalOnBean(RocketMQTemplate.class)` — won't load if RocketMQ is not configured
-- `schema.sql` is NOT a migration script — it contains data updates (UPDATE statements) and test data inserts with `WHERE NOT EXISTS`. `init.sql` is the actual DDL (1083 lines)
+- `schema.sql` is NOT a migration script — it contains data updates (UPDATE statements) and test data inserts with `WHERE NOT EXISTS`. `init.sql` is the actual DDL (all tables use `tc_` prefix)
 - `GlobalExceptionHandler` returns HTTP 200 for `BusinessException` (via `@ResponseStatus(HttpStatus.OK)`) — clients must check `ApiResponse.code`, not HTTP status
 
 ## Frontend Architecture
@@ -207,7 +208,7 @@ Vuex 4 in `src/store/` — only for global state (user info, token). Server data
 
 ## Infrastructure
 
-- **PostgreSQL 16** — 33 entity tables, DDL in `car-trade-backend/src/main/resources/init.sql`
+- **PostgreSQL 16** — 41 tables (all prefixed `tc_`), DDL in `car-trade-backend/src/main/resources/db/init.sql`
 - **Redis 7** — car source caching, token/blacklist storage, hot data
 - **RocketMQ 5.x** — async message processing (order events, auction settlement, notifications)
 - **WebSocket (STOMP)** — real-time chat, order status push (`/ws` endpoint with SockJS fallback)
@@ -246,7 +247,7 @@ These are hard-earned facts that agents would likely get wrong without explicit 
 ### Field changes require 6-layer updates
 
 When adding/modifying a DB column, update in this exact order:
-1. `init.sql` — DDL (CREATE TABLE / ALTER TABLE)
+1. `init.sql` — DDL (CREATE TABLE / ALTER TABLE) — remember all tables use `tc_` prefix
 2. `schema.sql` — migration script (same DDL, idempotent)
 3. Entity class — add field with `@TableField`
 4. VOs — response objects
@@ -273,7 +274,7 @@ If you add a public endpoint, update BOTH files. They must stay in sync.
 
 ### Design docs are stale
 
-`04-数据库设计.md` references 28 tables. `init.sql` is the source of truth with 33 tables. Many fields added via ALTER TABLE are missing from the docs. Always check `init.sql`, not the docs, for actual schema.
+`04-数据库设计.md` references 28 tables. `init.sql` is the source of truth with 41 tables (all `tc_` prefixed). Many fields added via ALTER TABLE are missing from the docs. Always check `init.sql`, not the docs, for actual schema.
 
 ### notification_settings is raw JSON
 

@@ -7,8 +7,8 @@
 -- ============================================================
 
 -- ===================== 1. 创建数据库 =====================
-CREATE DATABASE sxk WITH ENCODING 'UTF8' LC_COLLATE 'zh_CN.utf8' LC_CTYPE 'zh_CN.utf8' TEMPLATE template0;
-ALTER DATABASE sxk SET search_path TO sxk;
+--CREATE DATABASE sxk WITH ENCODING 'UTF8' LC_COLLATE 'zh_CN.utf8' LC_CTYPE 'zh_CN.utf8' TEMPLATE template0;
+--ALTER DATABASE sxk SET search_path TO sxk;
 
 -- ===================== 2. 创建数据表 =====================
 

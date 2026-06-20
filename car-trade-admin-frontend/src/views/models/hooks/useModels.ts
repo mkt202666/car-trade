@@ -95,19 +95,22 @@ export function useModels() {
       ])
 
       const brandsMap = new Map<number, CarBrand>()
-      if (brandsRes?.data) {
-        brandsList.value = brandsRes.data
-        brandsRes.data.forEach((b: CarBrand) => brandsMap.set(b.id, b))
+      const brands = brandsRes as unknown as CarBrand[]
+      if (Array.isArray(brands)) {
+        brandsList.value = brands
+        brands.forEach((b: CarBrand) => brandsMap.set(b.id, b))
       }
 
       const seriesMap = new Map<number, CarSeries>()
-      if (seriesRes?.data) {
-        seriesList.value = seriesRes.data
-        seriesRes.data.forEach((s: CarSeries) => seriesMap.set(s.id, s))
+      const seriesArr = seriesRes as unknown as CarSeries[]
+      if (Array.isArray(seriesArr)) {
+        seriesList.value = seriesArr
+        seriesArr.forEach((s: CarSeries) => seriesMap.set(s.id, s))
       }
 
-      if (modelsRes?.data) {
-        models.value = modelsRes.data.map((model: CarModel) => {
+      const modelsArr = modelsRes as unknown as CarModel[]
+      if (Array.isArray(modelsArr)) {
+        models.value = modelsArr.map((model: CarModel) => {
           const series = seriesMap.get(model.seriesId)
           const brand = series ? brandsMap.get(series.brandId) : null
           return {
@@ -451,9 +454,9 @@ export function useModels() {
       // 1. 解析品牌 ID：已有则使用，否则调用 API 创建
       let brandId = findBrandIdByName(brandName)
       if (brandId === undefined) {
-        const brandRes = await createBrand({ name: brandName })
-        if (brandRes?.data) {
-          brandId = brandRes.data.id
+        const brandRes = await createBrand({ name: brandName }) as unknown as CarBrand
+        if (brandRes?.id) {
+          brandId = brandRes.id
         } else {
           ElMessage.error('品牌创建失败，请重试')
           return
@@ -463,9 +466,9 @@ export function useModels() {
       // 2. 解析车系 ID：已有则使用，否则调用 API 创建
       let seriesId = findSeriesIdByName(seriesName, brandId)
       if (seriesId === undefined) {
-        const seriesRes = await createSeries({ brandId, name: seriesName })
-        if (seriesRes?.data) {
-          seriesId = seriesRes.data.id
+        const seriesRes = await createSeries({ brandId, name: seriesName }) as unknown as CarSeries
+        if (seriesRes?.id) {
+          seriesId = seriesRes.id
         } else {
           ElMessage.error('车系创建失败，请重试')
           return

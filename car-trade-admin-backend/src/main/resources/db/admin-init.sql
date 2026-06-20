@@ -4,8 +4,8 @@
 -- Schema: public
 -- =====================================================================
 
-SET client_min_messages = WARNING;
-SET search_path = public;
+--SET client_min_messages = WARNING;
+--SET search_path = public;
 
 -- ---------------------------------------------------------------------
 -- 1. tc_admin_users  -- 后台管理员账号
